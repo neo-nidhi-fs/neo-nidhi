@@ -36,3 +36,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: false, error: msg }, { status: 500 });
   }
 }
+
+export async function GET() {
+  try {
+    await dbConnect();
+    const transactions = await Transaction.find({}).sort({ date: -1 }); // latest first
+    return NextResponse.json({ success: true, data: transactions });
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ success: false, error: msg }, { status: 500 });
+  }
+}
