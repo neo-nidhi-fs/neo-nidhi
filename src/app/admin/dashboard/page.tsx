@@ -54,11 +54,9 @@ export default function AdminDashboard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, age, password, role: "user" }),
       });
-
       const data = await res.json();
       if (res.ok) {
         setUsers((prev) => [...prev, data.data]);
-        e.currentTarget.reset();
       } else {
         alert(`Error: ${data.error}`);
       }
@@ -97,7 +95,7 @@ export default function AdminDashboard() {
               <Label htmlFor="password">Password</Label>
               <Input id="password" name="password" type="password" required />
             </div>
-            <Button type="submit" className="w-full">Register</Button>
+            <Button type="submit" className="w-full cursor-pointer">Register</Button>
           </form>
         </DialogContent>
       </Dialog>
