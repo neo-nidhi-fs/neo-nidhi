@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document, Model } from "mongoose";
+import mongoose, { Schema, Document, Model } from 'mongoose';
 
 export interface ISettings extends Document {
   savingsInterestRate: number;
@@ -11,4 +11,5 @@ const SettingsSchema: Schema<ISettings> = new Schema({
 });
 
 export const Settings: Model<ISettings> =
-  mongoose.models.Settings || mongoose.model<ISettings>("Settings", SettingsSchema);
+  mongoose.models.Settings ||
+  mongoose.model<ISettings>('Settings', SettingsSchema);

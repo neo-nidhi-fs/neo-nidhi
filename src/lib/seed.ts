@@ -1,18 +1,18 @@
-import "dotenv/config";
-import { dbConnect } from "./dbConnect";
-import { User } from "@/models/User";
+import 'dotenv/config';
+import { dbConnect } from './dbConnect';
+import { User } from '@/models/User';
 
 async function seed() {
   await dbConnect();
   await User.deleteMany({});
 
   const admin = new User({
-    name: "Admin",
+    name: 'Admin',
     age: 32,
-    role: "admin",
+    role: 'admin',
     savingsBalance: 0,
     loanBalance: 0,
-    password: "akashvg007!", // will be hashed automatically
+    password: 'akashvg007!', // will be hashed automatically
   });
 
   // const kid = new User({
@@ -27,7 +27,7 @@ async function seed() {
   await admin.save();
   // await kid.save();
 
-  console.log("Seeded Admin and Kid User with passwords ✅");
+  console.log('Seeded Admin and Kid User with passwords ✅');
   process.exit(0);
 }
 

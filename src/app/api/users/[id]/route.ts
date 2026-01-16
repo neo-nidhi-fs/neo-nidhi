@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
-import { dbConnect } from "@/lib/dbConnect";
-import { User } from "@/models/User";
+import { NextResponse } from 'next/server';
+import { dbConnect } from '@/lib/dbConnect';
+import { User } from '@/models/User';
 
 // Notice: params must be awaited
 export async function GET(
@@ -15,7 +15,7 @@ export async function GET(
     const user = await User.findById(id);
     if (!user) {
       return NextResponse.json(
-        { success: false, error: "User not found" },
+        { success: false, error: 'User not found' },
         { status: 404 }
       );
     }

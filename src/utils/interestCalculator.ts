@@ -1,6 +1,6 @@
 /**
  * Calculate monthly interest for different schemes.
- * 
+ *
  * @param scheme - "saving", "fd", "rd", "loan"
  * @param principal - initial amount
  * @param annualRate - annual interest rate in %
@@ -9,7 +9,7 @@
  * @param monthsPassed - optional, for FD/RD to calculate over multiple months
  */
 export function calculateMonthlyInterest(
-  scheme: "saving" | "fd" | "rd" | "loan",
+  scheme: 'saving' | 'fd' | 'rd' | 'loan',
   principal: number,
   annualRate: number,
   depositDate: Date,
@@ -25,7 +25,7 @@ export function calculateMonthlyInterest(
     currentDate.getMonth() + 1,
     0
   ).getDate();
- 
+
   const daysActive =
     (currentDate.getTime() - depositDate.getTime()) / (1000 * 60 * 60 * 24);
 
@@ -37,18 +37,20 @@ export function calculateMonthlyInterest(
   let interest = 0;
 
   switch (scheme) {
-    case "saving":
+    case 'saving':
       // Simple monthly interest on balance
       interest = principal * monthlyRate * proRataFactor;
       break;
 
-    case "fd":
+    case 'fd':
       // FD: compound monthly interest
       interest =
-        principal * (Math.pow(1 + monthlyRate, monthsPassed) - 1) * proRataFactor;
+        principal *
+        (Math.pow(1 + monthlyRate, monthsPassed) - 1) *
+        proRataFactor;
       break;
 
-    case "rd":
+    case 'rd':
       // RD: monthly installment deposits, interest compounded
       // Assume principal is monthly installment
       let rdTotal = 0;
@@ -58,7 +60,7 @@ export function calculateMonthlyInterest(
       interest = (rdTotal - principal * monthsPassed) * proRataFactor;
       break;
 
-    case "loan":
+    case 'loan':
       // Loan: interest accrues monthly on outstanding balance
       interest = principal * monthlyRate * proRataFactor;
       break;

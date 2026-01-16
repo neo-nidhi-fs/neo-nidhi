@@ -1,9 +1,9 @@
-import NextAuth, { NextAuthOptions } from "next-auth";
-import CredentialsProvider from "next-auth/providers/credentials";
-import { dbConnect } from "@/lib/dbConnect";
-import { User } from "@/models/User";
+import NextAuth, { NextAuthOptions } from 'next-auth';
+import CredentialsProvider from 'next-auth/providers/credentials';
+import { dbConnect } from '@/lib/dbConnect';
+import { User } from '@/models/User';
 
-declare module "next-auth" {
+declare module 'next-auth' {
   interface Session {
     user?: {
       id?: string;
@@ -15,7 +15,7 @@ declare module "next-auth" {
   }
 }
 
-declare module "next-auth/jwt" {
+declare module 'next-auth/jwt' {
   interface JWT {
     role?: string;
   }
@@ -24,10 +24,10 @@ declare module "next-auth/jwt" {
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
-      name: "Credentials",
+      name: 'Credentials',
       credentials: {
-        name: { label: "Name", type: "text" },
-        password: { label: "Password", type: "password" },
+        name: { label: 'Name', type: 'text' },
+        password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
         await dbConnect();
@@ -35,7 +35,7 @@ export const authOptions: NextAuthOptions = {
         const user = await User.findOne({ name: credentials?.name });
         if (!user) return null;
 
-        const isValid = await user.comparePassword(credentials?.password || "");
+        const isValid = await user.comparePassword(credentials?.password || '');
         if (!isValid) return null;
 
         return {
@@ -62,7 +62,7 @@ export const authOptions: NextAuthOptions = {
     },
   },
   pages: {
-    signIn: "/login",
+    signIn: '/login',
   },
 };
 

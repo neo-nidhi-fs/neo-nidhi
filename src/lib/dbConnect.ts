@@ -1,9 +1,9 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
 const MONGODB_URI = process.env.MONGODB_URI as string;
 
 if (!MONGODB_URI) {
-  throw new Error("Please define the MONGODB_URI environment variable");
+  throw new Error('Please define the MONGODB_URI environment variable');
 }
 
 type CachedMongoose = {
@@ -15,10 +15,15 @@ interface GlobalWithMongoose {
   mongoose?: CachedMongoose;
 }
 
-let cached: CachedMongoose | undefined = (global as unknown as GlobalWithMongoose).mongoose;
+let cached: CachedMongoose | undefined = (
+  global as unknown as GlobalWithMongoose
+).mongoose;
 
 if (!cached) {
-  cached = (global as unknown as GlobalWithMongoose).mongoose = { conn: null, promise: null };
+  cached = (global as unknown as GlobalWithMongoose).mongoose = {
+    conn: null,
+    promise: null,
+  };
 }
 
 export async function dbConnect() {

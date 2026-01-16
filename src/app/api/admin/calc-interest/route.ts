@@ -1,8 +1,8 @@
-import { NextResponse } from "next/server";
-import { dbConnect } from "@/lib/dbConnect";
-import { User } from "@/models/User";
-import { Transaction } from "@/models/Transaction";
-import { calculateMonthlyInterest } from "@/utils/interestCalculator";
+import { NextResponse } from 'next/server';
+import { dbConnect } from '@/lib/dbConnect';
+import { User } from '@/models/User';
+import { Transaction } from '@/models/Transaction';
+import { calculateMonthlyInterest } from '@/utils/interestCalculator';
 
 export async function POST() {
   try {
@@ -23,7 +23,7 @@ export async function POST() {
 
       // Example: calculate interest on savings + loan
       const savingsInterest = calculateMonthlyInterest(
-        "saving",
+        'saving',
         user.savingsBalance,
         3.5, // assume 3.5% annual
         user.lastInterestCalc || user.createdAt,
@@ -31,14 +31,14 @@ export async function POST() {
       );
 
       const loanInterest = calculateMonthlyInterest(
-        "loan",
+        'loan',
         user.loanBalance,
         12,
         user.lastInterestCalc || user.createdAt,
         today
       );
       const fdInterest = calculateMonthlyInterest(
-        "fd",
+        'fd',
         user.fd,
         8,
         user.lastInterestCalc || user.createdAt,
@@ -49,7 +49,7 @@ export async function POST() {
       if (savingsInterest > 0) {
         const tx = new Transaction({
           userId: user._id,
-          type: "interest",
+          type: 'interest',
           amount: savingsInterest,
           date: today,
         });
@@ -60,7 +60,7 @@ export async function POST() {
       if (fdInterest > 0) {
         const tx = new Transaction({
           userId: user._id,
-          type: "fdInterest",
+          type: 'fdInterest',
           amount: fdInterest,
           date: today,
         });
@@ -70,7 +70,7 @@ export async function POST() {
       if (loanInterest > 0) {
         const tx = new Transaction({
           userId: user._id,
-          type: "loanInterest",
+          type: 'loanInterest',
           amount: loanInterest,
           date: today,
         });
@@ -81,11 +81,13 @@ export async function POST() {
       // Update lastInterestCalc
       user.lastInterestCalc = today;
       await user.save();
-
     }
 
-    return NextResponse.json({ success: true, results:[] });
+    return NextResponse.json({ success: true, results: [] });
   } catch (error: unknown) {
-    return NextResponse.json({ success: false, error: (error as Error).message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: (error as Error).message },
+      { status: 500 }
+    );
   }
 }

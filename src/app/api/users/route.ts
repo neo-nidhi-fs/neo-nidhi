@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
-import { dbConnect } from "@/lib/dbConnect";
-import { User } from "@/models/User";
+import { NextResponse } from 'next/server';
+import { dbConnect } from '@/lib/dbConnect';
+import { User } from '@/models/User';
 
 export async function GET() {
   try {
@@ -22,7 +22,7 @@ export async function POST(req: Request) {
     const newUser = new User({
       name: body.name,
       age: body.age,
-      role: body.role || "user", // default to user
+      role: body.role || 'user', // default to user
       savingsBalance: body.savingsBalance || 0,
       loanBalance: 0,
       password: body.password, // raw password, will be hashed

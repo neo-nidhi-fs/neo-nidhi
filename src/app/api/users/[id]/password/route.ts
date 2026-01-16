@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
-import { dbConnect } from "@/lib/dbConnect";
-import { User } from "@/models/User";
-import bcrypt from "bcryptjs";
+import { NextResponse } from 'next/server';
+import { dbConnect } from '@/lib/dbConnect';
+import { User } from '@/models/User';
+import bcrypt from 'bcryptjs';
 
 export async function PUT(
   req: Request,
@@ -15,13 +15,19 @@ export async function PUT(
 
     const user = await User.findById(id);
     if (!user) {
-      return NextResponse.json({ success: false, error: "User not found" }, { status: 404 });
+      return NextResponse.json(
+        { success: false, error: 'User not found' },
+        { status: 404 }
+      );
     }
 
     // Verify old password
     const isMatch = await bcrypt.compare(oldPassword, user.password);
     if (!isMatch) {
-      return NextResponse.json({ success: false, error: "Invalid old password" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: 'Invalid old password' },
+        { status: 400 }
+      );
     }
 
     // Hash new password
@@ -29,8 +35,14 @@ export async function PUT(
     user.password = newPassword;
     await user.save();
 
-    return NextResponse.json({ success: true, message: "Password updated successfully" });
+    return NextResponse.json({
+      success: true,
+      message: 'Password updated successfully',
+    });
   } catch (error: unknown) {
-    return NextResponse.json({ success: false, error: (error as Error).message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: (error as Error).message },
+      { status: 500 }
+    );
   }
 }

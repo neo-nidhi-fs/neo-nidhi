@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
-import { dbConnect } from "@/lib/dbConnect";
-import { Transaction } from "@/models/Transaction";
-import { User } from "@/models/User";
+import { NextResponse } from 'next/server';
+import { dbConnect } from '@/lib/dbConnect';
+import { Transaction } from '@/models/Transaction';
+import { User } from '@/models/User';
 
 export async function POST(req: Request) {
   try {
@@ -22,34 +22,42 @@ export async function POST(req: Request) {
     // Update user balances based on transaction type
     const user = await User.findById(userId);
     if (!user) {
-      return NextResponse.json({ success: false, error: "User not found" }, { status: 404 });
+      return NextResponse.json(
+        { success: false, error: 'User not found' },
+        { status: 404 }
+      );
     }
 
-    if (type === "deposit") {
+    if (type === 'deposit') {
       user.savingsBalance += amount;
-    } else if (type === "withdrawal") {
-        if (user.savingsBalance < amount) {
-          return NextResponse.json({ success: false, error: "Insufficient balance" }, { status: 400 });
-        }
-        user.savingsBalance -= amount;
-    } else if (type === "loan") {
+    } else if (type === 'withdrawal') {
+      if (user.savingsBalance < amount) {
+        return NextResponse.json(
+          { success: false, error: 'Insufficient balance' },
+          { status: 400 }
+        );
+      }
+      user.savingsBalance -= amount;
+    } else if (type === 'loan') {
       user.loanBalance += amount;
-    } else if (type === "repayment") {
+    } else if (type === 'repayment') {
       user.loanBalance -= amount;
       if (user.loanBalance < 0) user.loanBalance = 0; // prevent negative
-    } else if (type === "fd") {
+    } else if (type === 'fd') {
       user.fd += amount;
     }
 
     await user.save();
 
-    return NextResponse.json({ success: true, data: transaction }, { status: 201 });
+    return NextResponse.json(
+      { success: true, data: transaction },
+      { status: 201 }
+    );
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error);
     return NextResponse.json({ success: false, error: msg }, { status: 500 });
   }
 }
-
 
 export async function GET() {
   try {

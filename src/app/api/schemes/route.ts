@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
-import { dbConnect } from "@/lib/dbConnect";
-import { Scheme } from "@/models/Scheme";
+import { NextResponse } from 'next/server';
+import { dbConnect } from '@/lib/dbConnect';
+import { Scheme } from '@/models/Scheme';
 
 // ✅ GET: Fetch all schemes
 export async function GET() {
@@ -9,7 +9,10 @@ export async function GET() {
     const schemes = await Scheme.find({});
     return NextResponse.json({ success: true, data: schemes });
   } catch (error: unknown) {
-    return NextResponse.json({ success: false, error: (error as Error).message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: (error as Error).message },
+      { status: 500 }
+    );
   }
 }
 
@@ -28,6 +31,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true, data: scheme }, { status: 201 });
   } catch (error: unknown) {
-    return NextResponse.json({ success: false, error: (error as Error).message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: (error as Error).message },
+      { status: 500 }
+    );
   }
 }

@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
-import { dbConnect } from "@/lib/dbConnect";
-import { Settings } from "@/models/Settings";
+import { NextResponse } from 'next/server';
+import { dbConnect } from '@/lib/dbConnect';
+import { Settings } from '@/models/Settings';
 
 // GET: Fetch current interest rates
 export async function GET() {
@@ -30,7 +30,10 @@ export async function POST(req: Request) {
 
     await settings.save();
 
-    return NextResponse.json({ success: true, data: settings }, { status: 201 });
+    return NextResponse.json(
+      { success: true, data: settings },
+      { status: 201 }
+    );
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error);
     return NextResponse.json({ success: false, error: msg }, { status: 500 });
