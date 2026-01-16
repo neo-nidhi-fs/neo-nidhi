@@ -78,6 +78,7 @@ export default function AdminDashboard() {
     {value: 'fd', label: 'Fixed Deposit'},
     { value: "loan", label: "Loan" },
     { value: "repayment", label: "Repayment" },
+    { value: "withdrawal", label: "Withdrawal" },
   ]
 
   return (

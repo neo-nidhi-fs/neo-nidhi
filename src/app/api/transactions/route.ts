@@ -27,6 +27,11 @@ export async function POST(req: Request) {
 
     if (type === "deposit") {
       user.savingsBalance += amount;
+    } else if (type === "withdrawal") {
+        if (user.savingsBalance < amount) {
+          return NextResponse.json({ success: false, error: "Insufficient balance" }, { status: 400 });
+        }
+        user.savingsBalance -= amount;
     } else if (type === "loan") {
       user.loanBalance += amount;
     } else if (type === "repayment") {

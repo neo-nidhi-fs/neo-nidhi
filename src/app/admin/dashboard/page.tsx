@@ -56,7 +56,6 @@ export default function AdminDashboard() {
     const data = await res.json();
     if (res.ok) {
       setSchemes((prev) => [...prev, data.data]);
-      e.currentTarget.reset();
     } else {
       alert(`Error: ${data.error}`);
     }
@@ -107,6 +106,14 @@ export default function AdminDashboard() {
     return <p className="text-center mt-10">Loading dashboard...</p>;
   }
 
+  const userTableColumns = [
+    { header: "Name", accessor: "name", type: "string" },
+    { header: "Age", accessor: "age", type: "number" },
+    { header: "Savings", accessor: "savingsBalance", type: "currency" },
+    { header: "Fixed Deposit", accessor: "fd", type: "currency" },
+    { header: "Loans", accessor: "loanBalance", type: "currency" },
+  ]
+
   return (
     <div className="p-8">
       <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
@@ -144,19 +151,25 @@ export default function AdminDashboard() {
         <table className="w-full border-collapse">
           <thead>
             <tr className="bg-gray-100">
-              <th className="border p-2">Name</th>
-              <th className="border p-2">Age</th>
-              <th className="border p-2">Savings</th>
-              <th className="border p-2">Loans</th>
+              {
+                userTableColumns.map((col) => (
+                  <th key={col.accessor} className="border p-2">{col.header}</th>
+                ))
+              }
             </tr>
           </thead>
           <tbody>
             {users.map((u) => (
               <tr key={u._id}>
-                <td className="border p-2">{u.name}</td>
-                <td className="border p-2">{u.age}</td>
-                <td className="border p-2">₹{u.savingsBalance}</td>
-                <td className="border p-2">₹{u.loanBalance}</td>
+                {
+                  userTableColumns.map((col) => (
+                    <td key={col.accessor} className="border p-2">
+                      {col.type === "currency" || col.accessor === "loanBalance"
+                        ? `₹${u[col.accessor] || 0}`
+                        : u[col.accessor]}
+                    </td>
+                  ))
+                }
               </tr>
             ))}
           </tbody>

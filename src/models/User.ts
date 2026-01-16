@@ -10,6 +10,8 @@ export interface IUser extends Document {
   loanBalance: number;
   transactions: mongoose.Types.ObjectId[];
   password: string;
+  createdAt: Date;
+  lastInterestCalc: Date | null;
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
@@ -21,7 +23,9 @@ const UserSchema: Schema<IUser> = new Schema({
   fd: { type: Number, default: 0 },
   loanBalance: { type: Number, default: 0 },
   transactions: [{ type: Schema.Types.ObjectId, ref: "Transaction" }],
+  lastInterestCalc: { type: Date, default: null }, 
   password: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now },
 });
 
 // Hash password before saving
