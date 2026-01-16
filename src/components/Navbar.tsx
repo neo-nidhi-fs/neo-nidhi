@@ -43,7 +43,7 @@ export default function Navbar() {
       </div>
 
       <div
-        className={`absolute md:static top-full left-0 right-0 bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 md:bg-none flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-8 p-6 md:p-0 transition-all duration-300 ${
+        className={`absolute md:static items-center top-full left-0 right-0 bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 md:bg-none flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-8 p-6 md:p-0 transition-all duration-300 ${
           isOpen ? 'block' : 'hidden md:flex'
         }`}
       >
@@ -90,12 +90,15 @@ export default function Navbar() {
         )}
 
         {session && userRole === 'user' && (
-          <Link
-            href="/user/dashboard"
-            className="text-gray-200 hover:text-blue-400 transition-colors duration-300 font-medium"
-          >
-            User Dashboard
-          </Link>
+          <>
+            <Link
+              href="/user/dashboard"
+              className="text-gray-200 hover:text-blue-400 transition-colors duration-300 font-medium"
+            >
+              User Dashboard
+            </Link>
+            <Link href="/user/passbook">Passbook</Link>
+          </>
         )}
 
         {session && (

@@ -12,6 +12,14 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { Users, Plus, Settings } from 'lucide-react';
 
 interface User {
@@ -107,7 +115,7 @@ export default function AdminDashboard() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-slate-950 via-blue-950 to-slate-950">
-        <p className="text-gray-400">Loading dashboard...</p>
+        <p className="text-gray-100">Loading dashboard...</p>
       </div>
     );
   }
@@ -130,7 +138,7 @@ export default function AdminDashboard() {
               Admin Dashboard
             </span>
           </h1>
-          <p className="text-gray-400 text-lg">
+          <p className="text-gray-200 text-lg">
             Manage users, schemes, and platform settings
           </p>
         </div>
@@ -185,7 +193,7 @@ export default function AdminDashboard() {
                 </DialogHeader>
                 <form onSubmit={handleAddUser} className="space-y-4">
                   <div>
-                    <Label htmlFor="name" className="text-gray-300">
+                    <Label htmlFor="name" className="text-gray-100">
                       Name
                     </Label>
                     <Input
@@ -196,7 +204,7 @@ export default function AdminDashboard() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="age" className="text-gray-300">
+                    <Label htmlFor="age" className="text-gray-100">
                       Age
                     </Label>
                     <Input
@@ -208,7 +216,7 @@ export default function AdminDashboard() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="password" className="text-gray-300">
+                    <Label htmlFor="password" className="text-gray-100">
                       Password
                     </Label>
                     <Input
@@ -232,39 +240,29 @@ export default function AdminDashboard() {
 
           <Card className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 border-slate-700">
             <CardContent className="pt-6">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-slate-700">
-                      {userTableColumns.map((col) => (
-                        <th
-                          key={col.accessor}
-                          className="text-left py-3 px-4 text-gray-300 font-semibold"
-                        >
-                          {col.header}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {users.map((u) => (
-                      <tr
-                        key={u._id}
-                        className="border-b border-slate-700/50 hover:bg-slate-700/30 transition-colors"
-                      >
-                        {userTableColumns.map((col) => (
-                          <td key={col.accessor} className="py-3 px-4">
-                            {col.type === 'currency' ||
-                            col.accessor === 'loanBalance'
-                              ? `₹${(u[col.accessor as keyof User] || 0).toLocaleString()}`
-                              : u[col.accessor as keyof User]}
-                          </td>
-                        ))}
-                      </tr>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    {userTableColumns.map((col) => (
+                      <TableHead key={col.accessor}>{col.header}</TableHead>
                     ))}
-                  </tbody>
-                </table>
-              </div>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {users.map((u) => (
+                    <TableRow key={u._id}>
+                      {userTableColumns.map((col) => (
+                        <TableCell key={col.accessor}>
+                          {col.type === 'currency' ||
+                          col.accessor === 'loanBalance'
+                            ? `₹${(u[col.accessor as keyof User] || 0).toLocaleString()}`
+                            : u[col.accessor as keyof User]}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         </div>
@@ -288,7 +286,7 @@ export default function AdminDashboard() {
                 </DialogHeader>
                 <form onSubmit={handleAddScheme} className="space-y-4">
                   <div>
-                    <Label htmlFor="name" className="text-gray-300">
+                    <Label htmlFor="name" className="text-gray-100">
                       Scheme Name
                     </Label>
                     <Input
@@ -300,7 +298,7 @@ export default function AdminDashboard() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="interestRate" className="text-gray-300">
+                    <Label htmlFor="interestRate" className="text-gray-100">
                       Interest Rate (%)
                     </Label>
                     <Input
@@ -331,12 +329,12 @@ export default function AdminDashboard() {
                     key={s._id}
                     className="bg-gradient-to-br from-purple-900/30 to-indigo-900/30 border border-purple-400/30 rounded-lg p-4 hover:border-purple-400/50 transition-all"
                   >
-                    <h3 className="text-lg font-bold text-purple-300 mb-2">
+                    <h3 className="text-lg font-bold text-purple-200 mb-2">
                       {s.name}
                     </h3>
-                    <p className="text-gray-300">
+                    <p className="text-gray-100">
                       Interest Rate:{' '}
-                      <span className="text-2xl font-bold text-purple-400">
+                      <span className="text-2xl font-bold text-purple-300">
                         {s.interestRate}%
                       </span>
                     </p>

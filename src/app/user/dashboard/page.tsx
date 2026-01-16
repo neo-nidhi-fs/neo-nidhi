@@ -63,13 +63,13 @@ export default function UserDashboard() {
   if (loading)
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-slate-950 via-blue-950 to-slate-950">
-        <p className="text-gray-400">Loading dashboard...</p>
+        <p className="text-gray-100">Loading dashboard...</p>
       </div>
     );
   if (!user)
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-slate-950 via-blue-950 to-slate-950">
-        <p className="text-gray-400">User not found</p>
+        <p className="text-gray-100">User not found</p>
       </div>
     );
 
@@ -85,7 +85,7 @@ export default function UserDashboard() {
             </span>
             👋
           </h1>
-          <p className="text-gray-400 text-lg">
+          <p className="text-gray-200 text-lg">
             Manage your finances and track your progress
           </p>
         </div>
@@ -159,7 +159,7 @@ export default function UserDashboard() {
             </DialogHeader>
             <form onSubmit={handleChangePassword} className="space-y-4">
               <div>
-                <Label htmlFor="oldPassword" className="text-gray-300">
+                <Label htmlFor="oldPassword" className="text-gray-100">
                   Old Password
                 </Label>
                 <Input
@@ -171,7 +171,7 @@ export default function UserDashboard() {
                 />
               </div>
               <div>
-                <Label htmlFor="newPassword" className="text-gray-300">
+                <Label htmlFor="newPassword" className="text-gray-100">
                   New Password
                 </Label>
                 <Input

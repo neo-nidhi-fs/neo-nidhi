@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { signIn } from 'next-auth/react';
+import { useEffect, useState } from 'react';
+import { signIn, getSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,23 +26,41 @@ export default function LoginPage() {
       redirect: false,
     });
 
+    console.log('result ==> ', result);
     if (result?.error) {
       setError('Invalid credentials. Please try again.');
       setIsLoading(false);
     } else {
-      const res = await fetch('/api/users');
-      const data = await res.json();
-      const loggedUser = data.data.find(
-        (u: { name: string; role?: string }) => u.name === name
-      );
+      // Get session to retrieve user ID
+      const session = await getSession();
+      console.log('session ==> ', session);
 
-      if (loggedUser?.role === 'admin') {
-        router.push('/admin/dashboard');
-      } else {
-        router.push('/user/dashboard');
+      if (session?.user?.id) {
+        const userRole = session.user.role;
+        if (userRole === 'admin') {
+          router.push('/admin/dashboard');
+        } else {
+          router.push('/user/dashboard');
+        }
       }
     }
   };
+
+  useEffect(() => {
+    // Redirect if already logged in
+    async function checkSession() {
+      const session = await getSession();
+      if (session?.user?.id) {
+        const userRole = session.user.role;
+        if (userRole === 'admin') {
+          router.push('/admin/dashboard');
+        } else {
+          router.push('/user/dashboard');
+        }
+      }
+    }
+    checkSession();
+  }, [router]);
 
   return (
     <div className="bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 min-h-screen flex items-center justify-center px-6 relative overflow-hidden">
@@ -58,7 +76,7 @@ export default function LoginPage() {
           <h1 className="text-4xl font-black bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent mb-2">
             neoNidhi
           </h1>
-          <p className="text-gray-400">Master Your Finances</p>
+          <p className="text-gray-200">Master Your Finances</p>
         </div>
 
         <Card className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 border-slate-700 backdrop-blur-sm shadow-2xl">
@@ -66,7 +84,7 @@ export default function LoginPage() {
             <CardTitle className="text-2xl text-center text-white">
               Welcome Back
             </CardTitle>
-            <p className="text-sm text-gray-400 text-center">
+            <p className="text-sm text-gray-200 text-center">
               Login to your account and continue learning
             </p>
           </CardHeader>
@@ -75,7 +93,7 @@ export default function LoginPage() {
               <div className="space-y-2">
                 <label
                   htmlFor="name"
-                  className="text-sm font-medium text-gray-300"
+                  className="text-sm font-medium text-gray-100"
                 >
                   Username
                 </label>
@@ -92,7 +110,7 @@ export default function LoginPage() {
               <div className="space-y-2">
                 <label
                   htmlFor="password"
-                  className="text-sm font-medium text-gray-300"
+                  className="text-sm font-medium text-gray-100"
                 >
                   Password
                 </label>

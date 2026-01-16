@@ -4,8 +4,28 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowRight, TrendingUp, Shield, Zap } from 'lucide-react';
+import { useEffect } from 'react';
+import { getSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 
 export default function HomePage() {
+  const router = useRouter();
+  useEffect(() => {
+    // Redirect if already logged in
+    async function checkSession() {
+      const session = await getSession();
+      if (session?.user?.id) {
+        const userRole = session.user.role;
+        if (userRole === 'admin') {
+          router.push('/admin/dashboard');
+        } else {
+          router.push('/user/dashboard');
+        }
+      }
+    }
+    checkSession();
+  }, [router]);
+
   return (
     <main className="bg-gradient-to-b from-slate-950 via-blue-950 to-slate-950 text-white min-h-screen">
       {/* Hero Section */}
@@ -38,7 +58,7 @@ export default function HomePage() {
           </p>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
             <Link href="/login">
               <Button
                 size="lg"
@@ -114,7 +134,7 @@ export default function HomePage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-300 leading-relaxed">
+                <p className="text-gray-200 leading-relaxed">
                   Watch your money grow with compound interest. Learn how
                   consistent savings can create wealth over time and secure your
                   financial future.
@@ -133,7 +153,7 @@ export default function HomePage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-300 leading-relaxed">
+                <p className="text-gray-200 leading-relaxed">
                   Understand the true cost of borrowing. Learn when loans are
                   necessary and how to minimize debt while maintaining financial
                   stability.
@@ -152,7 +172,7 @@ export default function HomePage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-300 leading-relaxed">
+                <p className="text-gray-200 leading-relaxed">
                   Set and track meaningful financial goals. Create actionable
                   plans and monitor your progress toward a financially
                   independent future.
@@ -173,7 +193,7 @@ export default function HomePage() {
           <h2 className="text-4xl md:text-5xl font-bold mb-6">
             Ready to Master Your Finances?
           </h2>
-          <p className="text-gray-300 text-lg mb-8">
+          <p className="text-gray-200 text-lg mb-8">
             Join thousands of learners building financial literacy with
             neoNidhi. Start your journey today.
           </p>
@@ -190,7 +210,7 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-slate-700 py-8 px-6 text-center text-gray-400">
+      <footer className="border-t border-slate-700 py-8 px-6 text-center text-gray-300">
         <p>
           © 2024 neoNidhi. Making financial literacy accessible to everyone.
         </p>

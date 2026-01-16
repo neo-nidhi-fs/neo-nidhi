@@ -19,6 +19,14 @@ import {
   SelectItem,
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { Plus, TrendingUp } from 'lucide-react';
 
 interface User {
@@ -81,7 +89,7 @@ export default function AdminTransactionsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-slate-950 via-blue-950 to-slate-950">
-        <p className="text-gray-400">Loading dashboard...</p>
+        <p className="text-gray-100">Loading dashboard...</p>
       </div>
     );
   }
@@ -114,6 +122,13 @@ export default function AdminTransactionsPage() {
     0
   );
 
+  const transactionColumns = [
+    { header: 'Date', accessor: 'date' },
+    { header: 'User', accessor: 'name' },
+    { header: 'Type', accessor: 'type' },
+    { header: 'Amount', accessor: 'amount' },
+  ];
+
   return (
     <main className="bg-gradient-to-b from-slate-950 via-blue-950 to-slate-950 text-white min-h-screen py-12 px-6">
       <div className="max-w-7xl mx-auto">
@@ -124,7 +139,7 @@ export default function AdminTransactionsPage() {
               Transaction Management
             </span>
           </h1>
-          <p className="text-gray-400 text-lg">
+          <p className="text-gray-200 text-lg">
             Track and manage all user financial transactions
           </p>
         </div>
@@ -140,10 +155,10 @@ export default function AdminTransactionsPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-4xl font-bold">
+            <p className="text-4xl font-bold text-green-900">
               ₹{totalTransactions.toLocaleString()}
             </p>
-            <p className="text-gray-400 text-sm mt-2">
+            <p className="text-gray-200 text-sm mt-2">
               Across {transactions.length} transactions
             </p>
           </CardContent>
@@ -167,7 +182,7 @@ export default function AdminTransactionsPage() {
               <form onSubmit={handleAddTransaction} className="space-y-4">
                 {/* Select User */}
                 <div>
-                  <Label htmlFor="userId" className="text-gray-300">
+                  <Label htmlFor="userId" className="text-gray-100">
                     User
                   </Label>
                   <select
@@ -187,7 +202,7 @@ export default function AdminTransactionsPage() {
 
                 {/* Transaction Type */}
                 <div>
-                  <Label htmlFor="type" className="text-gray-300">
+                  <Label htmlFor="type" className="text-gray-100">
                     Type
                   </Label>
                   <select
@@ -207,7 +222,7 @@ export default function AdminTransactionsPage() {
 
                 {/* Amount */}
                 <div>
-                  <Label htmlFor="amount" className="text-gray-300">
+                  <Label htmlFor="amount" className="text-gray-100">
                     Amount
                   </Label>
                   <Input
@@ -221,7 +236,7 @@ export default function AdminTransactionsPage() {
 
                 <Button
                   type="submit"
-                  className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-semibold"
+                  className="w-full bg-gradient-to-r text-cyan-400 from-blue-500 to-cyan-500 text-white font-semibold"
                 >
                   Add Transaction
                 </Button>
@@ -233,53 +248,45 @@ export default function AdminTransactionsPage() {
         {/* Transactions Table */}
         <Card className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 border-slate-700">
           <CardHeader>
-            <CardTitle className="text-2xl">All Transactions</CardTitle>
+            <CardTitle className="text-2xl text-cyan-400">
+              All Transactions
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-slate-700">
-                    <th className="text-left py-3 px-4 text-gray-300 font-semibold">
-                      User
-                    </th>
-                    <th className="text-left py-3 px-4 text-gray-300 font-semibold">
-                      Type
-                    </th>
-                    <th className="text-left py-3 px-4 text-gray-300 font-semibold">
-                      Amount
-                    </th>
-                    <th className="text-left py-3 px-4 text-gray-300 font-semibold">
-                      Date
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {transactions.map((tx) => {
-                    const user = users.find((u) => u._id === tx.userId);
-                    return (
-                      <tr
-                        key={tx._id}
-                        className="border-b border-slate-700/50 hover:bg-slate-700/30 transition-colors"
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  {transactionColumns.map((col) => (
+                    <TableHead key={col.accessor}>{col.header}</TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {transactions.map((tx) => {
+                  const user = users.find((u) => u._id === tx.userId);
+                  return (
+                    <TableRow key={tx._id}>
+                      <TableCell className="text-gray-200">
+                        {new Date(tx.date).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell className="text-gray-200">
+                        {user?.name || 'Unknown'}
+                      </TableCell>
+                      <TableCell
+                        className={`capitalize font-semibold ${getTransactionColor(
+                          tx.type
+                        )}`}
                       >
-                        <td className="py-3 px-4">{user?.name || 'Unknown'}</td>
-                        <td
-                          className={`py-3 px-4 capitalize font-semibold ${getTransactionColor(tx.type)}`}
-                        >
-                          {tx.type}
-                        </td>
-                        <td className="py-3 px-4 font-semibold">
-                          ₹{tx.amount.toLocaleString()}
-                        </td>
-                        <td className="py-3 px-4 text-gray-400">
-                          {new Date(tx.date).toLocaleDateString()}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                        {tx.type}
+                      </TableCell>
+                      <TableCell className="font-semibold text-gray-200">
+                        ₹{tx.amount.toLocaleString()}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
           </CardContent>
         </Card>
       </div>

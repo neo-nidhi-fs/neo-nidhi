@@ -65,7 +65,7 @@ export default function RegisterUserPage() {
           <h1 className="text-4xl font-black bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent mb-2">
             Register User
           </h1>
-          <p className="text-gray-400">Create a new account for learning</p>
+          <p className="text-gray-200">Create a new account for learning</p>
         </div>
 
         <Card className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 border-slate-700 backdrop-blur-sm shadow-2xl">
@@ -73,7 +73,7 @@ export default function RegisterUserPage() {
             <CardTitle className="text-2xl text-center text-white">
               New User Registration
             </CardTitle>
-            <p className="text-sm text-gray-400 text-center">
+            <p className="text-sm text-gray-200 text-center">
               Fill in the details to create a new account
             </p>
           </CardHeader>
@@ -82,7 +82,7 @@ export default function RegisterUserPage() {
               <div className="space-y-2">
                 <label
                   htmlFor="name"
-                  className="text-sm font-medium text-gray-300"
+                  className="text-sm font-medium text-gray-100"
                 >
                   Full Name
                 </label>
@@ -99,7 +99,7 @@ export default function RegisterUserPage() {
               <div className="space-y-2">
                 <label
                   htmlFor="age"
-                  className="text-sm font-medium text-gray-300"
+                  className="text-sm font-medium text-gray-100"
                 >
                   Age
                 </label>
@@ -116,7 +116,7 @@ export default function RegisterUserPage() {
               <div className="space-y-2">
                 <label
                   htmlFor="password"
-                  className="text-sm font-medium text-gray-300"
+                  className="text-sm font-medium text-gray-100"
                 >
                   Password
                 </label>
@@ -154,7 +154,7 @@ export default function RegisterUserPage() {
         </Card>
 
         {/* Footer text */}
-        <p className="text-center text-gray-500 text-sm mt-6">
+        <p className="text-center text-gray-300 text-sm mt-6">
           © 2024 neoNidhi. All rights reserved.
         </p>
       </div>

@@ -21,7 +21,7 @@ export default function AboutPage() {
             </span>
           </h1>
 
-          <p className="text-xl md:text-2xl text-gray-300 mb-8 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-xl md:text-2xl text-gray-200 mb-8 max-w-2xl mx-auto leading-relaxed">
             Empowering the next generation with financial literacy through
             interactive learning and real-world banking education.
           </p>
@@ -38,7 +38,7 @@ export default function AboutPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-lg text-gray-200 leading-relaxed">
+              <p className="text-lg text-gray-100 leading-relaxed">
                 <span className="font-semibold text-cyan-400">neoNidhi</span> is
                 an innovative banking education platform designed to help
                 learners of all ages understand how money works. Through
@@ -74,7 +74,7 @@ export default function AboutPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-300 leading-relaxed">
+                <p className="text-gray-200 leading-relaxed">
                   Understand the power of compound interest. Watch your money
                   grow over time through consistent saving habits and
                   disciplined financial planning.
@@ -93,7 +93,7 @@ export default function AboutPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-300 leading-relaxed">
+                <p className="text-gray-200 leading-relaxed">
                   Learn how to strategically build wealth. Master the
                   fundamentals of investing, budgeting, and long-term financial
                   planning for sustainable growth.
@@ -112,7 +112,7 @@ export default function AboutPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-300 leading-relaxed">
+                <p className="text-gray-200 leading-relaxed">
                   Understand when and how to borrow responsibly. Learn the true
                   cost of loans and how to minimize debt while maintaining
                   financial stability.
@@ -127,7 +127,7 @@ export default function AboutPage() {
       <section className="py-20 px-6">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-4xl md:text-5xl font-bold mb-8">Our Mission</h2>
-          <p className="text-xl text-gray-300 leading-relaxed mb-12">
+          <p className="text-xl text-gray-200 leading-relaxed mb-12">
             {`To make financial literacy accessible, engaging, and practical for
             everyone. We believe that understanding money is a superpower, and
             we're committed to helping you master it through interactive
@@ -137,24 +137,24 @@ export default function AboutPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-6 hover:border-blue-400/50 transition-all duration-300">
               <div className="text-4xl font-bold text-blue-400 mb-2">100%</div>
-              <p className="text-gray-400 font-semibold">Free to Learn</p>
+              <p className="text-gray-200 font-semibold">Free to Learn</p>
             </div>
             <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-6 hover:border-cyan-400/50 transition-all duration-300">
               <div className="text-4xl font-bold text-cyan-400 mb-2">
                 Interactive
               </div>
-              <p className="text-gray-400 font-semibold">Real Scenarios</p>
+              <p className="text-gray-200 font-semibold">Real Scenarios</p>
             </div>
             <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-6 hover:border-green-400/50 transition-all duration-300">
               <div className="text-4xl font-bold text-green-400 mb-2">Safe</div>
-              <p className="text-gray-400 font-semibold">& Secure</p>
+              <p className="text-gray-200 font-semibold">& Secure</p>
             </div>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-slate-700 py-8 px-6 text-center text-gray-400">
+      <footer className="border-t border-slate-700 py-8 px-6 text-center text-gray-300">
         <p>
           © 2024 neoNidhi. Making financial literacy accessible to everyone.
         </p>
