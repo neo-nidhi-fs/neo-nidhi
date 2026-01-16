@@ -2,7 +2,7 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 
 export interface ITransaction extends Document {
   userId: mongoose.Types.ObjectId;
-  type: 'deposit' | 'loan' | 'repayment';
+  type: 'deposit' | 'loan' | 'repayment' | 'withdrawal' | 'fd';
   amount: number;
   date: Date;
 }
@@ -11,7 +11,7 @@ const TransactionSchema: Schema<ITransaction> = new Schema({
   userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   type: {
     type: String,
-    enum: ['deposit', 'loan', 'repayment'],
+    enum: ['deposit', 'loan', 'repayment', 'withdrawal', 'fd'],
     required: true,
   },
   amount: { type: Number, required: true },

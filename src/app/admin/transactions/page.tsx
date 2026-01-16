@@ -73,7 +73,6 @@ export default function AdminTransactionsPage() {
     const data = await res.json();
     if (res.ok) {
       setTransactions((prev) => [...prev, data.data]);
-      e.currentTarget.reset();
     } else {
       alert(`Error: ${data.error}`);
     }

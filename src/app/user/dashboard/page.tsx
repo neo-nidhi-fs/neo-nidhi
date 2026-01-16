@@ -40,7 +40,6 @@ export default function UserDashboard() {
     const data = await res.json();
     if (res.ok) {
       setMessage('✅ Password updated successfully');
-      e.currentTarget.reset();
     } else {
       setMessage(`❌ Error: ${data.error}`);
     }

@@ -96,7 +96,6 @@ export default function AdminDashboard() {
       const data = await res.json();
       if (res.ok) {
         setUsers((prev) => [...prev, data.data]);
-        e.currentTarget.reset();
       } else {
         alert(`Error: ${data.error}`);
       }
