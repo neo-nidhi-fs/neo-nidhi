@@ -73,6 +73,13 @@ export default function AdminDashboard() {
 
   if (loading) return <p className="text-center mt-10">Loading dashboard...</p>;
 
+  const transactionTypes = [
+    { value: "deposit", label: "Deposit" },
+    {value: 'fd', label: 'Fixed Deposit'},
+    { value: "loan", label: "Loan" },
+    { value: "repayment", label: "Repayment" },
+  ]
+
   return (
     <div className="p-8 space-y-8">
       <h1 className="text-3xl font-bold">Admin Dashboard</h1>
@@ -111,9 +118,11 @@ export default function AdminDashboard() {
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="deposit">Deposit</SelectItem>
-                  <SelectItem value="loan">Loan</SelectItem>
-                  <SelectItem value="repayment">Repayment</SelectItem>
+                  {
+                    transactionTypes.map((type) => (
+                      <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
+                    ))
+                  }
                 </SelectContent>
               </Select>
             </div>

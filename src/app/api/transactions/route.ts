@@ -32,6 +32,8 @@ export async function POST(req: Request) {
     } else if (type === "repayment") {
       user.loanBalance -= amount;
       if (user.loanBalance < 0) user.loanBalance = 0; // prevent negative
+    } else if (type === "fd") {
+      user.fd += amount;
     }
 
     await user.save();

@@ -6,6 +6,7 @@ export interface IUser extends Document {
   age: number;
   role: "admin" | "user";
   savingsBalance: number;
+  fd: number;
   loanBalance: number;
   transactions: mongoose.Types.ObjectId[];
   password: string;
@@ -17,6 +18,7 @@ const UserSchema: Schema<IUser> = new Schema({
   age: { type: Number, required: true },
   role: { type: String, enum: ["admin", "user"], default: "user" },
   savingsBalance: { type: Number, default: 0 },
+  fd: { type: Number, default: 0 },
   loanBalance: { type: Number, default: 0 },
   transactions: [{ type: Schema.Types.ObjectId, ref: "Transaction" }],
   password: { type: String, required: true },

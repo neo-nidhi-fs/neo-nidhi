@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 interface User {
   _id: string;
@@ -20,9 +21,46 @@ interface User {
   loanBalance: number;
 }
 
+interface Scheme {
+  _id: string;
+  name: string;
+  interestRate: number;
+}
+
 export default function AdminDashboard() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [schemes, setSchemes] = useState<Scheme[]>([]);
+
+  useEffect(() => {
+    async function fetchSchemes() {
+      const res = await fetch("/api/schemes");
+      const data = await res.json();
+      setSchemes(data.data);
+    }
+    fetchSchemes();
+  }, []);
+
+  async function handleAddScheme(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const name = formData.get("name")?.toString();
+    const interestRate = Number(formData.get("interestRate"));
+
+    const res = await fetch("/api/schemes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, interestRate }),
+    });
+
+    const data = await res.json();
+    if (res.ok) {
+      setSchemes((prev) => [...prev, data.data]);
+      e.currentTarget.reset();
+    } else {
+      alert(`Error: ${data.error}`);
+    }
+  }
 
   // Fetch users
   useEffect(() => {
@@ -124,6 +162,53 @@ export default function AdminDashboard() {
           </tbody>
         </table>
       </div>
+       {/* Add Scheme Modal */}
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button className="m-6">➕ Add New Scheme</Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New Scheme</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleAddScheme} className="space-y-4">
+            <div>
+              <Label htmlFor="name">Scheme Name</Label>
+              <Input id="name" name="name" placeholder="Normal Deposit / FD / RD" required />
+            </div>
+            <div>
+              <Label htmlFor="interestRate">Interest Rate (%)</Label>
+              <Input id="interestRate" name="interestRate" type="number" step="0.1" required />
+            </div>
+            <Button type="submit" className="w-full">Add Scheme</Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Schemes List */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Available Schemes</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="border p-2">Name</th>
+                <th className="border p-2">Interest Rate (%)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {schemes.map((s: Scheme) => (
+                <tr key={s._id}>
+                  <td className="border p-2">{s.name}</td>
+                  <td className="border p-2">{s.interestRate}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </CardContent>
+      </Card>
     </div>
   );
 }
