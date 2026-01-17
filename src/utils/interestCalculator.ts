@@ -9,7 +9,7 @@
  * @param monthsPassed - optional, for FD/RD to calculate over multiple months
  */
 export function calculateMonthlyInterest(
-  scheme: 'saving' | 'fd' | 'rd' | 'loan',
+  scheme: 'saving' | 'fd' | 'loan',
   principal: number,
   annualRate: number,
   depositDate: Date,
@@ -50,15 +50,15 @@ export function calculateMonthlyInterest(
         proRataFactor;
       break;
 
-    case 'rd':
-      // RD: monthly installment deposits, interest compounded
-      // Assume principal is monthly installment
-      let rdTotal = 0;
-      for (let i = 0; i < monthsPassed; i++) {
-        rdTotal += principal * Math.pow(1 + monthlyRate, monthsPassed - i);
-      }
-      interest = (rdTotal - principal * monthsPassed) * proRataFactor;
-      break;
+    // case 'rd':
+    //   // RD: monthly installment deposits, interest compounded
+    //   // Assume principal is monthly installment
+    //   let rdTotal = 0;
+    //   for (let i = 0; i < monthsPassed; i++) {
+    //     rdTotal += principal * Math.pow(1 + monthlyRate, monthsPassed - i);
+    //   }
+    //   interest = (rdTotal - principal * monthsPassed) * proRataFactor;
+    //   break;
 
     case 'loan':
       // Loan: interest accrues monthly on outstanding balance

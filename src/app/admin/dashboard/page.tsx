@@ -252,7 +252,10 @@ export default function AdminDashboard() {
                   {users.map((u) => (
                     <TableRow key={u._id}>
                       {userTableColumns.map((col) => (
-                        <TableCell key={col.accessor}>
+                        <TableCell
+                          key={col.accessor}
+                          className="text-green-200"
+                        >
                           {col.type === 'currency' ||
                           col.accessor === 'loanBalance'
                             ? `₹${(u[col.accessor as keyof User] || 0).toLocaleString()}`
