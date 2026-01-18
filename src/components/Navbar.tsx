@@ -78,7 +78,7 @@ export default function Navbar() {
               href="/admin/dashboard"
               className="text-gray-200 hover:text-blue-400 transition-colors duration-300 font-medium"
             >
-              Admin Dashboard
+              Dashboard
             </Link>
             <Link
               href="/admin/transactions"
@@ -95,7 +95,7 @@ export default function Navbar() {
               href="/user/dashboard"
               className="text-gray-200 hover:text-blue-400 transition-colors duration-300 font-medium"
             >
-              User Dashboard
+              Dashboard
             </Link>
             <Link href="/user/passbook">Passbook</Link>
           </>

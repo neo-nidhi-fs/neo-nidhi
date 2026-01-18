@@ -1,3 +1,5 @@
+import { differenceInDays, getDaysInMonth } from 'date-fns';
+
 /**
  * Calculate monthly interest for different schemes.
  *
@@ -6,28 +8,20 @@
  * @param annualRate - annual interest rate in %
  * @param depositDate - date when deposit/loan started
  * @param currentDate - date of calculation (usually last day of month)
- * @param monthsPassed - optional, for FD/RD to calculate over multiple months
  */
 export function calculateMonthlyInterest(
   scheme: 'saving' | 'fd' | 'loan',
   principal: number,
   annualRate: number,
   depositDate: Date,
-  currentDate: Date,
-  monthsPassed: number = 1
+  currentDate: Date
 ): number {
   // Convert annual rate to monthly rate
   const monthlyRate = annualRate / 12 / 100;
 
-  // Calculate number of days in month for pro-rata interest
-  const daysInMonth = new Date(
-    currentDate.getFullYear(),
-    currentDate.getMonth() + 1,
-    0
-  ).getDate();
-
-  const daysActive =
-    (currentDate.getTime() - depositDate.getTime()) / (1000 * 60 * 60 * 24);
+  // Calculate pro-rata factor using date-fns
+  const daysInMonth = getDaysInMonth(currentDate);
+  const daysActive = differenceInDays(currentDate, depositDate);
 
   if (daysActive < 0) return 0; // deposit not yet started
 
@@ -44,22 +38,8 @@ export function calculateMonthlyInterest(
 
     case 'fd':
       // FD: compound monthly interest
-      interest =
-        principal *
-        (Math.pow(1 + monthlyRate, monthsPassed) - 1) *
-        proRataFactor;
+      interest = principal * monthlyRate * proRataFactor;
       break;
-
-    // case 'rd':
-    //   // RD: monthly installment deposits, interest compounded
-    //   // Assume principal is monthly installment
-    //   let rdTotal = 0;
-    //   for (let i = 0; i < monthsPassed; i++) {
-    //     rdTotal += principal * Math.pow(1 + monthlyRate, monthsPassed - i);
-    //   }
-    //   interest = (rdTotal - principal * monthsPassed) * proRataFactor;
-    //   break;
-
     case 'loan':
       // Loan: interest accrues monthly on outstanding balance
       interest = principal * monthlyRate * proRataFactor;

@@ -41,6 +41,7 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [schemes, setSchemes] = useState<Scheme[]>([]);
+  const [message, setMessage] = useState('');
 
   useEffect(() => {
     async function fetchSchemes() {
@@ -86,6 +87,29 @@ export default function AdminDashboard() {
     }
     fetchUsers();
   }, []);
+
+  async function handleCalcInterest() {
+    try {
+      const res = await fetch('/api/admin/calc-interest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setMessage(
+          '✅ Interest calculated successfully for all users this month'
+        );
+        console.log('Interest results:', data.results); // optional: log details
+      } else {
+        setMessage(`❌ Error: ${data.error}`);
+      }
+    } catch (error) {
+      setMessage('❌ Something went wrong while calculating interest');
+      console.error(error);
+    }
+  }
 
   // Handle new user creation
   async function handleAddUser(e: React.FormEvent<HTMLFormElement>) {
@@ -141,6 +165,13 @@ export default function AdminDashboard() {
           <p className="text-gray-200 text-lg">
             Manage users, schemes, and platform settings
           </p>
+          <Button
+            onClick={handleCalcInterest}
+            className="bg-green-600 text-white"
+          >
+            📊 Calculate Monthly Interest
+          </Button>
+          {message && <p className="mt-4 text-sm">{message}</p>}
         </div>
 
         {/* Stats Cards */}

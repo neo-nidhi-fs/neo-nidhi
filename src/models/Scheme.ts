@@ -1,7 +1,7 @@
 import mongoose, { Schema, Model, Document } from 'mongoose';
 
 interface IScheme extends Document {
-  name: string;
+  name: 'deposit' | 'fd' | 'loan';
   interestRate: number;
   createdAt: Date;
 }
