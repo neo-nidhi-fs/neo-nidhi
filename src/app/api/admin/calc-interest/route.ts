@@ -44,15 +44,14 @@ export async function POST() {
 
     for (const user of users) {
       // // Check if already calculated this month
-      // if (
-      //   user.lastInterestCalc &&
-      //   user.lastInterestCalc.getMonth() === today.getMonth() &&
-      //   user.lastInterestCalc.getFullYear() === today.getFullYear() &&
-      //   user.name !== 'Admin'
-      // ) {
-      //   console.log(`Skipping ${user.name} - already calculated this month`);
-      //   continue;
-      // }
+      if (
+        user.lastInterestCalc &&
+        user.lastInterestCalc.getMonth() === today.getMonth() &&
+        user.lastInterestCalc.getFullYear() === today.getFullYear()
+      ) {
+        console.log(`Skipping ${user.name} - already calculated this month`);
+        continue;
+      }
 
       const transactions = await Transaction.find({ userId: user._id }).sort({
         date: 1,

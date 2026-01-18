@@ -262,7 +262,7 @@ export default function AdminTransactionsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {transactions.reverse().map((tx) => {
+                {transactions.map((tx) => {
                   const user = users.find((u) => u._id === tx.userId);
                   return (
                     <TableRow key={tx._id}>

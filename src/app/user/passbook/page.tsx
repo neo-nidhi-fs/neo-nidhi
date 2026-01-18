@@ -126,7 +126,7 @@ export default function PassbookPage() {
                 </TableHeader>
                 <TableBody>
                   {transactions.length > 0 ? (
-                    transactions.reverse().map((tx) => (
+                    transactions.map((tx) => (
                       <TableRow key={tx._id}>
                         <TableCell className="text-gray-200">
                           {new Date(tx.date).toLocaleDateString()}
