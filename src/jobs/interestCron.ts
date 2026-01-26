@@ -8,6 +8,14 @@ function calculateDailyInterest(principal: number, annualRate: number): number {
   return principal * dailyRate;
 }
 
+// Utility: check if today is the last day of the month
+function isLastDayOfMonth(): boolean {
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  return today.getMonth() !== tomorrow.getMonth();
+}
+
 // Core interest calculation
 export async function processInterest() {
   const accounts = await User.find({});
@@ -100,6 +108,46 @@ export async function processInterest() {
       if (deltaLoan !== 0) {
         const res = await saveAccountInterest(account._id, deltaLoan, 'loan');
         console.log('Updated loan interest for', account._id?.toString(), res);
+      }
+
+      // On last day of month, transfer accrued interest to respective balances
+      if (isLastDayOfMonth()) {
+        const refreshedAccount = await User.findById(account._id);
+        if (refreshedAccount) {
+          const updateData: Record<string, number> = {};
+
+          if (refreshedAccount.accruedSavingInterest > 0) {
+            updateData.savingsBalance =
+              refreshedAccount.savingsBalance +
+              refreshedAccount.accruedSavingInterest;
+            updateData.accruedSavingInterest = 0;
+          }
+
+          if (refreshedAccount.accruedFdInterest > 0) {
+            updateData.fd =
+              refreshedAccount.fd + refreshedAccount.accruedFdInterest;
+            updateData.accruedFdInterest = 0;
+          }
+
+          if (refreshedAccount.accruedLoanInterest > 0) {
+            updateData.loanBalance =
+              refreshedAccount.loanBalance +
+              refreshedAccount.accruedLoanInterest;
+            updateData.accruedLoanInterest = 0;
+          }
+
+          if (Object.keys(updateData).length > 0) {
+            await User.findByIdAndUpdate(
+              account._id,
+              { $set: updateData },
+              { new: true, upsert: true }
+            );
+            console.log(
+              'Transferred accrued interest to balances for',
+              account._id?.toString()
+            );
+          }
+        }
       }
     } catch (err) {
       console.error(
