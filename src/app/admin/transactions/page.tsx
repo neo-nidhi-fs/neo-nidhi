@@ -80,7 +80,7 @@ export default function AdminTransactionsPage() {
 
     const data = await res.json();
     if (res.ok) {
-      setTransactions((prev) => [...prev, data.data]);
+      setTransactions((prev) => [data.data, ...prev]);
     } else {
       alert(`Error: ${data.error}`);
     }

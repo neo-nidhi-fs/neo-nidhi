@@ -4,12 +4,29 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowRight, TrendingUp, Shield, Zap } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { getSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 
+interface Scheme {
+  _id: string;
+  name: string;
+  interestRate: number;
+}
+
 export default function HomePage() {
   const router = useRouter();
+  const [schemes, setSchemes] = useState<Scheme[]>([]);
+
+  useEffect(() => {
+    async function fetchSchemes() {
+      const res = await fetch('/api/schemes');
+      const data = await res.json();
+      setSchemes(data.data);
+    }
+    fetchSchemes();
+  }, []);
+
   useEffect(() => {
     // Redirect if already logged in
     async function checkSession() {
@@ -104,6 +121,28 @@ export default function HomePage() {
               <p className="text-sm md:text-base text-gray-400">& Secure</p>
             </div>
           </div>
+          <Card className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 border-slate-700 mt-20">
+            <CardContent className="pt-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {schemes.map((s: Scheme) => (
+                  <div
+                    key={s._id}
+                    className="bg-gradient-to-br from-purple-900/30 to-indigo-900/30 border border-purple-400/30 rounded-lg p-4 hover:border-purple-400/50 transition-all"
+                  >
+                    <h3 className="text-lg font-bold text-purple-200 mb-2">
+                      {s.name}
+                    </h3>
+                    <p className="text-gray-100">
+                      Interest Rate:{' '}
+                      <span className="text-2xl font-bold text-purple-300">
+                        {s.interestRate}%
+                      </span>
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </section>
 

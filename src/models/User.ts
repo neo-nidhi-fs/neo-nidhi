@@ -11,6 +11,9 @@ export interface IUser extends Document {
   transactions: mongoose.Types.ObjectId[];
   password: string;
   createdAt: Date;
+  accruedSavingInterest: number;
+  accruedFdInterest: number;
+  accruedLoanInterest: number;
   lastInterestCalc: Date | null;
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
@@ -25,6 +28,9 @@ const UserSchema: Schema<IUser> = new Schema({
   transactions: [{ type: Schema.Types.ObjectId, ref: 'Transaction' }],
   lastInterestCalc: { type: Date, default: null },
   password: { type: String, required: true },
+  accruedSavingInterest: { type: Number, default: 0 },
+  accruedFdInterest: { type: Number, default: 0 },
+  accruedLoanInterest: { type: Number, default: 0 },
   createdAt: { type: Date, default: Date.now },
 });
 
