@@ -1,6 +1,7 @@
 import cron from 'node-cron';
 import { User } from '@/models/User'; // Mongoose model
 import { Scheme } from '@/models/Scheme';
+import { Transaction } from '@/models/Transaction';
 
 // Utility: calculate daily interest
 function calculateDailyInterest(principal: number, annualRate: number): number {
@@ -110,41 +111,90 @@ export async function processInterest() {
         console.log('Updated loan interest for', account._id?.toString(), res);
       }
 
-      // On last day of month, transfer accrued interest to respective balances
+      // On last day of month, transfer accrued interest to respective balances as transactions
       if (isLastDayOfMonth()) {
         const refreshedAccount = await User.findById(account._id);
         if (refreshedAccount) {
           const updateData: Record<string, number> = {};
 
-          if (refreshedAccount.accruedSavingInterest > 0) {
-            updateData.savingsBalance =
-              refreshedAccount.savingsBalance +
-              refreshedAccount.accruedSavingInterest;
-            updateData.accruedSavingInterest = 0;
-          }
+          // Helper to create transaction and update balance
+          async function createInterestTransaction(
+            userId: string | { toString(): string },
+            transactionType:
+              | 'interest_deposit'
+              | 'interest_fd'
+              | 'interest_loan',
+            amount: number,
+            balanceField: string
+          ) {
+            if (amount <= 0) return;
 
-          if (refreshedAccount.accruedFdInterest > 0) {
-            updateData.fd =
-              refreshedAccount.fd + refreshedAccount.accruedFdInterest;
-            updateData.accruedFdInterest = 0;
-          }
+            // Create transaction record
+            await Transaction.create({
+              userId,
+              type: transactionType,
+              amount,
+              date: new Date(),
+            });
 
-          if (refreshedAccount.accruedLoanInterest > 0) {
-            updateData.loanBalance =
-              refreshedAccount.loanBalance +
-              refreshedAccount.accruedLoanInterest;
-            updateData.accruedLoanInterest = 0;
-          }
+            // Update balance
+            const update: Record<string, number> = {};
+            update[balanceField] = amount;
+            await User.findByIdAndUpdate(userId, { $inc: update });
 
-          if (Object.keys(updateData).length > 0) {
-            await User.findByIdAndUpdate(
-              account._id,
-              { $set: updateData },
-              { new: true, upsert: true }
-            );
             console.log(
-              'Transferred accrued interest to balances for',
-              account._id?.toString()
+              `Created ${transactionType} transaction for ${userId.toString()}: ${amount}`
+            );
+          }
+
+          try {
+            if (refreshedAccount.accruedSavingInterest > 0) {
+              await createInterestTransaction(
+                account._id,
+                'interest_deposit',
+                refreshedAccount.accruedSavingInterest,
+                'savingsBalance'
+              );
+              updateData.accruedSavingInterest = 0;
+            }
+
+            if (refreshedAccount.accruedFdInterest > 0) {
+              await createInterestTransaction(
+                account._id,
+                'interest_fd',
+                refreshedAccount.accruedFdInterest,
+                'fd'
+              );
+              updateData.accruedFdInterest = 0;
+            }
+
+            if (refreshedAccount.accruedLoanInterest > 0) {
+              await createInterestTransaction(
+                account._id,
+                'interest_loan',
+                refreshedAccount.accruedLoanInterest,
+                'loanBalance'
+              );
+              updateData.accruedLoanInterest = 0;
+            }
+
+            // Reset accrued interest fields
+            if (Object.keys(updateData).length > 0) {
+              await User.findByIdAndUpdate(
+                account._id,
+                { $set: updateData },
+                { new: true }
+              );
+              console.log(
+                'Transferred accrued interest via transactions for',
+                account._id?.toString()
+              );
+            }
+          } catch (transactionErr) {
+            console.error(
+              'Failed to create interest transactions for',
+              account._id?.toString(),
+              transactionErr
             );
           }
         }

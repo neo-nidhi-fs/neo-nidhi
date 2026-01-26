@@ -148,8 +148,23 @@ export default function AdminDashboard() {
     { header: 'Name', accessor: 'name', type: 'string' },
     { header: 'Age', accessor: 'age', type: 'number' },
     { header: 'Savings', accessor: 'savingsBalance', type: 'currency' },
+    {
+      header: 'Savings Interest',
+      accessor: 'accruedSavingInterest',
+      type: 'currency',
+    },
     { header: 'Fixed Deposit', accessor: 'fd', type: 'currency' },
+    {
+      header: 'Fixed Deposit Interest',
+      accessor: 'accruedFdInterest',
+      type: 'currency',
+    },
     { header: 'Loans', accessor: 'loanBalance', type: 'currency' },
+    {
+      header: 'Loan Interest',
+      accessor: 'accruedLoanInterest',
+      type: 'currency',
+    },
   ];
 
   return (
