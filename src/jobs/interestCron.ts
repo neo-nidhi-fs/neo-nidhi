@@ -210,7 +210,7 @@ export async function processInterest() {
 }
 
 // Cron job: run daily at 11:30 PM IST (6:00 PM UTC)
-cron.schedule('0 18 * * *', async () => {
+cron.schedule('0 16 * * *', async () => {
   console.log('Running daily interest calculation...');
   await processInterest();
 });
