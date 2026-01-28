@@ -90,16 +90,13 @@ export default function AdminDashboard() {
 
   async function handleCalcInterest() {
     try {
-      const res = await fetch('/api/admin/calc-interest', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const res = await fetch('/api/run-interest');
 
       const data = await res.json();
 
       if (res.ok) {
         setMessage(
-          '✅ Interest calculated successfully for all users this month'
+          '✅ Interest calculated successfully for all users for today'
         );
         console.log('Interest results:', data.results); // optional: log details
       } else {

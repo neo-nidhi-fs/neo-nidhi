@@ -1,4 +1,5 @@
 import cron from 'node-cron';
+import { dbConnect } from '@/lib/dbConnect';
 import { User } from '@/models/User'; // Mongoose model
 import { Scheme } from '@/models/Scheme';
 import { Transaction } from '@/models/Transaction';
@@ -19,6 +20,7 @@ function isLastDayOfMonth(): boolean {
 
 // Core interest calculation
 export async function processInterest() {
+  await dbConnect();
   const accounts = await User.find({});
   const schemes = await Scheme.find({});
 
@@ -28,7 +30,6 @@ export async function processInterest() {
     interest: number,
     type: 'deposit' | 'fd' | 'loan'
   ) {
-    console.log('Saving interest for', userId.toString(), type, interest);
     const fieldMap: Record<string, string> = {
       deposit: 'accruedSavingInterest',
       fd: 'accruedFdInterest',
@@ -37,7 +38,6 @@ export async function processInterest() {
     const field = fieldMap[type];
     const inc: Record<string, number> = {};
     inc[field] = interest;
-    console.log('inc ==> ', inc);
 
     const updated = await User.findByIdAndUpdate(
       userId,
@@ -45,7 +45,6 @@ export async function processInterest() {
       { new: true, upsert: true }
     );
 
-    console.log('updated ==> ', updated);
     return updated;
   }
 
@@ -105,7 +104,6 @@ export async function processInterest() {
         const res = await saveAccountInterest(account._id, deltaFd, 'fd');
         console.log('Updated fd interest for', account._id?.toString(), res);
       }
-      console.log('deltaLoan ==> ', deltaLoan);
       if (deltaLoan !== 0) {
         const res = await saveAccountInterest(account._id, deltaLoan, 'loan');
         console.log('Updated loan interest for', account._id?.toString(), res);
