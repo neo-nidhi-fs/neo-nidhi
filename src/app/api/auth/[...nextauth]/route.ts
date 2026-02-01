@@ -33,7 +33,9 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         await dbConnect();
 
-        const user = await User.findOne({ name: credentials?.name });
+        const user = await User.findOne({
+          name: new RegExp(`^${credentials?.name}$`, 'i'),
+        });
         if (!user) return null;
 
         const isValid = await user.comparePassword(credentials?.password || '');

@@ -20,7 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Users, Plus, Settings } from 'lucide-react';
+import { Users, Plus, Settings, RotateCcw } from 'lucide-react';
 
 interface User {
   _id: string;
@@ -133,6 +133,27 @@ export default function AdminDashboard() {
     }
   }
 
+  async function handleResetPassword(userId: string, userName: string) {
+    if (!confirm(`Reset password for ${userName} to default (123)?`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/users/${userId}/reset-password`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setMessage(`✅ Password reset to default for ${userName}`);
+      } else {
+        alert(`Error: ${data.error}`);
+      }
+    } catch (err) {
+      alert('Something went wrong.');
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-slate-950 via-blue-950 to-slate-950">
@@ -162,6 +183,7 @@ export default function AdminDashboard() {
       accessor: 'accruedLoanInterest',
       type: 'currency',
     },
+    { header: 'Actions', accessor: 'actions', type: 'action' },
   ];
 
   return (
@@ -299,10 +321,23 @@ export default function AdminDashboard() {
                           key={col.accessor}
                           className="text-green-200"
                         >
-                          {col.type === 'currency' ||
-                          col.accessor === 'loanBalance'
-                            ? `₹${(u[col.accessor as keyof User] || 0).toLocaleString()}`
-                            : u[col.accessor as keyof User]}
+                          {col.type === 'action' ? (
+                            <Button
+                              onClick={() =>
+                                handleResetPassword(u._id, u.name)
+                              }
+                              size="sm"
+                              className="bg-orange-600 hover:bg-orange-700 text-white flex items-center gap-2"
+                            >
+                              <RotateCcw size={16} />
+                              Reset Password
+                            </Button>
+                          ) : col.type === 'currency' ||
+                            col.accessor === 'loanBalance' ? (
+                            `₹${(u[col.accessor as keyof User] || 0).toLocaleString()}`
+                          ) : (
+                            u[col.accessor as keyof User]
+                          )}
                         </TableCell>
                       ))}
                     </TableRow>

@@ -81,6 +81,7 @@ export default function AdminTransactionsPage() {
     const data = await res.json();
     if (res.ok) {
       setTransactions((prev) => [data.data, ...prev]);
+      alert('Transaction added successfully!');
     } else {
       alert(`Error: ${data.error}`);
     }
