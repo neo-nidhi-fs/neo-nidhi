@@ -11,7 +11,14 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Wallet, Banknote, TrendingDown, Send, CreditCard } from 'lucide-react';
+import {
+  Wallet,
+  Banknote,
+  TrendingDown,
+  Send,
+  CreditCard,
+  Loader,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 export default function UserDashboard() {
@@ -24,80 +31,105 @@ export default function UserDashboard() {
   });
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
+  const [transferLoading, setTransferLoading] = useState(false);
+  const [loanLoading, setLoanLoading] = useState(false);
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [transferDialogOpen, setTransferDialogOpen] = useState(false);
+  const [loanDialogOpen, setLoanDialogOpen] = useState(false);
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
 
   async function handleChangePassword(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    setPasswordLoading(true);
     const formData = new FormData(e.currentTarget);
     const oldPassword = formData.get('oldPassword')?.toString();
     const newPassword = formData.get('newPassword')?.toString();
 
-    const res = await fetch(`/api/users/${user?._id}/password`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ oldPassword, newPassword }),
-    });
+    try {
+      const res = await fetch(`/api/users/${user?._id}/password`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ oldPassword, newPassword }),
+      });
 
-    const data = await res.json();
-    if (res.ok) {
-      setMessage('✅ Password updated successfully');
-    } else {
-      setMessage(`❌ Error: ${data.error}`);
+      const data = await res.json();
+      if (res.ok) {
+        setMessage('✅ Password updated successfully');
+
+        setTimeout(() => setPasswordDialogOpen(false), 1500);
+      } else {
+        setMessage(`❌ Error: ${data.error}`);
+      }
+    } finally {
+      setPasswordLoading(false);
     }
   }
 
   async function handleTransferMoney(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    setTransferLoading(true);
     const formData = new FormData(e.currentTarget);
     const toUserName = formData.get('toUserName')?.toString();
     const amount = Number(formData.get('amount'));
 
-    const res = await fetch('/api/transactions/transfer', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        fromUserId: user._id,
-        toUserName,
-        amount,
-      }),
-    });
+    try {
+      const res = await fetch('/api/transactions/transfer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fromUserId: user._id,
+          toUserName,
+          amount,
+        }),
+      });
 
-    const data = await res.json();
-    if (res.ok) {
-      setMessage(`✅ ${data.message}`);
-      // Refresh user data
-      const userRes = await fetch(`/api/users/${user._id}`);
-      const userData = await userRes.json();
-      setUser(userData.data);
-      e.currentTarget.reset();
-    } else {
-      setMessage(`❌ Error: ${data.error}`);
+      const data = await res.json();
+      if (res.ok) {
+        setMessage(`✅ ${data.message}`);
+        // Refresh user data
+        const userRes = await fetch(`/api/users/${user._id}`);
+        const userData = await userRes.json();
+        setUser(userData.data);
+
+        setTimeout(() => setTransferDialogOpen(false), 1500);
+      } else {
+        setMessage(`❌ Error: ${data.error}`);
+      }
+    } finally {
+      setTransferLoading(false);
     }
   }
 
   async function handlePayLoan(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    setLoanLoading(true);
     const formData = new FormData(e.currentTarget);
     const amount = Number(formData.get('loanAmount'));
 
-    const res = await fetch('/api/transactions/pay-loan', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        userId: user._id,
-        amount,
-      }),
-    });
+    try {
+      const res = await fetch('/api/transactions/pay-loan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user._id,
+          amount,
+        }),
+      });
 
-    const data = await res.json();
-    if (res.ok) {
-      setMessage(`✅ ${data.message}`);
-      // Refresh user data
-      const userRes = await fetch(`/api/users/${user._id}`);
-      const userData = await userRes.json();
-      setUser(userData.data);
-      e.currentTarget.reset();
-    } else {
-      setMessage(`❌ Error: ${data.error}`);
+      const data = await res.json();
+      if (res.ok) {
+        setMessage(`✅ ${data.message}`);
+        // Refresh user data
+        const userRes = await fetch(`/api/users/${user._id}`);
+        const userData = await userRes.json();
+        setUser(userData.data);
+
+        setTimeout(() => setLoanDialogOpen(false), 1500);
+      } else {
+        setMessage(`❌ Error: ${data.error}`);
+      }
+    } finally {
+      setLoanLoading(false);
     }
   }
 
@@ -204,7 +236,10 @@ export default function UserDashboard() {
         <div className="space-y-4 mb-12">
           <div className="flex gap-4 flex-wrap">
             {/* Change Password Dialog */}
-            <Dialog>
+            <Dialog
+              open={passwordDialogOpen}
+              onOpenChange={setPasswordDialogOpen}
+            >
               <DialogTrigger asChild>
                 <Button className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-semibold py-6">
                   🔑 Change Password
@@ -226,7 +261,8 @@ export default function UserDashboard() {
                       name="oldPassword"
                       type="password"
                       required
-                      className="bg-slate-700 border-slate-600 text-white"
+                      disabled={passwordLoading}
+                      className="bg-slate-700 border-slate-600 text-white disabled:opacity-50"
                     />
                   </div>
                   <div>
@@ -238,21 +274,33 @@ export default function UserDashboard() {
                       name="newPassword"
                       type="password"
                       required
-                      className="bg-slate-700 border-slate-600 text-white"
+                      disabled={passwordLoading}
+                      className="bg-slate-700 border-slate-600 text-white disabled:opacity-50"
                     />
                   </div>
                   <Button
                     type="submit"
-                    className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-semibold"
+                    disabled={passwordLoading}
+                    className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
-                    Update Password
+                    {passwordLoading ? (
+                      <>
+                        <Loader size={18} className="animate-spin" />
+                        Updating...
+                      </>
+                    ) : (
+                      'Update Password'
+                    )}
                   </Button>
                 </form>
               </DialogContent>
             </Dialog>
 
             {/* Transfer Money Dialog */}
-            <Dialog>
+            <Dialog
+              open={transferDialogOpen}
+              onOpenChange={setTransferDialogOpen}
+            >
               <DialogTrigger asChild>
                 <Button className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-6 flex items-center gap-2">
                   <Send size={18} />
@@ -276,7 +324,8 @@ export default function UserDashboard() {
                       type="text"
                       placeholder="Enter recipient username"
                       required
-                      className="bg-slate-700 border-slate-600 text-white"
+                      disabled={transferLoading}
+                      className="bg-slate-700 border-slate-600 text-white disabled:opacity-50"
                     />
                   </div>
                   <div>
@@ -291,14 +340,23 @@ export default function UserDashboard() {
                       min="0"
                       placeholder="0.00"
                       required
-                      className="bg-slate-700 border-slate-600 text-white"
+                      disabled={transferLoading}
+                      className="bg-slate-700 border-slate-600 text-white disabled:opacity-50"
                     />
                   </div>
                   <Button
                     type="submit"
-                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold"
+                    disabled={transferLoading}
+                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
-                    Transfer
+                    {transferLoading ? (
+                      <>
+                        <Loader size={18} className="animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      'Transfer'
+                    )}
                   </Button>
                 </form>
               </DialogContent>
@@ -306,7 +364,7 @@ export default function UserDashboard() {
 
             {/* Pay Loan Dialog */}
             {user.loanBalance > 0 && (
-              <Dialog>
+              <Dialog open={loanDialogOpen} onOpenChange={setLoanDialogOpen}>
                 <DialogTrigger asChild>
                   <Button className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-semibold py-6 flex items-center gap-2">
                     <CreditCard size={18} />
@@ -347,14 +405,23 @@ export default function UserDashboard() {
                         max={Math.min(user.loanBalance, user.savingsBalance)}
                         placeholder="0.00"
                         required
-                        className="bg-slate-700 border-slate-600 text-white"
+                        disabled={loanLoading}
+                        className="bg-slate-700 border-slate-600 text-white disabled:opacity-50"
                       />
                     </div>
                     <Button
                       type="submit"
-                      className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white font-semibold"
+                      disabled={loanLoading}
+                      className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
-                      Pay Loan
+                      {loanLoading ? (
+                        <>
+                          <Loader size={18} className="animate-spin" />
+                          Processing...
+                        </>
+                      ) : (
+                        'Pay Loan'
+                      )}
                     </Button>
                   </form>
                 </DialogContent>

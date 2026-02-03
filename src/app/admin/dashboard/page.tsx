@@ -20,7 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Users, Plus, Settings, RotateCcw } from 'lucide-react';
+import { Users, Plus, Settings, RotateCcw, Loader } from 'lucide-react';
 
 interface User {
   _id: string;
@@ -42,6 +42,14 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [schemes, setSchemes] = useState<Scheme[]>([]);
   const [message, setMessage] = useState('');
+  const [addUserLoading, setAddUserLoading] = useState(false);
+  const [addSchemeLoading, setAddSchemeLoading] = useState(false);
+  const [calcInterestLoading, setCalcInterestLoading] = useState(false);
+  const [resetPasswordLoading, setResetPasswordLoading] = useState<
+    string | null
+  >(null);
+  const [userDialogOpen, setUserDialogOpen] = useState(false);
+  const [schemeDialogOpen, setSchemeDialogOpen] = useState(false);
 
   useEffect(() => {
     async function fetchSchemes() {
@@ -54,21 +62,29 @@ export default function AdminDashboard() {
 
   async function handleAddScheme(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    setAddSchemeLoading(true);
     const formData = new FormData(e.currentTarget);
     const name = formData.get('name')?.toString();
     const interestRate = Number(formData.get('interestRate'));
 
-    const res = await fetch('/api/schemes', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, interestRate }),
-    });
+    try {
+      const res = await fetch('/api/schemes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, interestRate }),
+      });
 
-    const data = await res.json();
-    if (res.ok) {
-      setSchemes((prev) => [...prev, data.data]);
-    } else {
-      alert(`Error: ${data.error}`);
+      const data = await res.json();
+      if (res.ok) {
+        setSchemes((prev) => [...prev, data.data]);
+        setMessage('✅ Scheme added successfully');
+
+        setTimeout(() => setSchemeDialogOpen(false), 1500);
+      } else {
+        setMessage(`❌ Error: ${data.error}`);
+      }
+    } finally {
+      setAddSchemeLoading(false);
     }
   }
 
@@ -89,6 +105,7 @@ export default function AdminDashboard() {
   }, []);
 
   async function handleCalcInterest() {
+    setCalcInterestLoading(true);
     try {
       const res = await fetch('/api/run-interest');
 
@@ -105,12 +122,15 @@ export default function AdminDashboard() {
     } catch (error) {
       setMessage('❌ Something went wrong while calculating interest');
       console.error(error);
+    } finally {
+      setCalcInterestLoading(false);
     }
   }
 
   // Handle new user creation
   async function handleAddUser(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    setAddUserLoading(true);
     const formData = new FormData(e.currentTarget);
     const name = formData.get('name') as string;
     const age = Number(formData.get('age'));
@@ -125,11 +145,16 @@ export default function AdminDashboard() {
       const data = await res.json();
       if (res.ok) {
         setUsers((prev) => [...prev, data.data]);
+        setMessage('✅ User registered successfully');
+
+        setTimeout(() => setUserDialogOpen(false), 1500);
       } else {
-        alert(`Error: ${data.error}`);
+        setMessage(`❌ Error: ${data.error}`);
       }
     } catch (err) {
-      alert('Something went wrong.');
+      setMessage('❌ Something went wrong.');
+    } finally {
+      setAddUserLoading(false);
     }
   }
 
@@ -138,6 +163,7 @@ export default function AdminDashboard() {
       return;
     }
 
+    setResetPasswordLoading(userId);
     try {
       const res = await fetch(`/api/users/${userId}/reset-password`, {
         method: 'PUT',
@@ -147,10 +173,10 @@ export default function AdminDashboard() {
       if (res.ok) {
         setMessage(`✅ Password reset to default for ${userName}`);
       } else {
-        alert(`Error: ${data.error}`);
+        setMessage(`❌ Error: ${data.error}`);
       }
-    } catch (err) {
-      alert('Something went wrong.');
+    } finally {
+      setResetPasswordLoading(null);
     }
   }
 
@@ -201,9 +227,17 @@ export default function AdminDashboard() {
           </p>
           <Button
             onClick={handleCalcInterest}
-            className="bg-green-600 text-white"
+            disabled={calcInterestLoading}
+            className="bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
-            📊 Calculate Monthly Interest
+            {calcInterestLoading ? (
+              <>
+                <Loader size={18} className="animate-spin" />
+                Calculating...
+              </>
+            ) : (
+              '📊 Calculate Monthly Interest'
+            )}
           </Button>
           {message && <p className="mt-4 text-sm">{message}</p>}
         </div>
@@ -243,7 +277,7 @@ export default function AdminDashboard() {
         <div className="mb-12">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-3xl font-bold">Registered Users</h2>
-            <Dialog>
+            <Dialog open={userDialogOpen} onOpenChange={setUserDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-semibold flex items-center gap-2">
                   <Plus size={18} />
@@ -265,7 +299,8 @@ export default function AdminDashboard() {
                       id="name"
                       name="name"
                       required
-                      className="bg-slate-700 border-slate-600 text-white"
+                      disabled={addUserLoading}
+                      className="bg-slate-700 border-slate-600 text-white disabled:opacity-50"
                     />
                   </div>
                   <div>
@@ -277,7 +312,8 @@ export default function AdminDashboard() {
                       name="age"
                       type="number"
                       required
-                      className="bg-slate-700 border-slate-600 text-white"
+                      disabled={addUserLoading}
+                      className="bg-slate-700 border-slate-600 text-white disabled:opacity-50"
                     />
                   </div>
                   <div>
@@ -289,14 +325,23 @@ export default function AdminDashboard() {
                       name="password"
                       type="password"
                       required
-                      className="bg-slate-700 border-slate-600 text-white"
+                      disabled={addUserLoading}
+                      className="bg-slate-700 border-slate-600 text-white disabled:opacity-50"
                     />
                   </div>
                   <Button
                     type="submit"
-                    className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-semibold"
+                    disabled={addUserLoading}
+                    className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
-                    Register
+                    {addUserLoading ? (
+                      <>
+                        <Loader size={18} className="animate-spin" />
+                        Registering...
+                      </>
+                    ) : (
+                      'Register'
+                    )}
                   </Button>
                 </form>
               </DialogContent>
@@ -323,14 +368,22 @@ export default function AdminDashboard() {
                         >
                           {col.type === 'action' ? (
                             <Button
-                              onClick={() =>
-                                handleResetPassword(u._id, u.name)
-                              }
+                              onClick={() => handleResetPassword(u._id, u.name)}
+                              disabled={resetPasswordLoading === u._id}
                               size="sm"
-                              className="bg-orange-600 hover:bg-orange-700 text-white flex items-center gap-2"
+                              className="bg-orange-600 hover:bg-orange-700 text-white flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                              <RotateCcw size={16} />
-                              Reset Password
+                              {resetPasswordLoading === u._id ? (
+                                <>
+                                  <Loader size={14} className="animate-spin" />
+                                  Resetting...
+                                </>
+                              ) : (
+                                <>
+                                  <RotateCcw size={16} />
+                                  Reset Password
+                                </>
+                              )}
                             </Button>
                           ) : col.type === 'currency' ||
                             col.accessor === 'loanBalance' ? (
@@ -352,7 +405,7 @@ export default function AdminDashboard() {
         <div>
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-3xl font-bold">Available Schemes</h2>
-            <Dialog>
+            <Dialog open={schemeDialogOpen} onOpenChange={setSchemeDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold flex items-center gap-2">
                   <Plus size={18} />
@@ -375,7 +428,8 @@ export default function AdminDashboard() {
                       name="name"
                       placeholder="Normal Deposit / FD / RD"
                       required
-                      className="bg-slate-700 border-slate-600 text-white"
+                      disabled={addSchemeLoading}
+                      className="bg-slate-700 border-slate-600 text-white disabled:opacity-50"
                     />
                   </div>
                   <div>
@@ -388,14 +442,23 @@ export default function AdminDashboard() {
                       type="number"
                       step="0.1"
                       required
-                      className="bg-slate-700 border-slate-600 text-white"
+                      disabled={addSchemeLoading}
+                      className="bg-slate-700 border-slate-600 text-white disabled:opacity-50"
                     />
                   </div>
                   <Button
                     type="submit"
-                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold"
+                    disabled={addSchemeLoading}
+                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
-                    Add Scheme
+                    {addSchemeLoading ? (
+                      <>
+                        <Loader size={18} className="animate-spin" />
+                        Adding...
+                      </>
+                    ) : (
+                      'Add Scheme'
+                    )}
                   </Button>
                 </form>
               </DialogContent>
@@ -424,6 +487,18 @@ export default function AdminDashboard() {
               </div>
             </CardContent>
           </Card>
+
+          {message && (
+            <div
+              className={`mt-6 p-3 rounded-lg text-sm ${
+                message.includes('Error') || message.includes('❌')
+                  ? 'bg-red-500/10 border border-red-500/30 text-red-400'
+                  : 'bg-green-500/10 border border-green-500/30 text-green-400'
+              }`}
+            >
+              {message}
+            </div>
+          )}
         </div>
       </div>
     </main>

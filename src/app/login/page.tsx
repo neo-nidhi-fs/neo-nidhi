@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Loader } from 'lucide-react';
 
 export default function LoginPage() {
   const [name, setName] = useState('');
@@ -104,7 +104,8 @@ export default function LoginPage() {
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Enter your username"
                   required
-                  className="bg-slate-700/50 border-slate-600 text-white placeholder:text-gray-500 focus:border-blue-400"
+                  disabled={isLoading}
+                  className="bg-slate-700/50 border-slate-600 text-white placeholder:text-gray-500 focus:border-blue-400 disabled:opacity-50"
                 />
               </div>
               <div className="space-y-2">
@@ -121,7 +122,8 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
                   required
-                  className="bg-slate-700/50 border-slate-600 text-white placeholder:text-gray-500 focus:border-blue-400"
+                  disabled={isLoading}
+                  className="bg-slate-700/50 border-slate-600 text-white placeholder:text-gray-500 focus:border-blue-400 disabled:opacity-50"
                 />
               </div>
               {error && (
@@ -132,10 +134,19 @@ export default function LoginPage() {
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-semibold py-6 transition-all duration-300 flex items-center justify-center gap-2"
+                className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-semibold py-6 transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoading ? 'Logging in...' : 'Login'}
-                {!isLoading && <ArrowRight size={16} />}
+                {isLoading ? (
+                  <>
+                    <Loader size={16} className="animate-spin" />
+                    Logging in...
+                  </>
+                ) : (
+                  <>
+                    Login
+                    <ArrowRight size={16} />
+                  </>
+                )}
               </Button>
             </form>
           </CardContent>

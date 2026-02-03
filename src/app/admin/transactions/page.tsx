@@ -27,7 +27,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Plus, TrendingUp } from 'lucide-react';
+import { Plus, TrendingUp, Loader } from 'lucide-react';
 
 interface User {
   _id: string;
@@ -49,6 +49,9 @@ export default function AdminTransactionsPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [addTransactionLoading, setAddTransactionLoading] = useState(false);
+  const [message, setMessage] = useState('');
+  const [transactionDialogOpen, setTransactionDialogOpen] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -67,23 +70,30 @@ export default function AdminTransactionsPage() {
 
   async function handleAddTransaction(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    setAddTransactionLoading(true);
     const formData = new FormData(e.currentTarget);
     const userId = formData.get('userId') as string;
     const type = formData.get('type') as string;
     const amount = Number(formData.get('amount'));
 
-    const res = await fetch('/api/transactions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, type, amount }),
-    });
+    try {
+      const res = await fetch('/api/transactions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, type, amount }),
+      });
 
-    const data = await res.json();
-    if (res.ok) {
-      setTransactions((prev) => [data.data, ...prev]);
-      alert('Transaction added successfully!');
-    } else {
-      alert(`Error: ${data.error}`);
+      const data = await res.json();
+      if (res.ok) {
+        setTransactions((prev) => [data.data, ...prev]);
+        setMessage('✅ Transaction added successfully!');
+
+        setTimeout(() => setTransactionDialogOpen(false), 1500);
+      } else {
+        setMessage(`❌ Error: ${data.error}`);
+      }
+    } finally {
+      setAddTransactionLoading(false);
     }
   }
 
@@ -167,7 +177,10 @@ export default function AdminTransactionsPage() {
 
         {/* Add Transaction Button */}
         <div className="mb-6">
-          <Dialog>
+          <Dialog
+            open={transactionDialogOpen}
+            onOpenChange={setTransactionDialogOpen}
+          >
             <DialogTrigger asChild>
               <Button className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-semibold flex items-center gap-2">
                 <Plus size={18} />
@@ -189,8 +202,9 @@ export default function AdminTransactionsPage() {
                   <select
                     id="userId"
                     name="userId"
-                    className="w-full bg-slate-700 border border-slate-600 text-white rounded px-3 py-2"
+                    className="w-full bg-slate-700 border border-slate-600 text-white rounded px-3 py-2 disabled:opacity-50"
                     required
+                    disabled={addTransactionLoading}
                   >
                     <option value="">Select a user</option>
                     {users.map((u) => (
@@ -209,8 +223,9 @@ export default function AdminTransactionsPage() {
                   <select
                     id="type"
                     name="type"
-                    className="w-full bg-slate-700 border border-slate-600 text-white rounded px-3 py-2"
+                    className="w-full bg-slate-700 border border-slate-600 text-white rounded px-3 py-2 disabled:opacity-50"
                     required
+                    disabled={addTransactionLoading}
                   >
                     <option value="">Select type</option>
                     {transactionTypes.map((type) => (
@@ -231,20 +246,41 @@ export default function AdminTransactionsPage() {
                     name="amount"
                     type="number"
                     required
-                    className="bg-slate-700 border-slate-600 text-white"
+                    disabled={addTransactionLoading}
+                    className="bg-slate-700 border-slate-600 text-white disabled:opacity-50"
                   />
                 </div>
 
                 <Button
                   type="submit"
-                  className="w-full bg-gradient-to-r text-cyan-400 from-blue-500 to-cyan-500 text-white font-semibold"
+                  disabled={addTransactionLoading}
+                  className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  Add Transaction
+                  {addTransactionLoading ? (
+                    <>
+                      <Loader size={18} className="animate-spin" />
+                      Adding...
+                    </>
+                  ) : (
+                    'Add Transaction'
+                  )}
                 </Button>
               </form>
             </DialogContent>
           </Dialog>
         </div>
+
+        {message && (
+          <div
+            className={`mb-6 p-3 rounded-lg text-sm ${
+              message.includes('Error') || message.includes('❌')
+                ? 'bg-red-500/10 border border-red-500/30 text-red-400'
+                : 'bg-green-500/10 border border-green-500/30 text-green-400'
+            }`}
+          >
+            {message}
+          </div>
+        )}
 
         {/* Transactions Table */}
         <Card className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 border-slate-700">
