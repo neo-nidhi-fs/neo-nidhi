@@ -34,7 +34,7 @@ export const authOptions: NextAuthOptions = {
         await dbConnect();
 
         const user = await User.findOne({
-          name: new RegExp(`^${credentials?.name}$`, 'i'),
+          name: new RegExp(`^${credentials?.name?.trim()}$`, 'i'),
         });
         if (!user) return null;
 

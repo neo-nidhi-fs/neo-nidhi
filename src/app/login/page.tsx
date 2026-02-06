@@ -21,7 +21,7 @@ export default function LoginPage() {
     setIsLoading(true);
 
     const result = await signIn('credentials', {
-      name,
+      name: name.trim(),
       password,
       redirect: false,
     });

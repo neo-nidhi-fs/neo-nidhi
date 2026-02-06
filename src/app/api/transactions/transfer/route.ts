@@ -8,8 +8,9 @@ export async function POST(req: Request) {
     await dbConnect();
     const body = await req.json();
     const { fromUserId, toUserName, amount } = body;
+    const trimmedToUserName = toUserName?.trim();
 
-    if (!fromUserId || !toUserName || !amount || amount <= 0) {
+    if (!fromUserId || !trimmedToUserName || !amount || amount <= 0) {
       return NextResponse.json(
         { success: false, error: 'Invalid input parameters' },
         { status: 400 }
@@ -34,7 +35,7 @@ export async function POST(req: Request) {
     }
 
     // Get receiver
-    const receiver = await User.findOne({ name: toUserName });
+    const receiver = await User.findOne({ name: trimmedToUserName });
     if (!receiver) {
       return NextResponse.json(
         { success: false, error: 'Recipient not found' },

@@ -20,7 +20,7 @@ export async function POST(req: Request) {
 
     // Create new user (password will be hashed automatically by pre-save hook in User model)
     const newUser = new User({
-      name: body.name,
+      name: body.name?.trim(),
       age: body.age,
       role: body.role || 'user', // default to user
       savingsBalance: body.savingsBalance || 0,

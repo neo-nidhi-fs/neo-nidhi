@@ -69,7 +69,7 @@ export default function UserDashboard() {
     e.preventDefault();
     setTransferLoading(true);
     const formData = new FormData(e.currentTarget);
-    const toUserName = formData.get('toUserName')?.toString();
+    const toUserName = formData.get('toUserName')?.toString().trim();
     const amount = Number(formData.get('amount'));
 
     try {
@@ -192,7 +192,7 @@ export default function UserDashboard() {
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-bold text-green-300">
-                ₹{user.savingsBalance.toLocaleString()}
+                ₹{user.savingsBalance.toFixed(2)}
               </p>
             </CardContent>
           </Card>
@@ -209,7 +209,7 @@ export default function UserDashboard() {
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-bold text-blue-300">
-                ₹{(user.fd || 0).toLocaleString()}
+                ₹{(user.fd || 0).toFixed(2)}
               </p>
             </CardContent>
           </Card>
@@ -226,7 +226,7 @@ export default function UserDashboard() {
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-bold text-orange-300">
-                ₹{user.loanBalance.toLocaleString()}
+                ₹{user.loanBalance.toFixed(2)}
               </p>
             </CardContent>
           </Card>
@@ -381,13 +381,13 @@ export default function UserDashboard() {
                     <p className="text-sm text-gray-300">
                       Loan Balance:{' '}
                       <span className="font-bold text-orange-400">
-                        ₹{user.loanBalance.toLocaleString()}
+                        ₹{user.loanBalance.toFixed(2)}
                       </span>
                     </p>
                     <p className="text-sm text-gray-300">
                       Available Balance:{' '}
                       <span className="font-bold text-green-400">
-                        ₹{user.savingsBalance.toLocaleString()}
+                        ₹{user.savingsBalance.toFixed(2)}
                       </span>
                     </p>
                   </div>

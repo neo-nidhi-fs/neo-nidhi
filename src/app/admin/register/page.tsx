@@ -25,7 +25,7 @@ export default function RegisterUserPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name,
+          name: name.trim(),
           age,
           role: 'user',
           password,

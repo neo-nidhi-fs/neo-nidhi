@@ -20,7 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Users, Plus, Settings, RotateCcw, Loader } from 'lucide-react';
+import { Users, Plus, Settings, RotateCcw, Loader, Edit, Trash2 } from 'lucide-react';
 
 interface User {
   _id: string;
@@ -50,6 +50,9 @@ export default function AdminDashboard() {
   >(null);
   const [userDialogOpen, setUserDialogOpen] = useState(false);
   const [schemeDialogOpen, setSchemeDialogOpen] = useState(false);
+  const [editingScheme, setEditingScheme] = useState<Scheme | null>(null);
+  const [editSchemeLoading, setEditSchemeLoading] = useState(false);
+  const [deleteSchemeLoading, setDeleteSchemeLoading] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchSchemes() {
@@ -177,6 +180,62 @@ export default function AdminDashboard() {
       }
     } finally {
       setResetPasswordLoading(null);
+    }
+  }
+
+  async function handleEditScheme(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!editingScheme) return;
+
+    setEditSchemeLoading(true);
+    const formData = new FormData(e.currentTarget);
+    const name = formData.get('name')?.toString();
+    const interestRate = Number(formData.get('interestRate'));
+
+    try {
+      const res = await fetch(`/api/schemes/${editingScheme._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, interestRate }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setSchemes((prev) =>
+          prev.map((s) => (s._id === editingScheme._id ? data.data : s))
+        );
+        setMessage('✅ Scheme updated successfully');
+        setEditingScheme(null);
+        setTimeout(() => setSchemeDialogOpen(false), 1500);
+      } else {
+        setMessage(`❌ Error: ${data.error}`);
+      }
+    } finally {
+      setEditSchemeLoading(false);
+    }
+  }
+
+  async function handleDeleteScheme(schemeId: string, schemeName: string) {
+    if (!confirm(`Delete scheme "${schemeName}"?`)) {
+      return;
+    }
+
+    setDeleteSchemeLoading(schemeId);
+    try {
+      const res = await fetch(`/api/schemes/${schemeId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setSchemes((prev) => prev.filter((s) => s._id !== schemeId));
+        setMessage('✅ Scheme deleted successfully');
+      } else {
+        setMessage(`❌ Error: ${data.error}`);
+      }
+    } finally {
+      setDeleteSchemeLoading(null);
     }
   }
 
@@ -387,7 +446,7 @@ export default function AdminDashboard() {
                             </Button>
                           ) : col.type === 'currency' ||
                             col.accessor === 'loanBalance' ? (
-                            `₹${(u[col.accessor as keyof User] || 0).toLocaleString()}`
+                            `₹${((u[col.accessor as keyof User] as number) || 0).toFixed(2)}`
                           ) : (
                             u[col.accessor as keyof User]
                           )}
@@ -405,7 +464,13 @@ export default function AdminDashboard() {
         <div>
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-3xl font-bold">Available Schemes</h2>
-            <Dialog open={schemeDialogOpen} onOpenChange={setSchemeDialogOpen}>
+            <Dialog 
+              open={schemeDialogOpen} 
+              onOpenChange={(open) => {
+                setSchemeDialogOpen(open);
+                if (!open) setEditingScheme(null);
+              }}
+            >
               <DialogTrigger asChild>
                 <Button className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold flex items-center gap-2">
                   <Plus size={18} />
@@ -415,10 +480,10 @@ export default function AdminDashboard() {
               <DialogContent className="bg-slate-800 border-slate-700">
                 <DialogHeader>
                   <DialogTitle className="text-white">
-                    Create New Scheme
+                    {editingScheme ? 'Edit Scheme' : 'Create New Scheme'}
                   </DialogTitle>
                 </DialogHeader>
-                <form onSubmit={handleAddScheme} className="space-y-4">
+                <form onSubmit={editingScheme ? handleEditScheme : handleAddScheme} className="space-y-4">
                   <div>
                     <Label htmlFor="name" className="text-gray-100">
                       Scheme Name
@@ -427,8 +492,9 @@ export default function AdminDashboard() {
                       id="name"
                       name="name"
                       placeholder="Normal Deposit / FD / RD"
+                      defaultValue={editingScheme?.name || ''}
                       required
-                      disabled={addSchemeLoading}
+                      disabled={addSchemeLoading || editSchemeLoading}
                       className="bg-slate-700 border-slate-600 text-white disabled:opacity-50"
                     />
                   </div>
@@ -441,23 +507,24 @@ export default function AdminDashboard() {
                       name="interestRate"
                       type="number"
                       step="0.1"
+                      defaultValue={editingScheme?.interestRate || ''}
                       required
-                      disabled={addSchemeLoading}
+                      disabled={addSchemeLoading || editSchemeLoading}
                       className="bg-slate-700 border-slate-600 text-white disabled:opacity-50"
                     />
                   </div>
                   <Button
                     type="submit"
-                    disabled={addSchemeLoading}
+                    disabled={addSchemeLoading || editSchemeLoading}
                     className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
-                    {addSchemeLoading ? (
+                    {addSchemeLoading || editSchemeLoading ? (
                       <>
                         <Loader size={18} className="animate-spin" />
-                        Adding...
+                        {editingScheme ? 'Updating...' : 'Adding...'}
                       </>
                     ) : (
-                      'Add Scheme'
+                      editingScheme ? 'Update Scheme' : 'Add Scheme'
                     )}
                   </Button>
                 </form>
@@ -473,9 +540,35 @@ export default function AdminDashboard() {
                     key={s._id}
                     className="bg-gradient-to-br from-purple-900/30 to-indigo-900/30 border border-purple-400/30 rounded-lg p-4 hover:border-purple-400/50 transition-all"
                   >
-                    <h3 className="text-lg font-bold text-purple-200 mb-2">
-                      {s.name}
-                    </h3>
+                    <div className="flex items-start justify-between mb-3">
+                      <h3 className="text-lg font-bold text-purple-200">
+                        {s.name}
+                      </h3>
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => {
+                            setEditingScheme(s);
+                            setSchemeDialogOpen(true);
+                          }}
+                          size="sm"
+                          className="bg-blue-600 hover:bg-blue-700 text-white p-2"
+                        >
+                          <Edit size={16} />
+                        </Button>
+                        <Button
+                          onClick={() => handleDeleteScheme(s._id, s.name)}
+                          disabled={deleteSchemeLoading === s._id}
+                          size="sm"
+                          className="bg-red-600 hover:bg-red-700 text-white p-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {deleteSchemeLoading === s._id ? (
+                            <Loader size={16} className="animate-spin" />
+                          ) : (
+                            <Trash2 size={16} />
+                          )}
+                        </Button>
+                      </div>
+                    </div>
                     <p className="text-gray-100">
                       Interest Rate:{' '}
                       <span className="text-2xl font-bold text-purple-300">
