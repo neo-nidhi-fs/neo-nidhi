@@ -53,6 +53,8 @@ export default function AdminDashboard() {
   const [editingScheme, setEditingScheme] = useState<Scheme | null>(null);
   const [editSchemeLoading, setEditSchemeLoading] = useState(false);
   const [deleteSchemeLoading, setDeleteSchemeLoading] = useState<string | null>(null);
+  const [userPage, setUserPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   useEffect(() => {
     async function fetchSchemes() {
@@ -418,7 +420,9 @@ export default function AdminDashboard() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {users.map((u) => (
+                  {users
+                    .slice((userPage - 1) * ITEMS_PER_PAGE, userPage * ITEMS_PER_PAGE)
+                    .map((u) => (
                     <TableRow key={u._id}>
                       {userTableColumns.map((col) => (
                         <TableCell
@@ -456,6 +460,44 @@ export default function AdminDashboard() {
                   ))}
                 </TableBody>
               </Table>
+              {users.length > ITEMS_PER_PAGE && (
+                <div className="mt-4 flex items-center justify-between">
+                  <p className="text-sm text-gray-400">
+                    Showing {(userPage - 1) * ITEMS_PER_PAGE + 1} to {Math.min(userPage * ITEMS_PER_PAGE, users.length)} of {users.length} users
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => setUserPage((p) => Math.max(1, p - 1))}
+                      disabled={userPage === 1}
+                      className="bg-slate-700 hover:bg-slate-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Previous
+                    </Button>
+                    <div className="flex items-center gap-2">
+                      {Array.from({ length: Math.ceil(users.length / ITEMS_PER_PAGE) }).map((_, i) => (
+                        <Button
+                          key={i + 1}
+                          onClick={() => setUserPage(i + 1)}
+                          className={`w-10 h-10 ${
+                            userPage === i + 1
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-slate-700 hover:bg-slate-600 text-white'
+                          }`}
+                        >
+                          {i + 1}
+                        </Button>
+                      ))}
+                    </div>
+                    <Button
+                      onClick={() => setUserPage((p) => Math.min(Math.ceil(users.length / ITEMS_PER_PAGE), p + 1))}
+                      disabled={userPage === Math.ceil(users.length / ITEMS_PER_PAGE)}
+                      className="bg-slate-700 hover:bg-slate-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

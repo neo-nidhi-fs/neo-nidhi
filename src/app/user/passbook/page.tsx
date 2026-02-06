@@ -12,6 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
 import { History } from 'lucide-react';
 
 type Transaction = {
@@ -32,6 +33,8 @@ export default function PassbookPage() {
   const { data: session } = useSession() as { data: CustomSession | null };
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [passPage, setPassPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   useEffect(() => {
     async function fetchTransactions() {
@@ -126,23 +129,25 @@ export default function PassbookPage() {
                 </TableHeader>
                 <TableBody>
                   {transactions.length > 0 ? (
-                    transactions.map((tx) => (
-                      <TableRow key={tx._id}>
-                        <TableCell className="text-gray-200">
-                          {new Date(tx.date).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell
-                          className={`capitalize font-semibold ${getTransactionColor(
-                            tx.type
-                          )}`}
-                        >
-                          {tx.type}
-                        </TableCell>
-                        <TableCell className="font-semibold text-gray-200">
-                          ₹{tx.amount.toLocaleString()}
-                        </TableCell>
-                      </TableRow>
-                    ))
+                    transactions
+                      .slice((passPage - 1) * ITEMS_PER_PAGE, passPage * ITEMS_PER_PAGE)
+                      .map((tx) => (
+                        <TableRow key={tx._id}>
+                          <TableCell className="text-gray-200">
+                            {new Date(tx.date).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell
+                            className={`capitalize font-semibold ${getTransactionColor(
+                              tx.type
+                            )}`}
+                          >
+                            {tx.type}
+                          </TableCell>
+                          <TableCell className="font-semibold text-gray-200">
+                            ₹{tx.amount.toFixed(2)}
+                          </TableCell>
+                        </TableRow>
+                      ))
                   ) : (
                     <TableRow>
                       <TableCell
@@ -156,6 +161,44 @@ export default function PassbookPage() {
                 </TableBody>
               </Table>
             </div>
+            {transactions.length > ITEMS_PER_PAGE && (
+              <div className="mt-4 flex items-center justify-between">
+                <p className="text-sm text-gray-400">
+                  Showing {(passPage - 1) * ITEMS_PER_PAGE + 1} to {Math.min(passPage * ITEMS_PER_PAGE, transactions.length)} of {transactions.length} transactions
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => setPassPage((p) => Math.max(1, p - 1))}
+                    disabled={passPage === 1}
+                    className="bg-slate-700 hover:bg-slate-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Previous
+                  </Button>
+                  <div className="flex items-center gap-2">
+                    {Array.from({ length: Math.ceil(transactions.length / ITEMS_PER_PAGE) }).map((_, i) => (
+                      <Button
+                        key={i + 1}
+                        onClick={() => setPassPage(i + 1)}
+                        className={`w-10 h-10 ${
+                          passPage === i + 1
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-slate-700 hover:bg-slate-600 text-white'
+                        }`}
+                      >
+                        {i + 1}
+                      </Button>
+                    ))}
+                  </div>
+                  <Button
+                    onClick={() => setPassPage((p) => Math.min(Math.ceil(transactions.length / ITEMS_PER_PAGE), p + 1))}
+                    disabled={passPage === Math.ceil(transactions.length / ITEMS_PER_PAGE)}
+                    className="bg-slate-700 hover:bg-slate-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
