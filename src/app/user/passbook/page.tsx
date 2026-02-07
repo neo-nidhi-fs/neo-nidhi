@@ -130,7 +130,10 @@ export default function PassbookPage() {
                 <TableBody>
                   {transactions.length > 0 ? (
                     transactions
-                      .slice((passPage - 1) * ITEMS_PER_PAGE, passPage * ITEMS_PER_PAGE)
+                      .slice(
+                        (passPage - 1) * ITEMS_PER_PAGE,
+                        passPage * ITEMS_PER_PAGE
+                      )
                       .map((tx) => (
                         <TableRow key={tx._id}>
                           <TableCell className="text-gray-200">
@@ -162,24 +165,28 @@ export default function PassbookPage() {
               </Table>
             </div>
             {transactions.length > ITEMS_PER_PAGE && (
-              <div className="mt-4 flex items-center justify-between">
+              <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm text-gray-400">
-                  Showing {(passPage - 1) * ITEMS_PER_PAGE + 1} to {Math.min(passPage * ITEMS_PER_PAGE, transactions.length)} of {transactions.length} transactions
+                  Showing {(passPage - 1) * ITEMS_PER_PAGE + 1} to{' '}
+                  {Math.min(passPage * ITEMS_PER_PAGE, transactions.length)} of{' '}
+                  {transactions.length} transactions
                 </p>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap items-center gap-2 justify-center sm:justify-end">
                   <Button
                     onClick={() => setPassPage((p) => Math.max(1, p - 1))}
                     disabled={passPage === 1}
-                    className="bg-slate-700 hover:bg-slate-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="bg-slate-700 hover:bg-slate-600 text-white disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                   >
                     Previous
                   </Button>
-                  <div className="flex items-center gap-2">
-                    {Array.from({ length: Math.ceil(transactions.length / ITEMS_PER_PAGE) }).map((_, i) => (
+                  <div className="hidden sm:flex items-center gap-2">
+                    {Array.from({
+                      length: Math.ceil(transactions.length / ITEMS_PER_PAGE),
+                    }).map((_, i) => (
                       <Button
                         key={i + 1}
                         onClick={() => setPassPage(i + 1)}
-                        className={`w-10 h-10 ${
+                        className={`w-10 h-10 text-sm ${
                           passPage === i + 1
                             ? 'bg-blue-600 text-white'
                             : 'bg-slate-700 hover:bg-slate-600 text-white'
@@ -189,10 +196,23 @@ export default function PassbookPage() {
                       </Button>
                     ))}
                   </div>
+                  <div className="sm:hidden text-sm text-gray-400">
+                    Page {passPage}
+                  </div>
                   <Button
-                    onClick={() => setPassPage((p) => Math.min(Math.ceil(transactions.length / ITEMS_PER_PAGE), p + 1))}
-                    disabled={passPage === Math.ceil(transactions.length / ITEMS_PER_PAGE)}
-                    className="bg-slate-700 hover:bg-slate-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={() =>
+                      setPassPage((p) =>
+                        Math.min(
+                          Math.ceil(transactions.length / ITEMS_PER_PAGE),
+                          p + 1
+                        )
+                      )
+                    }
+                    disabled={
+                      passPage ===
+                      Math.ceil(transactions.length / ITEMS_PER_PAGE)
+                    }
+                    className="bg-slate-700 hover:bg-slate-600 text-white disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                   >
                     Next
                   </Button>

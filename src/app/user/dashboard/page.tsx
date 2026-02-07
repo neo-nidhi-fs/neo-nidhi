@@ -245,7 +245,7 @@ export default function UserDashboard() {
                   🔑 Change Password
                 </Button>
               </DialogTrigger>
-              <DialogContent className="bg-slate-800 border-slate-700">
+              <DialogContent className="bg-slate-800 border-slate-700 w-[90vw] sm:w-full max-w-md max-h-[90vh] overflow-y-auto p-4 sm:p-6 rounded-lg">
                 <DialogHeader>
                   <DialogTitle className="text-white">
                     Update Your Password
@@ -307,7 +307,7 @@ export default function UserDashboard() {
                   Transfer Money
                 </Button>
               </DialogTrigger>
-              <DialogContent className="bg-slate-800 border-slate-700">
+              <DialogContent className="bg-slate-800 border-slate-700 w-[90vw] sm:w-full max-w-md max-h-[90vh] overflow-y-auto p-4 sm:p-6 rounded-lg">
                 <DialogHeader>
                   <DialogTitle className="text-white">
                     Transfer Money to Another User
@@ -371,7 +371,7 @@ export default function UserDashboard() {
                     Pay Loan
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="bg-slate-800 border-slate-700">
+                <DialogContent className="bg-slate-800 border-slate-700 w-[90vw] sm:w-full max-w-md max-h-[90vh] overflow-y-auto p-4 sm:p-6 rounded-lg">
                   <DialogHeader>
                     <DialogTitle className="text-white">
                       Pay Loan from Savings

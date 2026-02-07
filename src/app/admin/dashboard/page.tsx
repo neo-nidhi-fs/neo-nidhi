@@ -345,7 +345,7 @@ export default function AdminDashboard() {
                   Add New User
                 </Button>
               </DialogTrigger>
-              <DialogContent className="bg-slate-800 border-slate-700">
+              <DialogContent className="bg-slate-800 border-slate-700 w-[90vw] sm:w-full max-w-md max-h-[90vh] overflow-y-auto p-4 sm:p-6 rounded-lg">
                 <DialogHeader>
                   <DialogTitle className="text-white">
                     Register New User
@@ -461,37 +461,40 @@ export default function AdminDashboard() {
                 </TableBody>
               </Table>
               {users.length > ITEMS_PER_PAGE && (
-                <div className="mt-4 flex items-center justify-between">
+                <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-sm text-gray-400">
                     Showing {(userPage - 1) * ITEMS_PER_PAGE + 1} to {Math.min(userPage * ITEMS_PER_PAGE, users.length)} of {users.length} users
                   </p>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap items-center gap-2 justify-center sm:justify-end">
                     <Button
                       onClick={() => setUserPage((p) => Math.max(1, p - 1))}
                       disabled={userPage === 1}
-                      className="bg-slate-700 hover:bg-slate-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="bg-slate-700 hover:bg-slate-600 text-white disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                     >
                       Previous
                     </Button>
-                    <div className="flex items-center gap-2">
+                    <div className="hidden sm:flex items-center gap-2">
                       {Array.from({ length: Math.ceil(users.length / ITEMS_PER_PAGE) }).map((_, i) => (
                         <Button
                           key={i + 1}
                           onClick={() => setUserPage(i + 1)}
-                          className={`w-10 h-10 ${
+                          className={`w-10 h-10 text-sm ${(
                             userPage === i + 1
                               ? 'bg-blue-600 text-white'
                               : 'bg-slate-700 hover:bg-slate-600 text-white'
-                          }`}
+                          )}`}
                         >
                           {i + 1}
                         </Button>
                       ))}
                     </div>
+                    <div className="sm:hidden text-sm text-gray-400">
+                      Page {userPage}
+                    </div>
                     <Button
                       onClick={() => setUserPage((p) => Math.min(Math.ceil(users.length / ITEMS_PER_PAGE), p + 1))}
                       disabled={userPage === Math.ceil(users.length / ITEMS_PER_PAGE)}
-                      className="bg-slate-700 hover:bg-slate-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="bg-slate-700 hover:bg-slate-600 text-white disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                     >
                       Next
                     </Button>
@@ -519,7 +522,7 @@ export default function AdminDashboard() {
                   Add New Scheme
                 </Button>
               </DialogTrigger>
-              <DialogContent className="bg-slate-800 border-slate-700">
+              <DialogContent className="bg-slate-800 border-slate-700 w-[90vw] sm:w-full max-w-md max-h-[90vh] overflow-y-auto p-4 sm:p-6 rounded-lg">
                 <DialogHeader>
                   <DialogTitle className="text-white">
                     {editingScheme ? 'Edit Scheme' : 'Create New Scheme'}
