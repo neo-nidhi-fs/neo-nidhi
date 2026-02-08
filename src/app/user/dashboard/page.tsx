@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -18,6 +19,7 @@ import {
   Send,
   CreditCard,
   Loader,
+  BarChart3,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -173,9 +175,15 @@ export default function UserDashboard() {
             </span>
             👋
           </h1>
-          <p className="text-gray-200 text-lg">
+          <p className="text-gray-200 text-lg mb-4">
             Manage your finances and track your progress
           </p>
+          <Link href="/user/reports">
+            <Button className="bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-2">
+              <BarChart3 size={18} />
+              View Your Reports
+            </Button>
+          </Link>
         </div>
 
         {/* Stats Cards */}

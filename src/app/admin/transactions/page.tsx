@@ -350,11 +350,11 @@ export default function AdminTransactionsPage() {
                       <Button
                         key={i + 1}
                         onClick={() => setTxPage(i + 1)}
-                        className={`w-10 h-10 text-sm ${(
+                        className={`w-10 h-10 text-sm ${
                           txPage === i + 1
                             ? 'bg-blue-600 text-white'
                             : 'bg-slate-700 hover:bg-slate-600 text-white'
-                        )}`}
+                        }`}
                       >
                         {i + 1}
                       </Button>

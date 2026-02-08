@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -20,7 +21,16 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Users, Plus, Settings, RotateCcw, Loader, Edit, Trash2 } from 'lucide-react';
+import {
+  Users,
+  Plus,
+  Settings,
+  RotateCcw,
+  Loader,
+  Edit,
+  Trash2,
+  BarChart3,
+} from 'lucide-react';
 
 interface User {
   _id: string;
@@ -52,7 +62,9 @@ export default function AdminDashboard() {
   const [schemeDialogOpen, setSchemeDialogOpen] = useState(false);
   const [editingScheme, setEditingScheme] = useState<Scheme | null>(null);
   const [editSchemeLoading, setEditSchemeLoading] = useState(false);
-  const [deleteSchemeLoading, setDeleteSchemeLoading] = useState<string | null>(null);
+  const [deleteSchemeLoading, setDeleteSchemeLoading] = useState<string | null>(
+    null
+  );
   const [userPage, setUserPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
 
@@ -283,23 +295,31 @@ export default function AdminDashboard() {
               Admin Dashboard
             </span>
           </h1>
-          <p className="text-gray-200 text-lg">
+          <p className="text-gray-200 text-lg mb-4">
             Manage users, schemes, and platform settings
           </p>
-          <Button
-            onClick={handleCalcInterest}
-            disabled={calcInterestLoading}
-            className="bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-          >
-            {calcInterestLoading ? (
-              <>
-                <Loader size={18} className="animate-spin" />
-                Calculating...
-              </>
-            ) : (
-              '📊 Calculate Monthly Interest'
-            )}
-          </Button>
+          <div className="flex gap-4">
+            <Button
+              onClick={handleCalcInterest}
+              disabled={calcInterestLoading}
+              className="bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              {calcInterestLoading ? (
+                <>
+                  <Loader size={18} className="animate-spin" />
+                  Calculating...
+                </>
+              ) : (
+                '📊 Calculate Monthly Interest'
+              )}
+            </Button>
+            <Link href="/admin/reports">
+              <Button className="bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-2">
+                <BarChart3 size={18} />
+                View Reports
+              </Button>
+            </Link>
+          </div>
           {message && <p className="mt-4 text-sm">{message}</p>}
         </div>
 
@@ -421,49 +441,59 @@ export default function AdminDashboard() {
                 </TableHeader>
                 <TableBody>
                   {users
-                    .slice((userPage - 1) * ITEMS_PER_PAGE, userPage * ITEMS_PER_PAGE)
+                    .slice(
+                      (userPage - 1) * ITEMS_PER_PAGE,
+                      userPage * ITEMS_PER_PAGE
+                    )
                     .map((u) => (
-                    <TableRow key={u._id}>
-                      {userTableColumns.map((col) => (
-                        <TableCell
-                          key={col.accessor}
-                          className="text-green-200"
-                        >
-                          {col.type === 'action' ? (
-                            <Button
-                              onClick={() => handleResetPassword(u._id, u.name)}
-                              disabled={resetPasswordLoading === u._id}
-                              size="sm"
-                              className="bg-orange-600 hover:bg-orange-700 text-white flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              {resetPasswordLoading === u._id ? (
-                                <>
-                                  <Loader size={14} className="animate-spin" />
-                                  Resetting...
-                                </>
-                              ) : (
-                                <>
-                                  <RotateCcw size={16} />
-                                  Reset Password
-                                </>
-                              )}
-                            </Button>
-                          ) : col.type === 'currency' ||
-                            col.accessor === 'loanBalance' ? (
-                            `₹${((u[col.accessor as keyof User] as number) || 0).toFixed(2)}`
-                          ) : (
-                            u[col.accessor as keyof User]
-                          )}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))}
+                      <TableRow key={u._id}>
+                        {userTableColumns.map((col) => (
+                          <TableCell
+                            key={col.accessor}
+                            className="text-green-200"
+                          >
+                            {col.type === 'action' ? (
+                              <Button
+                                onClick={() =>
+                                  handleResetPassword(u._id, u.name)
+                                }
+                                disabled={resetPasswordLoading === u._id}
+                                size="sm"
+                                className="bg-orange-600 hover:bg-orange-700 text-white flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                {resetPasswordLoading === u._id ? (
+                                  <>
+                                    <Loader
+                                      size={14}
+                                      className="animate-spin"
+                                    />
+                                    Resetting...
+                                  </>
+                                ) : (
+                                  <>
+                                    <RotateCcw size={16} />
+                                    Reset Password
+                                  </>
+                                )}
+                              </Button>
+                            ) : col.type === 'currency' ||
+                              col.accessor === 'loanBalance' ? (
+                              `₹${((u[col.accessor as keyof User] as number) || 0).toFixed(2)}`
+                            ) : (
+                              u[col.accessor as keyof User]
+                            )}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))}
                 </TableBody>
               </Table>
               {users.length > ITEMS_PER_PAGE && (
                 <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-sm text-gray-400">
-                    Showing {(userPage - 1) * ITEMS_PER_PAGE + 1} to {Math.min(userPage * ITEMS_PER_PAGE, users.length)} of {users.length} users
+                    Showing {(userPage - 1) * ITEMS_PER_PAGE + 1} to{' '}
+                    {Math.min(userPage * ITEMS_PER_PAGE, users.length)} of{' '}
+                    {users.length} users
                   </p>
                   <div className="flex flex-wrap items-center gap-2 justify-center sm:justify-end">
                     <Button
@@ -474,15 +504,17 @@ export default function AdminDashboard() {
                       Previous
                     </Button>
                     <div className="hidden sm:flex items-center gap-2">
-                      {Array.from({ length: Math.ceil(users.length / ITEMS_PER_PAGE) }).map((_, i) => (
+                      {Array.from({
+                        length: Math.ceil(users.length / ITEMS_PER_PAGE),
+                      }).map((_, i) => (
                         <Button
                           key={i + 1}
                           onClick={() => setUserPage(i + 1)}
-                          className={`w-10 h-10 text-sm ${(
+                          className={`w-10 h-10 text-sm ${
                             userPage === i + 1
                               ? 'bg-blue-600 text-white'
                               : 'bg-slate-700 hover:bg-slate-600 text-white'
-                          )}`}
+                          }`}
                         >
                           {i + 1}
                         </Button>
@@ -492,8 +524,17 @@ export default function AdminDashboard() {
                       Page {userPage}
                     </div>
                     <Button
-                      onClick={() => setUserPage((p) => Math.min(Math.ceil(users.length / ITEMS_PER_PAGE), p + 1))}
-                      disabled={userPage === Math.ceil(users.length / ITEMS_PER_PAGE)}
+                      onClick={() =>
+                        setUserPage((p) =>
+                          Math.min(
+                            Math.ceil(users.length / ITEMS_PER_PAGE),
+                            p + 1
+                          )
+                        )
+                      }
+                      disabled={
+                        userPage === Math.ceil(users.length / ITEMS_PER_PAGE)
+                      }
                       className="bg-slate-700 hover:bg-slate-600 text-white disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                     >
                       Next
@@ -509,8 +550,8 @@ export default function AdminDashboard() {
         <div>
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-3xl font-bold">Available Schemes</h2>
-            <Dialog 
-              open={schemeDialogOpen} 
+            <Dialog
+              open={schemeDialogOpen}
               onOpenChange={(open) => {
                 setSchemeDialogOpen(open);
                 if (!open) setEditingScheme(null);
@@ -528,7 +569,10 @@ export default function AdminDashboard() {
                     {editingScheme ? 'Edit Scheme' : 'Create New Scheme'}
                   </DialogTitle>
                 </DialogHeader>
-                <form onSubmit={editingScheme ? handleEditScheme : handleAddScheme} className="space-y-4">
+                <form
+                  onSubmit={editingScheme ? handleEditScheme : handleAddScheme}
+                  className="space-y-4"
+                >
                   <div>
                     <Label htmlFor="name" className="text-gray-100">
                       Scheme Name
@@ -568,8 +612,10 @@ export default function AdminDashboard() {
                         <Loader size={18} className="animate-spin" />
                         {editingScheme ? 'Updating...' : 'Adding...'}
                       </>
+                    ) : editingScheme ? (
+                      'Update Scheme'
                     ) : (
-                      editingScheme ? 'Update Scheme' : 'Add Scheme'
+                      'Add Scheme'
                     )}
                   </Button>
                 </form>
