@@ -56,6 +56,11 @@ export default function UserReports() {
   const [reportData, setReportData] = useState<UserReportData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     async function fetchReports() {
@@ -79,8 +84,10 @@ export default function UserReports() {
       }
     }
 
-    fetchReports();
-  }, []);
+    if (mounted) {
+      fetchReports();
+    }
+  }, [mounted]);
 
   if (loading) {
     return (
@@ -384,90 +391,89 @@ export default function UserReports() {
         </div>
 
         {/* Charts Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Transaction Summary */}
-          <Card className="bg-gradient-to-br from-gray-900/50 to-slate-900/50 border-gray-700/30">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg text-gray-200 flex items-center gap-2">
-                <BarChart3 size={20} className="text-blue-400" />
-                Transaction Summary
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4">
-              <HighchartsReact
-                highcharts={Highcharts}
-                options={transactionSummaryChart}
-              />
-            </CardContent>
-          </Card>
+        {mounted && (
+          <>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+              {/* Transaction Summary */}
+              <Card className="bg-gradient-to-br from-gray-900/50 to-slate-900/50 border-gray-700/30">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg text-gray-200 flex items-center gap-2">
+                    <BarChart3 size={20} className="text-blue-400" />
+                    Transaction Summary
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4">
+                  <HighchartsReact
+                    highcharts={Highcharts}
+                    options={transactionSummaryChart}
+                  />
+                </CardContent>
+              </Card>
 
-          {/* Transaction Types */}
-          <Card className="bg-gradient-to-br from-gray-900/50 to-slate-900/50 border-gray-700/30">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg text-gray-200 flex items-center gap-2">
-                <PieChart size={20} className="text-purple-400" />
-                Transaction Types
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4">
-              <HighchartsReact
-                highcharts={Highcharts}
-                options={transactionTypesPie}
-              />
-            </CardContent>
-          </Card>
+              <Card className="bg-gradient-to-br from-gray-900/50 to-slate-900/50 border-gray-700/30">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg text-gray-200 flex items-center gap-2">
+                    <PieChart size={20} className="text-purple-400" />
+                    Transaction Types
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4">
+                  <HighchartsReact
+                    highcharts={Highcharts}
+                    options={transactionTypesPie}
+                  />
+                </CardContent>
+              </Card>
 
-          {/* Interest Breakdown */}
-          <Card className="bg-gradient-to-br from-gray-900/50 to-slate-900/50 border-gray-700/30">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg text-gray-200 flex items-center gap-2">
-                <DollarSign size={20} className="text-amber-400" />
-                Interest Breakdown
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4">
-              <HighchartsReact
-                highcharts={Highcharts}
-                options={interestChart}
-              />
-            </CardContent>
-          </Card>
+              <Card className="bg-gradient-to-br from-gray-900/50 to-slate-900/50 border-gray-700/30">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg text-gray-200 flex items-center gap-2">
+                    <DollarSign size={20} className="text-amber-400" />
+                    Interest Breakdown
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4">
+                  <HighchartsReact
+                    highcharts={Highcharts}
+                    options={interestChart}
+                  />
+                </CardContent>
+              </Card>
 
-          {/* Monthly Savings */}
-          <Card className="bg-gradient-to-br from-gray-900/50 to-slate-900/50 border-gray-700/30">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg text-gray-200 flex items-center gap-2">
-                <TrendingUp size={20} className="text-green-400" />
-                Savings Trend
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4">
-              <HighchartsReact
-                highcharts={Highcharts}
-                options={monthlySavingsChart}
-              />
-            </CardContent>
-          </Card>
-        </div>
+              <Card className="bg-gradient-to-br from-gray-900/50 to-slate-900/50 border-gray-700/30">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg text-gray-200 flex items-center gap-2">
+                    <TrendingUp size={20} className="text-green-400" />
+                    Savings Trend
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4">
+                  <HighchartsReact
+                    highcharts={Highcharts}
+                    options={monthlySavingsChart}
+                  />
+                </CardContent>
+              </Card>
+            </div>
 
-        {/* Full Width Charts */}
-        <div className="grid grid-cols-1 gap-6">
-          {/* Monthly Transaction Trends */}
-          <Card className="bg-gradient-to-br from-gray-900/50 to-slate-900/50 border-gray-700/30">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg text-gray-200 flex items-center gap-2">
-                <TrendingUp size={20} className="text-cyan-400" />
-                Monthly Activity
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4">
-              <HighchartsReact
-                highcharts={Highcharts}
-                options={monthlyTransactionsChart}
-              />
-            </CardContent>
-          </Card>
-        </div>
+            <div className="grid grid-cols-1 gap-6">
+              <Card className="bg-gradient-to-br from-gray-900/50 to-slate-900/50 border-gray-700/30">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg text-gray-200 flex items-center gap-2">
+                    <TrendingUp size={20} className="text-cyan-400" />
+                    Monthly Activity
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4">
+                  <HighchartsReact
+                    highcharts={Highcharts}
+                    options={monthlyTransactionsChart}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+          </>
+        )}
       </div>
     </main>
   );
