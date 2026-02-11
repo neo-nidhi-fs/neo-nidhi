@@ -54,7 +54,6 @@ export default function AdminDashboard() {
   const [message, setMessage] = useState('');
   const [addUserLoading, setAddUserLoading] = useState(false);
   const [addSchemeLoading, setAddSchemeLoading] = useState(false);
-  const [calcInterestLoading, setCalcInterestLoading] = useState(false);
   const [resetPasswordLoading, setResetPasswordLoading] = useState<
     string | null
   >(null);
@@ -120,29 +119,6 @@ export default function AdminDashboard() {
     }
     fetchUsers();
   }, []);
-
-  async function handleCalcInterest() {
-    setCalcInterestLoading(true);
-    try {
-      const res = await fetch('/api/run-interest');
-
-      const data = await res.json();
-
-      if (res.ok) {
-        setMessage(
-          '✅ Interest calculated successfully for all users for today'
-        );
-        console.log('Interest results:', data.results); // optional: log details
-      } else {
-        setMessage(`❌ Error: ${data.error}`);
-      }
-    } catch (error) {
-      setMessage('❌ Something went wrong while calculating interest');
-      console.error(error);
-    } finally {
-      setCalcInterestLoading(false);
-    }
-  }
 
   // Handle new user creation
   async function handleAddUser(e: React.FormEvent<HTMLFormElement>) {
@@ -299,20 +275,6 @@ export default function AdminDashboard() {
             Manage users, schemes, and platform settings
           </p>
           <div className="flex gap-4">
-            <Button
-              onClick={handleCalcInterest}
-              disabled={calcInterestLoading}
-              className="bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-            >
-              {calcInterestLoading ? (
-                <>
-                  <Loader size={18} className="animate-spin" />
-                  Calculating...
-                </>
-              ) : (
-                '📊 Calculate Monthly Interest'
-              )}
-            </Button>
             <Link href="/admin/reports">
               <Button className="bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-2">
                 <BarChart3 size={18} />
