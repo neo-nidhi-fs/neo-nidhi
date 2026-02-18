@@ -34,9 +34,11 @@ export default function UserDashboard() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
   const [transferLoading, setTransferLoading] = useState(false);
+  const [fdTransferLoading, setFdTransferLoading] = useState(false);
   const [loanLoading, setLoanLoading] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [transferDialogOpen, setTransferDialogOpen] = useState(false);
+  const [fdTransferDialogOpen, setFdTransferDialogOpen] = useState(false);
   const [loanDialogOpen, setLoanDialogOpen] = useState(false);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
 
@@ -99,6 +101,39 @@ export default function UserDashboard() {
       }
     } finally {
       setTransferLoading(false);
+    }
+  }
+
+  async function handleTransferToFd(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setFdTransferLoading(true);
+    const formData = new FormData(e.currentTarget);
+    const amount = Number(formData.get('fdAmount'));
+
+    try {
+      const res = await fetch('/api/transactions/transfer-fd', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user._id,
+          amount,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setMessage(`✅ ${data.message}`);
+        // Refresh user data
+        const userRes = await fetch(`/api/users/${user._id}`);
+        const userData = await userRes.json();
+        setUser(userData.data);
+
+        setTimeout(() => setFdTransferDialogOpen(false), 1500);
+      } else {
+        setMessage(`❌ Error: ${data.error}`);
+      }
+    } finally {
+      setFdTransferLoading(false);
     }
   }
 
@@ -364,6 +399,73 @@ export default function UserDashboard() {
                       </>
                     ) : (
                       'Transfer'
+                    )}
+                  </Button>
+                </form>
+              </DialogContent>
+            </Dialog>
+
+            {/* Transfer to Fixed Deposit Dialog */}
+            <Dialog
+              open={fdTransferDialogOpen}
+              onOpenChange={setFdTransferDialogOpen}
+            >
+              <DialogTrigger asChild>
+                <Button className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-semibold py-6 flex items-center gap-2">
+                  <Banknote size={18} />
+                  Transfer to FD
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="bg-slate-800 border-slate-700 w-[90vw] sm:w-full max-w-md max-h-[90vh] overflow-y-auto p-4 sm:p-6 rounded-lg">
+                <DialogHeader>
+                  <DialogTitle className="text-white">
+                    Transfer to Fixed Deposit
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="bg-slate-700/50 border border-slate-600 rounded-lg p-3 mb-4">
+                  <p className="text-sm text-gray-300">
+                    Available Balance:{' '}
+                    <span className="font-bold text-green-400">
+                      ₹{user.savingsBalance.toFixed(2)}
+                    </span>
+                  </p>
+                  <p className="text-sm text-gray-300">
+                    Current FD:{' '}
+                    <span className="font-bold text-blue-400">
+                      ₹{(user.fd || 0).toFixed(2)}
+                    </span>
+                  </p>
+                </div>
+                <form onSubmit={handleTransferToFd} className="space-y-4">
+                  <div>
+                    <Label htmlFor="fdAmount" className="text-gray-100">
+                      Amount to Transfer (₹)
+                    </Label>
+                    <Input
+                      id="fdAmount"
+                      name="fdAmount"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max={user.savingsBalance}
+                      placeholder="0.00"
+                      required
+                      disabled={fdTransferLoading}
+                      className="bg-slate-700 border-slate-600 text-white disabled:opacity-50"
+                    />
+                  </div>
+                  <Button
+                    type="submit"
+                    disabled={fdTransferLoading}
+                    className="w-full bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {fdTransferLoading ? (
+                      <>
+                        <Loader size={18} className="animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      'Transfer to FD'
                     )}
                   </Button>
                 </form>
