@@ -35,12 +35,29 @@ export default function UserDashboard() {
   const [message, setMessage] = useState('');
   const [transferLoading, setTransferLoading] = useState(false);
   const [fdTransferLoading, setFdTransferLoading] = useState(false);
+  const [fdWithdrawLoading, setFdWithdrawLoading] = useState(false);
   const [loanLoading, setLoanLoading] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [transferDialogOpen, setTransferDialogOpen] = useState(false);
   const [fdTransferDialogOpen, setFdTransferDialogOpen] = useState(false);
+  const [fdWithdrawDialogOpen, setFdWithdrawDialogOpen] = useState(false);
   const [loanDialogOpen, setLoanDialogOpen] = useState(false);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [fdWithdrawInfo, setFdWithdrawInfo] = useState({
+    matureAmount: 0,
+    prematureAmount: 0,
+    totalFd: 0,
+    matureTransactions: [] as {
+      amount: number;
+      date: Date;
+      yearsOld: number;
+    }[],
+    prematureTransactions: [] as {
+      amount: number;
+      date: Date;
+      yearsOld: number;
+    }[],
+  });
 
   async function handleChangePassword(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -134,6 +151,53 @@ export default function UserDashboard() {
       }
     } finally {
       setFdTransferLoading(false);
+    }
+  }
+
+  async function fetchFdWithdrawInfo() {
+    try {
+      const res = await fetch(
+        `/api/transactions/withdraw-fd?userId=${user._id}`
+      );
+      const data = await res.json();
+      if (res.ok) {
+        setFdWithdrawInfo(data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching FD info:', error);
+    }
+  }
+
+  async function handleWithdrawFd(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setFdWithdrawLoading(true);
+    const formData = new FormData(e.currentTarget);
+    const amount = Number(formData.get('withdrawAmount'));
+
+    try {
+      const res = await fetch('/api/transactions/withdraw-fd', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user._id,
+          amount,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setMessage(`✅ ${data.message}`);
+        // Refresh user data
+        const userRes = await fetch(`/api/users/${user._id}`);
+        const userData = await userRes.json();
+        setUser(userData.data);
+
+        setTimeout(() => setFdWithdrawDialogOpen(false), 1500);
+      } else {
+        setMessage(`❌ Error: ${data.error}`);
+      }
+    } finally {
+      setFdWithdrawLoading(false);
     }
   }
 
@@ -471,6 +535,116 @@ export default function UserDashboard() {
                 </form>
               </DialogContent>
             </Dialog>
+
+            {/* Withdraw FD Dialog */}
+            {user.fd > 0 && (
+              <Dialog
+                open={fdWithdrawDialogOpen}
+                onOpenChange={(open) => {
+                  setFdWithdrawDialogOpen(open);
+                  if (open) fetchFdWithdrawInfo();
+                }}
+              >
+                <DialogTrigger asChild>
+                  <Button className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-semibold py-6 flex items-center gap-2">
+                    <Banknote size={18} />
+                    Withdraw FD
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="bg-slate-800 border-slate-700 w-[90vw] sm:w-full max-w-md max-h-[90vh] overflow-y-auto p-4 sm:p-6 rounded-lg">
+                  <DialogHeader>
+                    <DialogTitle className="text-white">
+                      Withdraw Fixed Deposit
+                    </DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-3 mb-4">
+                    <div className="bg-green-900/30 border border-green-500/30 rounded-lg p-3">
+                      <p className="text-sm text-gray-300">
+                        Mature Amount (3+ years):
+                      </p>
+                      <p className="text-2xl font-bold text-green-400">
+                        ₹{fdWithdrawInfo.matureAmount.toFixed(2)}
+                      </p>
+                      {fdWithdrawInfo.matureTransactions.length > 0 && (
+                        <p className="text-xs text-gray-400 mt-2">
+                          {fdWithdrawInfo.matureTransactions.length}{' '}
+                          transaction(s) ready to withdraw
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="bg-orange-900/30 border border-orange-500/30 rounded-lg p-3">
+                      <p className="text-sm text-gray-300">
+                        Premature Amount (under 3 years):
+                      </p>
+                      <p className="text-2xl font-bold text-orange-400">
+                        ₹{fdWithdrawInfo.prematureAmount.toFixed(2)}
+                      </p>
+                      {fdWithdrawInfo.prematureTransactions.length > 0 && (
+                        <p className="text-xs text-gray-400 mt-1">
+                          ⚠️ Lower interest rate applies
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="bg-slate-700/50 border border-slate-600 rounded-lg p-3">
+                      <p className="text-sm text-gray-300">Total FD Balance:</p>
+                      <p className="text-xl font-bold text-blue-400">
+                        ₹{fdWithdrawInfo.totalFd.toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <form onSubmit={handleWithdrawFd} className="space-y-4">
+                    <div>
+                      <Label htmlFor="withdrawAmount" className="text-gray-100">
+                        Amount to Withdraw (₹)
+                      </Label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max={fdWithdrawInfo.totalFd}
+                        placeholder="0.00"
+                        name="withdrawAmount"
+                        id="withdrawAmount"
+                        required
+                        disabled={fdWithdrawLoading}
+                        className="w-full px-3 py-2 bg-slate-700 border border-slate-600 text-white rounded disabled:opacity-50"
+                      />
+                    </div>
+
+                    <div className="text-xs text-gray-400 space-y-1">
+                      <p>
+                        💡 Mature amount is priority. Interest will be
+                        calculated accordingly.
+                      </p>
+                      <p>• Full interest rate applies to mature FD</p>
+                      <p>
+                        • Reduced interest rate applies to premature withdrawal
+                      </p>
+                    </div>
+
+                    <Button
+                      type="submit"
+                      disabled={
+                        fdWithdrawLoading || fdWithdrawInfo.totalFd === 0
+                      }
+                      className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                      {fdWithdrawLoading ? (
+                        <>
+                          <Loader size={18} className="animate-spin" />
+                          Processing...
+                        </>
+                      ) : (
+                        'Withdraw FD'
+                      )}
+                    </Button>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            )}
 
             {/* Pay Loan Dialog */}
             {user.loanBalance > 0 && (
