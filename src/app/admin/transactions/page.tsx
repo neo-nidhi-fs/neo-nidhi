@@ -130,6 +130,21 @@ export default function AdminTransactionsPage() {
     }
   };
 
+  const getShortTransactionType = (type: string) => {
+    const typeMap: Record<string, string> = {
+      deposit: 'dep',
+      loan: 'loan',
+      repayment: 'rep',
+      withdrawal: 'wd',
+      fd: 'fd',
+      'interest_fd': 'int_fd',
+      'interest_loan': 'int_loan',
+      'withdrawal_fd': 'wd_fd',
+      'interest_deposit': 'int_dep',
+    };
+    return typeMap[type] || type;
+  };
+
   const totalTransactions = transactions.reduce(
     (sum, tx) => sum + tx.amount,
     0
@@ -318,7 +333,10 @@ export default function AdminTransactionsPage() {
                             tx.type
                           )}`}
                         >
-                          {tx.type}
+                          <span className="sm:hidden">
+                            {getShortTransactionType(tx.type)}
+                          </span>
+                          <span className="hidden sm:inline">{tx.type}</span>
                         </TableCell>
                         <TableCell className="font-semibold text-gray-200">
                           ₹{tx.amount.toFixed(2)}

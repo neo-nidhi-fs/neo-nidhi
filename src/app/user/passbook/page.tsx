@@ -62,6 +62,21 @@ export default function PassbookPage() {
     }
   };
 
+  const getShortTransactionType = (type: string) => {
+    const typeMap: Record<string, string> = {
+      deposit: 'dep',
+      loan: 'loan',
+      repayment: 'rep',
+      withdrawal: 'wd',
+      fd: 'fd',
+      interest_fd: 'int_fd',
+      interest_loan: 'int_loan',
+      withdrawal_fd: 'wd_fd',
+      interest_deposit: 'int_dep',
+    };
+    return typeMap[type] || type;
+  };
+
   if (loading)
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-slate-950 via-blue-950 to-slate-950">
@@ -144,7 +159,10 @@ export default function PassbookPage() {
                               tx.type
                             )}`}
                           >
-                            {tx.type}
+                            <span className="sm:hidden">
+                              {getShortTransactionType(tx.type)}
+                            </span>
+                            <span className="hidden sm:inline">{tx.type}</span>
                           </TableCell>
                           <TableCell className="font-semibold text-gray-200">
                             ₹{tx.amount.toFixed(2)}

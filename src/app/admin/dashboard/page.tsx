@@ -30,6 +30,7 @@ import {
   Edit,
   Trash2,
   BarChart3,
+  Banknote,
 } from 'lucide-react';
 
 interface User {
@@ -59,6 +60,24 @@ export default function AdminDashboard() {
   >(null);
   const [userDialogOpen, setUserDialogOpen] = useState(false);
   const [schemeDialogOpen, setSchemeDialogOpen] = useState(false);
+  const [fdWithdrawDialogOpen, setFdWithdrawDialogOpen] = useState(false);
+  const [selectedUserForFd, setSelectedUserForFd] = useState<User | null>(null);
+  const [fdWithdrawLoading, setFdWithdrawLoading] = useState(false);
+  const [fdWithdrawInfo, setFdWithdrawInfo] = useState({
+    matureAmount: 0,
+    prematureAmount: 0,
+    totalFd: 0,
+    matureTransactions: [] as {
+      amount: number;
+      date: Date;
+      yearsOld: number;
+    }[],
+    prematureTransactions: [] as {
+      amount: number;
+      date: Date;
+      yearsOld: number;
+    }[],
+  });
   const [editingScheme, setEditingScheme] = useState<Scheme | null>(null);
   const [editSchemeLoading, setEditSchemeLoading] = useState(false);
   const [deleteSchemeLoading, setDeleteSchemeLoading] = useState<string | null>(
@@ -170,6 +189,55 @@ export default function AdminDashboard() {
       }
     } finally {
       setResetPasswordLoading(null);
+    }
+  }
+
+  async function fetchFdWithdrawInfo(userId: string) {
+    try {
+      const res = await fetch(`/api/transactions/withdraw-fd?userId=${userId}`);
+      const data = await res.json();
+      if (res.ok) {
+        setFdWithdrawInfo(data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching FD info:', error);
+    }
+  }
+
+  async function handleAdminWithdrawFd(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!selectedUserForFd) return;
+
+    setFdWithdrawLoading(true);
+    const formData = new FormData(e.currentTarget);
+    const amount = Number(formData.get('withdrawAmount'));
+
+    try {
+      const res = await fetch('/api/transactions/withdraw-fd', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: selectedUserForFd._id,
+          amount,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setMessage(
+          `✅ FD withdrawal successful for ${selectedUserForFd.name}: ${data.message}`
+        );
+        // Refresh users data
+        const usersRes = await fetch('/api/users');
+        const usersData = await usersRes.json();
+        setUsers(usersData.data);
+
+        setTimeout(() => setFdWithdrawDialogOpen(false), 1500);
+      } else {
+        setMessage(`❌ Error: ${data.error}`);
+      }
+    } finally {
+      setFdWithdrawLoading(false);
     }
   }
 
@@ -415,29 +483,171 @@ export default function AdminDashboard() {
                             className="text-green-200"
                           >
                             {col.type === 'action' ? (
-                              <Button
-                                onClick={() =>
-                                  handleResetPassword(u._id, u.name)
-                                }
-                                disabled={resetPasswordLoading === u._id}
-                                size="sm"
-                                className="bg-orange-600 hover:bg-orange-700 text-white flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                              >
-                                {resetPasswordLoading === u._id ? (
-                                  <>
+                              <div className="flex gap-2 flex-wrap">
+                                <Button
+                                  onClick={() =>
+                                    handleResetPassword(u._id, u.name)
+                                  }
+                                  disabled={resetPasswordLoading === u._id}
+                                  size="sm"
+                                  className="bg-orange-600 hover:bg-orange-700 text-white flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  {resetPasswordLoading === u._id ? (
                                     <Loader
                                       size={14}
                                       className="animate-spin"
                                     />
-                                    Resetting...
-                                  </>
-                                ) : (
-                                  <>
+                                  ) : (
                                     <RotateCcw size={16} />
-                                    Reset Password
-                                  </>
+                                  )}
+                                </Button>
+                                {u.fd && u.fd > 0 && (
+                                  <Dialog
+                                    open={
+                                      fdWithdrawDialogOpen &&
+                                      selectedUserForFd?._id === u._id
+                                    }
+                                    onOpenChange={(open) => {
+                                      setFdWithdrawDialogOpen(open);
+                                      if (open) {
+                                        setSelectedUserForFd(u);
+                                        fetchFdWithdrawInfo(u._id);
+                                      } else {
+                                        setSelectedUserForFd(null);
+                                      }
+                                    }}
+                                  >
+                                    <DialogTrigger asChild>
+                                      <Button
+                                        size="sm"
+                                        className="bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-2"
+                                      >
+                                        <Banknote size={16} />
+                                      </Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="bg-slate-800 border-slate-700 w-[90vw] sm:w-full max-w-md max-h-[90vh] overflow-y-auto p-4 sm:p-6 rounded-lg">
+                                      <DialogHeader>
+                                        <DialogTitle className="text-white">
+                                          Withdraw FD for {u.name}
+                                        </DialogTitle>
+                                      </DialogHeader>
+                                      <div className="space-y-3 mb-4">
+                                        <div className="bg-green-900/30 border border-green-500/30 rounded-lg p-3">
+                                          <p className="text-sm text-gray-300">
+                                            Mature Amount (3+ years):
+                                          </p>
+                                          <p className="text-2xl font-bold text-green-400">
+                                            ₹
+                                            {fdWithdrawInfo.matureAmount.toFixed(
+                                              2
+                                            )}
+                                          </p>
+                                          {fdWithdrawInfo.matureTransactions
+                                            .length > 0 && (
+                                            <p className="text-xs text-gray-400 mt-2">
+                                              {
+                                                fdWithdrawInfo
+                                                  .matureTransactions.length
+                                              }{' '}
+                                              transaction(s) ready to withdraw
+                                            </p>
+                                          )}
+                                        </div>
+
+                                        <div className="bg-orange-900/30 border border-orange-500/30 rounded-lg p-3">
+                                          <p className="text-sm text-gray-300">
+                                            Premature Amount (under 3 years):
+                                          </p>
+                                          <p className="text-2xl font-bold text-orange-400">
+                                            ₹
+                                            {fdWithdrawInfo.prematureAmount.toFixed(
+                                              2
+                                            )}
+                                          </p>
+                                          {fdWithdrawInfo.prematureTransactions
+                                            .length > 0 && (
+                                            <p className="text-xs text-gray-400 mt-1">
+                                              ⚠️ Lower interest rate applies
+                                            </p>
+                                          )}
+                                        </div>
+
+                                        <div className="bg-slate-700/50 border border-slate-600 rounded-lg p-3">
+                                          <p className="text-sm text-gray-300">
+                                            Total FD Balance:
+                                          </p>
+                                          <p className="text-xl font-bold text-blue-400">
+                                            ₹{fdWithdrawInfo.totalFd.toFixed(2)}
+                                          </p>
+                                        </div>
+                                      </div>
+
+                                      <form
+                                        onSubmit={handleAdminWithdrawFd}
+                                        className="space-y-4"
+                                      >
+                                        <div>
+                                          <Label
+                                            htmlFor={`admin-withdraw-${u._id}`}
+                                            className="text-gray-100"
+                                          >
+                                            Amount to Withdraw (₹)
+                                          </Label>
+                                          <input
+                                            type="number"
+                                            step="0.01"
+                                            min="0"
+                                            max={fdWithdrawInfo.totalFd}
+                                            placeholder="0.00"
+                                            name="withdrawAmount"
+                                            id={`admin-withdraw-${u._id}`}
+                                            required
+                                            disabled={fdWithdrawLoading}
+                                            className="w-full px-3 py-2 bg-slate-700 border border-slate-600 text-white rounded disabled:opacity-50"
+                                          />
+                                        </div>
+
+                                        <div className="text-xs text-gray-400 space-y-1">
+                                          <p>
+                                            💡 Mature amount is priority.
+                                            Interest will be calculated
+                                            accordingly.
+                                          </p>
+                                          <p>
+                                            • Full interest rate applies to
+                                            mature FD
+                                          </p>
+                                          <p>
+                                            • Reduced interest rate applies to
+                                            premature withdrawal
+                                          </p>
+                                        </div>
+
+                                        <Button
+                                          type="submit"
+                                          disabled={
+                                            fdWithdrawLoading ||
+                                            fdWithdrawInfo.totalFd === 0
+                                          }
+                                          className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                        >
+                                          {fdWithdrawLoading ? (
+                                            <>
+                                              <Loader
+                                                size={18}
+                                                className="animate-spin"
+                                              />
+                                              Processing...
+                                            </>
+                                          ) : (
+                                            'Withdraw FD'
+                                          )}
+                                        </Button>
+                                      </form>
+                                    </DialogContent>
+                                  </Dialog>
                                 )}
-                              </Button>
+                              </div>
                             ) : col.type === 'currency' ||
                               col.accessor === 'loanBalance' ? (
                               `₹${((u[col.accessor as keyof User] as number) || 0).toFixed(2)}`
