@@ -323,7 +323,7 @@ export default function AdminTransactionsPage() {
                     return (
                       <TableRow key={tx._id}>
                         <TableCell className="text-gray-200">
-                          {new Date(tx.date).toLocaleDateString()}
+                          {new Date(tx.date).toLocaleDateString('en-IN')}
                         </TableCell>
                         <TableCell className="text-gray-200">
                           {user?.name || 'Unknown'}

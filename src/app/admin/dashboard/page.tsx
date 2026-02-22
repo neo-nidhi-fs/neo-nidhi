@@ -163,7 +163,7 @@ export default function AdminDashboard() {
       } else {
         setMessage(`❌ Error: ${data.error}`);
       }
-    } catch (err) {
+    } catch {
       setMessage('❌ Something went wrong.');
     } finally {
       setAddUserLoading(false);

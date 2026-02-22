@@ -97,7 +97,24 @@ export default function Navbar() {
             >
               Dashboard
             </Link>
-            <Link href="/user/passbook">Passbook</Link>
+            <Link
+              href="/user/passbook"
+              className="text-gray-200 hover:text-blue-400 transition-colors duration-300 font-medium"
+            >
+              Passbook
+            </Link>
+            <Link
+              href="/user/quiz"
+              className="text-gray-200 hover:text-blue-400 transition-colors duration-300 font-medium"
+            >
+              Quizzes
+            </Link>
+            <Link
+              href="/user/challenges"
+              className="text-gray-200 hover:text-blue-400 transition-colors duration-300 font-medium"
+            >
+              Challenges
+            </Link>
           </>
         )}
 

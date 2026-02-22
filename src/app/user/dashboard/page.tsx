@@ -20,6 +20,8 @@ import {
   CreditCard,
   Loader,
   BarChart3,
+  Brain,
+  Trophy,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -281,6 +283,18 @@ export default function UserDashboard() {
             <Button className="bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-2">
               <BarChart3 size={18} />
               View Your Reports
+            </Button>
+          </Link>
+          <Link href="/user/quiz">
+            <Button className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2">
+              <Brain size={18} />
+              Take Quiz
+            </Button>
+          </Link>
+          <Link href="/user/challenges">
+            <Button className="bg-purple-600 hover:bg-purple-700 text-white flex items-center gap-2">
+              <Trophy size={18} />
+              Join Challenge
             </Button>
           </Link>
         </div>
