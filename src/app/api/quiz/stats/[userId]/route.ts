@@ -5,11 +5,11 @@ import mongoose from 'mongoose';
 
 export async function GET(
   req: Request,
-  { params }: { params: { userId: string } }
+  { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
     await dbConnect();
-    const { userId } = params;
+    const { userId } = await params;
     const objectId = new mongoose.Types.ObjectId(userId);
 
     // Get user's quiz stats

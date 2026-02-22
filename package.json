@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "seed": "tsx src/lib/seed.ts",
+    "seed:reset": "SEED_CLEAR_USERS=true tsx src/lib/seed.ts",
+    "restore-users": "tsx src/lib/restore-users.ts",
     "lint": "eslint",
     "format": "prettier --write .",
     "format:check": "prettier --check ."

@@ -129,13 +129,18 @@ export async function POST(req: Request) {
   }
 }
 
-export async function GET(
-  req: Request,
-  { params }: { params: { challengeId: string } }
-) {
+export async function GET(req: Request) {
   try {
     await dbConnect();
-    const { challengeId } = params;
+    const { searchParams } = new URL(req.url);
+    const challengeId = searchParams.get('challengeId');
+
+    if (!challengeId) {
+      return NextResponse.json(
+        { success: false, error: 'Challenge ID required' },
+        { status: 400 }
+      );
+    }
 
     const participants = await ChallengeParticipant.find({ challengeId })
       .populate('userId', 'name')

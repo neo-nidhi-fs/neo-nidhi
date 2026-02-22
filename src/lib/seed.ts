@@ -472,21 +472,41 @@ function generateGeneralKnowledgeQuestions(count: number): QuizQuestionData[] {
 async function seed() {
   await dbConnect();
 
-  // Clear existing data
-  await User.deleteMany({});
+  // Only clear data if explicitly requested via environment variable
+  const shouldClearUsers = process.env.SEED_CLEAR_USERS === 'true';
+
+  if (shouldClearUsers) {
+    console.log('⚠️  Clearing existing users...');
+    await User.deleteMany({});
+  } else {
+    console.log(
+      '✓ Preserving existing users (use SEED_CLEAR_USERS=true to reset)'
+    );
+  }
+
+  // Always clear quiz questions to refresh question bank
+  console.log('🗑️  Clearing quiz questions to refresh...');
   await QuizQuestion.deleteMany({});
 
-  // Seed Users
-  const admin = new User({
-    name: 'Admin',
-    age: 32,
-    role: 'admin',
-    savingsBalance: 0,
-    loanBalance: 0,
-    password: 'akashvg007!', // will be hashed automatically
-  });
+  // Seed Admin User (only if not already exists)
+  const existingAdmin = await User.findOne({ role: 'admin' });
+  const admin =
+    existingAdmin ||
+    new User({
+      name: 'Admin',
+      age: 32,
+      role: 'admin',
+      savingsBalance: 0,
+      loanBalance: 0,
+      password: 'akashvg007!', // will be hashed automatically
+    });
 
-  await admin.save();
+  if (!existingAdmin) {
+    await admin.save();
+    console.log('👤 Admin user created');
+  } else {
+    console.log('👤 Admin user already exists, skipping...');
+  }
 
   // Finance Quiz Questions
   const financeQuestions = [
