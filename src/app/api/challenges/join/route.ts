@@ -26,10 +26,16 @@ export async function POST(req: Request) {
       );
     }
 
-    // Check if challenge is active
-    if (challenge.status !== 'active') {
+    // Check if challenge is in registration status
+    if (challenge.status !== 'registration') {
       return NextResponse.json(
-        { success: false, error: 'Challenge is not active' },
+        {
+          success: false,
+          error:
+            challenge.status === 'started'
+              ? 'Challenge registration closed'
+              : 'Challenge is not available',
+        },
         { status: 400 }
       );
     }
@@ -58,21 +64,17 @@ export async function POST(req: Request) {
     const user = await User.findById(userId);
     if (!user || user.savingsBalance < challenge.registrationFee) {
       return NextResponse.json(
-        { success: false, error: 'Insufficient balance for registration' },
+        { success: false, error: 'Insufficient balance to join challenge' },
         { status: 400 }
       );
     }
 
-    // Deduct registration fee from user
-    await User.findByIdAndUpdate(userId, {
-      $inc: { savingsBalance: -challenge.registrationFee },
-    });
-
-    // Add participant
+    // Create participant record (don't deduct fee yet, it's deducted when challenge starts)
     const participant = await ChallengeParticipant.create({
       challengeId,
       userId,
       registrationFee: challenge.registrationFee,
+      status: 'registered',
     });
 
     // Update challenge
@@ -83,7 +85,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      message: `Successfully joined challenge. Registration fee: ₹${challenge.registrationFee}`,
+      message: `Successfully joined challenge. Fee will be deducted when challenge starts.`,
       data: participant,
     });
   } catch (error: unknown) {

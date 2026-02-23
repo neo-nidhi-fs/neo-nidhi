@@ -31,6 +31,7 @@ import {
   Trash2,
   BarChart3,
   Banknote,
+  Trophy,
 } from 'lucide-react';
 
 interface User {
@@ -342,7 +343,13 @@ export default function AdminDashboard() {
           <p className="text-gray-200 text-lg mb-4">
             Manage users, schemes, and platform settings
           </p>
-          <div className="flex gap-4">
+          <div className="flex gap-4 flex-wrap">
+            <Link href="/admin/challenges">
+              <Button className="bg-purple-600 hover:bg-purple-700 text-white flex items-center gap-2">
+                <Trophy size={18} />
+                Manage Challenges
+              </Button>
+            </Link>
             <Link href="/admin/reports">
               <Button className="bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-2">
                 <BarChart3 size={18} />

@@ -20,7 +20,6 @@ import {
   CreditCard,
   Loader,
   BarChart3,
-  Brain,
   Trophy,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -45,6 +44,14 @@ export default function UserDashboard() {
   const [fdWithdrawDialogOpen, setFdWithdrawDialogOpen] = useState(false);
   const [loanDialogOpen, setLoanDialogOpen] = useState(false);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [activeChallenges, setActiveChallenges] = useState<
+    {
+      _id: string;
+      title: string;
+      totalPrizePool: number;
+    }[]
+  >([]);
+  console.log('activeChallenges ==> ', activeChallenges);
   const [fdWithdrawInfo, setFdWithdrawInfo] = useState({
     matureAmount: 0,
     prematureAmount: 0,
@@ -245,11 +252,59 @@ export default function UserDashboard() {
         const userRes = await fetch(`/api/users/${session.user.id}`);
         const userData = await userRes.json();
         setUser(userData.data);
+
+        // Fetch user's active challenges
+        fetchActiveChallenges(session.user.id);
       }
       setLoading(false);
     }
     fetchUser();
   }, []);
+
+  const fetchActiveChallenges = async (userId: string) => {
+    try {
+      // Get all challenges
+      const challengesRes = await fetch('/api/challenges');
+      const challengesData = await challengesRes.json();
+
+      // Get user's challenge participations
+      const participationRes = await fetch(`/api/challenges/user/${userId}`);
+      const participationData = await participationRes.json();
+
+      if (
+        challengesData.success &&
+        participationData.success &&
+        participationData.data.length > 0
+      ) {
+        // Filter challenges that are 'started' and user has participated in
+        const active = challengesData.data.filter(
+          (challenge: {
+            _id: string;
+            status: string;
+            title: string;
+            totalPrizePool?: number;
+          }) =>
+            challenge.status === 'started' &&
+            participationData.data.some(
+              (p: { challengeId: string; status: string }) =>
+                p.challengeId === challenge._id && p.status === 'started'
+            )
+        );
+
+        setActiveChallenges(
+          active.map(
+            (c: { _id: string; title: string; totalPrizePool?: number }) => ({
+              _id: c._id,
+              title: c.title,
+              totalPrizePool: c.totalPrizePool,
+            })
+          )
+        );
+      }
+    } catch (error) {
+      console.error('Error fetching active challenges:', error);
+    }
+  };
 
   if (loading)
     return (
@@ -340,6 +395,43 @@ export default function UserDashboard() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Active Challenges Section */}
+        {activeChallenges.length > 0 && (
+          <div className="mb-12">
+            <h2 className="text-2xl font-bold text-purple-400 mb-6">
+              Active Challenges
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {activeChallenges.map((challenge) => (
+                <Card
+                  key={challenge._id}
+                  className="bg-gradient-to-br from-purple-900/30 to-pink-900/30 border-purple-400/30 hover:border-purple-400/50 transition-all duration-300"
+                >
+                  <CardHeader>
+                    <CardTitle className="text-purple-400">
+                      {challenge.title}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="bg-slate-700/30 p-3 rounded">
+                      <p className="text-xs text-gray-400">Prize Pool</p>
+                      <p className="text-2xl font-bold text-purple-300">
+                        ₹{challenge.totalPrizePool}
+                      </p>
+                    </div>
+                    <Link href={`/user/challenges/${challenge._id}`}>
+                      <Button className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold flex items-center justify-center gap-2">
+                        <Trophy size={18} />
+                        Start {challenge.title}
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Password Change Dialog */}
         <div className="space-y-4 mb-12">

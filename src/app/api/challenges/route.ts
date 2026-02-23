@@ -5,16 +5,14 @@ import { Challenge } from '@/models/Challenge';
 export async function GET(req: Request) {
   try {
     await dbConnect();
-    const { searchParams } = new URL(req.url);
-    const status = searchParams.get('status') || 'active';
-    const category = searchParams.get('category');
 
-    const query: Record<string, string | null> = { status };
-    if (category) query.category = category;
-
-    const challenges = await Challenge.find(query)
+    // Fetch all challenges that are open for registration or already started
+    const challenges = await Challenge.find({
+      status: { $in: ['registration', 'started'] },
+    })
       .populate('createdBy', 'name')
       .sort({ createdAt: -1 });
+    console.log('challenges ==> ', challenges);
 
     return NextResponse.json({
       success: true,
@@ -29,48 +27,8 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  try {
-    await dbConnect();
-    const body = await req.json();
-    const {
-      userId,
-      title,
-      description,
-      category,
-      registrationFee,
-      maxParticipants,
-      startDate,
-      endDate,
-    } = body;
-
-    if (!userId || !title || !registrationFee || !maxParticipants) {
-      return NextResponse.json(
-        { success: false, error: 'Missing required fields' },
-        { status: 400 }
-      );
-    }
-
-    const challenge = await Challenge.create({
-      title,
-      description,
-      category: category || 'finance',
-      registrationFee,
-      maxParticipants,
-      createdBy: userId,
-      startDate: startDate || new Date(),
-      endDate: endDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
-      totalPrizePool: registrationFee * maxParticipants,
-    });
-
-    return NextResponse.json({
-      success: true,
-      message: 'Challenge created successfully',
-      data: challenge,
-    });
-  } catch (error: unknown) {
-    return NextResponse.json(
-      { success: false, error: (error as Error).message },
-      { status: 500 }
-    );
-  }
+  return NextResponse.json(
+    { success: false, error: 'Only admins can create challenges' },
+    { status: 403 }
+  );
 }
