@@ -150,18 +150,45 @@ function generateGeneralKnowledgeQuestions(count: number): QuizQuestionData[] {
     return arr;
   };
 
+  // Helper function to get unique options
+  const getUniqueOptions = (
+    correctAnswer: string,
+    options: string[],
+    count: number = 4
+  ): string[] => {
+    const uniqueOptions = new Set<string>([correctAnswer]);
+    const availableOptions = options.filter((opt) => opt !== correctAnswer);
+
+    // Shuffle available options
+    const shuffled = shuffle(availableOptions);
+
+    // Add unique options until we have enough
+    for (const opt of shuffled) {
+      if (uniqueOptions.size >= count) break;
+      uniqueOptions.add(opt);
+    }
+
+    // If we still don't have enough unique options, we need to create variants
+    while (uniqueOptions.size < count) {
+      const variant = `${correctAnswer} (${uniqueOptions.size})`;
+      if (!uniqueOptions.has(variant)) {
+        uniqueOptions.add(variant);
+      } else {
+        uniqueOptions.add(`${correctAnswer} variant ${uniqueOptions.size}`);
+      }
+    }
+
+    return shuffle(Array.from(uniqueOptions));
+  };
+
   // Generate questions
 
   // Geography questions - Countries and Capitals
   for (let i = 0; i < 800; i++) {
     const country = countries[i % countries.length];
-    const options = [
-      country.capital,
-      countries[(i + 1) % countries.length].capital,
-      countries[(i + 2) % countries.length].capital,
-      countries[(i + 3) % countries.length].capital,
-    ];
-    const shuffledOptions = shuffle(options);
+    const availableCapitals = countries.map((c) => c.capital);
+    const capitalOptions = getUniqueOptions(country.capital, availableCapitals);
+    const shuffledOptions = shuffle(capitalOptions);
     const difficultyIndex = Math.floor(i / 200) % 4;
     const difficulties: Array<'easy' | 'medium' | 'hard'> = [
       'easy',
@@ -183,13 +210,9 @@ function generateGeneralKnowledgeQuestions(count: number): QuizQuestionData[] {
   // Science questions - Elements
   for (let i = 0; i < 600; i++) {
     const element = elements[i % elements.length];
-    const options = [
-      element.symbol,
-      elements[(i + 1) % elements.length].symbol,
-      elements[(i + 2) % elements.length].symbol,
-      elements[(i + 3) % elements.length].symbol,
-    ];
-    const shuffledOptions = shuffle(options);
+    const availableSymbols = elements.map((e) => e.symbol);
+    const symbolOptions = getUniqueOptions(element.symbol, availableSymbols);
+    const shuffledOptions = shuffle(symbolOptions);
     const diffIdx = Math.floor(i / 200) % 3;
     const diffs: Array<'easy' | 'medium' | 'hard'> = ['easy', 'medium', 'hard'];
     const pts: number[] = [10, 20, 30];
@@ -206,18 +229,15 @@ function generateGeneralKnowledgeQuestions(count: number): QuizQuestionData[] {
   // History questions - Years and Events
   for (let i = 0; i < 900; i++) {
     const event = historicalEvents[i % historicalEvents.length];
-    const options = [
-      event.year,
-      event.year - 10,
-      event.year + 10,
-      event.year - 5,
-    ];
-    const shuffledOptions = shuffle(options.map((y) => y.toString()));
+    const correctYearStr = event.year.toString();
+    const availableYears = historicalEvents.map((e) => e.year.toString());
+    const yearOptions = getUniqueOptions(correctYearStr, availableYears);
+    const shuffledOptions = shuffle(yearOptions);
     questions.push({
       category: 'general',
       question: `In which year did the ${event.event} occur?`,
       options: shuffledOptions,
-      correctAnswer: shuffledOptions.indexOf(event.year.toString()),
+      correctAnswer: shuffledOptions.indexOf(correctYearStr),
       difficulty: (['medium', 'medium', 'hard'] as const)[
         Math.floor(i / 300) % 3
       ],
@@ -228,13 +248,9 @@ function generateGeneralKnowledgeQuestions(count: number): QuizQuestionData[] {
   // Literature questions - Books and Authors
   for (let i = 0; i < 700; i++) {
     const book = books[i % books.length];
-    const options = [
-      book.author,
-      books[(i + 1) % books.length].author,
-      books[(i + 2) % books.length].author,
-      books[(i + 3) % books.length].author,
-    ];
-    const shuffledOptions = shuffle(options);
+    const availableAuthors = books.map((b) => b.author);
+    const authorOptions = getUniqueOptions(book.author, availableAuthors);
+    const shuffledOptions = shuffle(authorOptions);
     const bIdx = Math.floor(i / 233) % 3;
     const bDiffs: Array<'easy' | 'medium' | 'hard'> = [
       'easy',
@@ -255,13 +271,9 @@ function generateGeneralKnowledgeQuestions(count: number): QuizQuestionData[] {
   // Rivers questions
   for (let i = 0; i < 500; i++) {
     const river = rivers[i % rivers.length];
-    const options = [
-      river.country,
-      rivers[(i + 1) % rivers.length].country,
-      rivers[(i + 2) % rivers.length].country,
-      rivers[(i + 3) % rivers.length].country,
-    ];
-    const shuffledOptions = shuffle(options);
+    const availableCountries = rivers.map((r) => r.country);
+    const countryOptions = getUniqueOptions(river.country, availableCountries);
+    const shuffledOptions = shuffle(countryOptions);
     const rIdx = Math.floor(i / 166) % 3;
     const rDiffs: Array<'easy' | 'medium' | 'hard'> = [
       'easy',
@@ -282,13 +294,9 @@ function generateGeneralKnowledgeQuestions(count: number): QuizQuestionData[] {
   // Scientists and their discoveries
   for (let i = 0; i < 700; i++) {
     const scientist = scientists[i % scientists.length];
-    const options = [
-      scientist.field,
-      scientists[(i + 1) % scientists.length].field,
-      scientists[(i + 2) % scientists.length].field,
-      scientists[(i + 3) % scientists.length].field,
-    ];
-    const shuffledOptions = shuffle(options);
+    const availableFields = scientists.map((s) => s.field);
+    const fieldOptions = getUniqueOptions(scientist.field, availableFields);
+    const shuffledOptions = shuffle(fieldOptions);
     const sIdx = Math.floor(i / 233) % 3;
     const sDiffs: Array<'easy' | 'medium' | 'hard'> = [
       'easy',
@@ -309,13 +317,9 @@ function generateGeneralKnowledgeQuestions(count: number): QuizQuestionData[] {
   // Planets questions
   for (let i = 0; i < 500; i++) {
     const planet = planets[i % planets.length];
-    const options = [
-      planet.type,
-      planets[(i + 1) % planets.length].type,
-      planets[(i + 2) % planets.length].type,
-      planets[(i + 3) % planets.length].type,
-    ];
-    const shuffledOptions = shuffle(options);
+    const availableTypes = planets.map((p) => p.type);
+    const typeOptions = getUniqueOptions(planet.type, availableTypes);
+    const shuffledOptions = shuffle(typeOptions);
     const pIdx = Math.floor(i / 166) % 3;
     const pDiffs: Array<'easy' | 'medium' | 'hard'> = [
       'easy',
@@ -336,13 +340,9 @@ function generateGeneralKnowledgeQuestions(count: number): QuizQuestionData[] {
   // Animals questions
   for (let i = 0; i < 400; i++) {
     const animal = animals[i % animals.length];
-    const options = [
-      animal.habitat,
-      animals[(i + 1) % animals.length].habitat,
-      animals[(i + 2) % animals.length].habitat,
-      animals[(i + 3) % animals.length].habitat,
-    ];
-    const shuffledOptions = shuffle(options);
+    const availableHabitats = animals.map((a) => a.habitat);
+    const habitatOptions = getUniqueOptions(animal.habitat, availableHabitats);
+    const shuffledOptions = shuffle(habitatOptions);
     const aIdx = Math.floor(i / 133) % 3;
     const aDiffs: Array<'easy' | 'medium' | 'hard'> = [
       'easy',
@@ -363,13 +363,9 @@ function generateGeneralKnowledgeQuestions(count: number): QuizQuestionData[] {
   // Technology & Inventions
   for (let i = 0; i < 600; i++) {
     const tech = technologies[i % technologies.length];
-    const options = [
-      tech.inventor,
-      technologies[(i + 1) % technologies.length].inventor,
-      technologies[(i + 2) % technologies.length].inventor,
-      technologies[(i + 3) % technologies.length].inventor,
-    ];
-    const shuffledOptions = shuffle(options);
+    const availableInventors = technologies.map((t) => t.inventor);
+    const inventorOptions = getUniqueOptions(tech.inventor, availableInventors);
+    const shuffledOptions = shuffle(inventorOptions);
     const tIdx = Math.floor(i / 200) % 3;
     const tDiffs: Array<'easy' | 'medium' | 'hard'> = [
       'medium',
@@ -390,13 +386,12 @@ function generateGeneralKnowledgeQuestions(count: number): QuizQuestionData[] {
   // Mountains questions
   for (let i = 0; i < 300; i++) {
     const mountain = mountains[i % mountains.length];
-    const options = [
+    const availableCountries = mountains.map((m) => m.country);
+    const countryOptions = getUniqueOptions(
       mountain.country,
-      mountains[(i + 1) % mountains.length].country,
-      mountains[(i + 2) % mountains.length].country,
-      mountains[(i + 3) % mountains.length].country,
-    ];
-    const shuffledOptions = shuffle(options);
+      availableCountries
+    );
+    const shuffledOptions = shuffle(countryOptions);
     const mIdx = Math.floor(i / 100) % 3;
     const mDiffs: Array<'easy' | 'medium' | 'hard'> = [
       'medium',
@@ -471,18 +466,6 @@ function generateGeneralKnowledgeQuestions(count: number): QuizQuestionData[] {
 
 async function seed() {
   await dbConnect();
-
-  // Only clear data if explicitly requested via environment variable
-  const shouldClearUsers = process.env.SEED_CLEAR_USERS === 'true';
-
-  if (shouldClearUsers) {
-    console.log('⚠️  Clearing existing users...');
-    await User.deleteMany({});
-  } else {
-    console.log(
-      '✓ Preserving existing users (use SEED_CLEAR_USERS=true to reset)'
-    );
-  }
 
   // Always clear quiz questions to refresh question bank
   console.log('🗑️  Clearing quiz questions to refresh...');

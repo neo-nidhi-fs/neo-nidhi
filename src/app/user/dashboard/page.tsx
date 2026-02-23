@@ -285,18 +285,6 @@ export default function UserDashboard() {
               View Your Reports
             </Button>
           </Link>
-          <Link href="/user/quiz">
-            <Button className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2">
-              <Brain size={18} />
-              Take Quiz
-            </Button>
-          </Link>
-          <Link href="/user/challenges">
-            <Button className="bg-purple-600 hover:bg-purple-700 text-white flex items-center gap-2">
-              <Trophy size={18} />
-              Join Challenge
-            </Button>
-          </Link>
         </div>
 
         {/* Stats Cards */}

@@ -15,6 +15,13 @@ type Question = {
   points: number;
 };
 
+type AnswerDetail = {
+  questionId: string;
+  selectedOption: number;
+  isCorrect: boolean;
+  correctAnswer: number;
+};
+
 type QuizResult = {
   score: number;
   correctAnswers: number;
@@ -42,6 +49,10 @@ export default function QuizPage() {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [result, setResult] = useState<QuizResult | null>(null);
+  const [answerDetails, setAnswerDetails] = useState<AnswerDetail[]>([]);
+  const [reviewQuestions, setReviewQuestions] = useState<
+    Array<Question & { correctAnswer: number }>
+  >([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   // Leaderboard is shown in results screen
 
@@ -49,7 +60,7 @@ export default function QuizPage() {
     setLoading(true);
     try {
       const res = await fetch(
-        `/api/quiz?category=${selectedCategory}&count=10`
+        `/api/quiz?category=${selectedCategory}&count=10&userId=${session?.user?.id || ''}`
       );
       const data = await res.json();
       if (data.success) {
@@ -112,6 +123,30 @@ export default function QuizPage() {
       if (data.success) {
         setResult(data.data);
         setSubmitted(true);
+
+        // Fetch the exact questions that were answered with correct answers
+        const questionIds = answers.map((a) => a.questionId).join(',');
+        const reviewQuestionsRes = await fetch(
+          `/api/quiz?category=${category}&questionIds=${questionIds}&review=true`
+        );
+        const reviewData = await reviewQuestionsRes.json();
+        const fetchedReviewQuestions = reviewData.success
+          ? reviewData.data
+          : [];
+        setReviewQuestions(fetchedReviewQuestions);
+
+        // Build answer details with correct answers for review
+        const details: AnswerDetail[] = answers.map((answer, idx) => {
+          const correctAnswer = fetchedReviewQuestions[idx]?.correctAnswer || 0;
+          return {
+            questionId: answer.questionId,
+            selectedOption: answer.selectedOption,
+            isCorrect: answer.selectedOption === correctAnswer,
+            correctAnswer,
+          };
+        });
+        setAnswerDetails(details);
+
         if (category) {
           await fetchLeaderboard(category);
         }
@@ -425,6 +460,90 @@ export default function QuizPage() {
           </>
         )}
 
+        {/* Answer Review Section */}
+        {reviewQuestions.length > 0 && answerDetails.length > 0 && (
+          <Card className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 border-slate-700 mb-8">
+            <CardHeader>
+              <CardTitle className="text-cyan-400">
+                Review Your Answers
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                {reviewQuestions.map((question, idx) => {
+                  const answer = answerDetails[idx];
+                  const isCorrect = answer?.isCorrect || false;
+                  const selectedOption = answer?.selectedOption;
+                  const correctOption = question.correctAnswer;
+
+                  return (
+                    <div
+                      key={question._id}
+                      className="border-b border-slate-700 pb-6 last:border-b-0"
+                    >
+                      <div className="mb-4">
+                        <p className="text-sm text-cyan-400 font-semibold">
+                          Question {idx + 1}
+                        </p>
+                        <p className="text-gray-100 text-lg mt-2">
+                          {question.question}
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {question.options.map((option, optIdx) => {
+                          let bgColor = 'bg-slate-700/30 border-slate-600';
+                          let textColor = 'text-gray-300';
+
+                          // User selected this option
+                          if (selectedOption === optIdx) {
+                            if (isCorrect) {
+                              // User was correct
+                              bgColor = 'bg-green-700/30 border-green-400';
+                              textColor = 'text-green-300 font-semibold';
+                            } else {
+                              // User was wrong
+                              bgColor = 'bg-red-700/30 border-red-400';
+                              textColor = 'text-red-300 font-semibold';
+                            }
+                          }
+                          // This is the correct answer (and user didn't select it)
+                          else if (optIdx === correctOption && !isCorrect) {
+                            bgColor = 'bg-blue-700/30 border-blue-400';
+                            textColor = 'text-blue-300 font-semibold';
+                          }
+
+                          return (
+                            <div
+                              key={optIdx}
+                              className={`p-3 rounded-lg border-2 ${bgColor} ${textColor}`}
+                            >
+                              <p className="text-sm">
+                                {String.fromCharCode(65 + optIdx)}. {option}
+                              </p>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {!isCorrect && (
+                        <div className="mt-4 p-3 bg-blue-900/20 border border-blue-400/30 rounded-lg">
+                          <p className="text-sm text-blue-300">
+                            <span className="font-semibold">
+                              Correct Answer:
+                            </span>{' '}
+                            {question.options[correctOption]}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Actions */}
         <div className="flex gap-4 flex-wrap justify-center">
           <Button
@@ -434,6 +553,8 @@ export default function QuizPage() {
               setAnswers([]);
               setResult(null);
               setSubmitted(false);
+              setAnswerDetails([]);
+              setReviewQuestions([]);
             }}
             className="bg-blue-600 hover:bg-blue-700 flex items-center gap-2"
           >
