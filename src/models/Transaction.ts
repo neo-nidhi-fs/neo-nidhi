@@ -11,6 +11,8 @@ export interface ITransaction extends Document {
     | 'interest_fd'
     | 'interest_loan'
     | 'withdrawal_fd'
+    | 'challenge_fee'
+    | 'challenge_reward'
     | 'interest_deposit';
   amount: number;
   date: Date;
@@ -26,6 +28,8 @@ const TransactionSchema: Schema<ITransaction> = new Schema({
       'repayment',
       'withdrawal',
       'fd',
+      'challenge_fee',
+      'challenge_reward',
       'interest_fd',
       'withdrawal_fd',
       'interest_loan',

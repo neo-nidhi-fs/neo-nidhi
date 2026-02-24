@@ -13,7 +13,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Plus, Edit2, Trash2, Play, Loader } from 'lucide-react';
+import {
+  Plus,
+  Edit2,
+  Trash2,
+  Play,
+  Loader,
+  Pause,
+  StopCircleIcon,
+} from 'lucide-react';
 
 type Challenge = {
   _id: string;
@@ -146,6 +154,26 @@ export default function AdminChallengesPage() {
     }
   };
 
+  const handleFinish = async (id: string) => {
+    if (!confirm('Finish this challenge? This cannot be undone.')) return;
+
+    try {
+      const res = await fetch(`/api/admin/challenges/${id}/finish`, {
+        method: 'POST',
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setMessage('✅ Challenge finished!');
+        fetchChallenges();
+      } else {
+        setMessage(`❌ ${data.error}`);
+      }
+    } catch (error) {
+      setMessage(`❌ Error finishing challenge: ${error}`);
+    }
+  };
+
   const handleEdit = (challenge: Challenge) => {
     setFormData({
       title: challenge.title,
@@ -165,11 +193,11 @@ export default function AdminChallengesPage() {
     setFormData({
       title: '',
       description: '',
-      category: 'finance',
-      questionCount: 10,
-      registrationFee: 100,
-      maxParticipants: 50,
-      totalPrizePool: 5000,
+      category: 'general',
+      questionCount: 20,
+      registrationFee: 10,
+      maxParticipants: 5,
+      totalPrizePool: 50,
       durationMinutes: 30,
     });
     setEditingId(null);
@@ -446,6 +474,7 @@ export default function AdminChallengesPage() {
                           <Play size={16} />
                           Start Challenge
                         </Button>
+
                         <Button
                           onClick={() => handleEdit(challenge)}
                           className="bg-blue-600 hover:bg-blue-700 flex items-center gap-2"
@@ -454,6 +483,15 @@ export default function AdminChallengesPage() {
                           Edit
                         </Button>
                       </>
+                    )}
+                    {challenge.status === 'started' && (
+                      <Button
+                        onClick={() => handleFinish(challenge._id)}
+                        className="bg-green-600 hover:bg-green-700 flex items-center gap-2"
+                      >
+                        <StopCircleIcon size={16} />
+                        Finish Challenge
+                      </Button>
                     )}
 
                     <Button

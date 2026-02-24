@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { dbConnect } from '@/lib/dbConnect';
 import { Challenge } from '@/models/Challenge';
+import { Transaction } from '@/models/Transaction';
 import { ChallengeParticipant } from '@/models/ChallengeParticipant';
 import { User } from '@/models/User';
 
@@ -47,6 +48,13 @@ export async function POST(
       if (user) {
         user.savingsBalance -= participant.registrationFee;
         await user.save();
+        const transaction = new Transaction({
+          userId: participant.userId,
+          type: 'challenge_fee',
+          amount: participant.registrationFee,
+          date: new Date(),
+        });
+        await transaction.save();
       }
 
       // Update participant status to 'started'
