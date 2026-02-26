@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -89,6 +89,10 @@ export default function QuizPage() {
       console.error('Error fetching leaderboard:', error);
     }
   };
+
+  useEffect(() => {
+    fetchLeaderboard('general');
+  }, []);
 
   const handleAnswer = (selectedOption: number) => {
     const newAnswers = [...answers];
@@ -225,7 +229,8 @@ export default function QuizPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-gray-300 mb-4">
-                  Test your general knowledge across various topics
+                  Test your general knowledge across various topics and stay
+                  sharp
                 </p>
                 <Button className="w-full bg-purple-600 hover:bg-purple-700 flex items-center justify-center gap-2">
                   <Brain size={18} />
