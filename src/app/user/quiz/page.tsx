@@ -319,7 +319,7 @@ export default function QuizPage() {
                     <Button
                       key={idx}
                       onClick={() => handleAnswer(idx)}
-                      className={`w-full justify-start text-left h-auto py-3 px-4 ${
+                      className={`w-full justify-start text-left h-auto py-3 flex-wrap px-4 ${
                         answers[currentQuestion]?.selectedOption === idx
                           ? 'bg-blue-600 border border-blue-400'
                           : 'bg-slate-700 hover:bg-slate-600'
