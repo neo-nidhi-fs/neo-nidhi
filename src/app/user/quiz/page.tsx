@@ -4,13 +4,32 @@ import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Brain, Loader, Trophy, ArrowRight } from 'lucide-react';
+import { Brain, Loader, Trophy, ArrowRight, Info } from 'lucide-react';
 import Link from 'next/link';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from '@/components/ui/drawer';
+import Image from 'next/image';
+import { extractKeywordPhrase } from '@/lib/getKeyword';
 
 type Question = {
   _id: string;
   question: string;
   options: string[];
+  keyword?: string;
+  subCategory?: string;
   difficulty: string;
   points: number;
 };
@@ -37,6 +56,12 @@ type LeaderboardEntry = {
   totalAttempts: number;
   avgScore: number;
 };
+type Wiki = {
+  title: string;
+  thumbnail?: string;
+  summary: string;
+  url?: string;
+};
 
 export default function QuizPage() {
   const { data: session } = useSession();
@@ -50,17 +75,20 @@ export default function QuizPage() {
   const [submitted, setSubmitted] = useState(false);
   const [result, setResult] = useState<QuizResult | null>(null);
   const [answerDetails, setAnswerDetails] = useState<AnswerDetail[]>([]);
+  const [subCategories, setSubCategories] = useState<string[]>([]);
+  const [selectedSubCategory, setSelectedSubCategory] = useState<string>('');
   const [reviewQuestions, setReviewQuestions] = useState<
     Array<Question & { correctAnswer: number }>
   >([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [wikipediaSummary, setWikipediaSummary] = useState<Wiki | null>(null);
   // Leaderboard is shown in results screen
 
   const fetchQuestions = async (selectedCategory: 'finance' | 'general') => {
     setLoading(true);
     try {
       const res = await fetch(
-        `/api/quiz?category=${selectedCategory}&count=10&userId=${session?.user?.id || ''}`
+        `/api/quiz?category=${selectedCategory}&subCategory=${selectedSubCategory}&count=10&userId=${session?.user?.id || ''}`
       );
       const data = await res.json();
       if (data.success) {
@@ -73,6 +101,35 @@ export default function QuizPage() {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchWikipediaSummary = async (query: string) => {
+    try {
+      const keyword = extractKeywordPhrase(query).replace(' ', '_');
+      const res = await fetch(`/api/quiz/wiki?query=${keyword}`);
+      const data = await res.json();
+      if (data) {
+        setWikipediaSummary(data);
+      } else {
+        return 'No additional information available.';
+      }
+    } catch (error) {
+      console.error('Error fetching Wikipedia summary:', error);
+      return 'No additional information available.';
+    }
+  };
+
+  const fetchSubCategories = async () => {
+    try {
+      const res = await fetch(`/api/quiz/subCategory`);
+
+      const data = await res.json();
+      if (data.success) {
+        setSubCategories(data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching subcategories:', error);
     }
   };
 
@@ -92,6 +149,7 @@ export default function QuizPage() {
 
   useEffect(() => {
     fetchLeaderboard('general');
+    fetchSubCategories();
   }, []);
 
   const handleAnswer = (selectedOption: number) => {
@@ -214,14 +272,7 @@ export default function QuizPage() {
                 </Button>
               </CardContent>
             </Card>
-
-            <Card
-              className="bg-gradient-to-br from-purple-900/30 to-pink-900/30 border-purple-400/30 hover:border-purple-400/50 transition cursor-pointer"
-              onClick={() => {
-                fetchQuestions('general');
-                fetchLeaderboard('general');
-              }}
-            >
+            <Card className="bg-gradient-to-br from-purple-900/30 to-pink-900/30 border-purple-400/30 hover:border-purple-400/50 transition cursor-pointer">
               <CardHeader>
                 <CardTitle className="text-purple-400">
                   General Knowledge
@@ -229,10 +280,33 @@ export default function QuizPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-gray-300 mb-4">
-                  Test your general knowledge across various topics and stay
-                  sharp
+                  Test your general knowledge across various topics
                 </p>
-                <Button className="w-full bg-purple-600 hover:bg-purple-700 flex items-center justify-center gap-2">
+                <div className="flex justify-center items-center mb-4">
+                  <Select
+                    value={selectedSubCategory}
+                    onValueChange={(value) => setSelectedSubCategory(value)}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a subCategory" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        {subCategories.map((cat) => (
+                          <SelectItem key={cat} value={cat}>
+                            {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button
+                  onClick={() => {
+                    fetchQuestions('general');
+                  }}
+                  className="w-full pt-2 bg-purple-600 hover:bg-purple-700 flex items-center justify-center gap-2"
+                >
                   <Brain size={18} />
                   Start GK Quiz
                 </Button>
@@ -325,10 +399,9 @@ export default function QuizPage() {
                           : 'bg-slate-700 hover:bg-slate-600'
                       }`}
                     >
-                      <span className="font-semibold mr-3">
-                        {String.fromCharCode(65 + idx)}.
+                      <span className="font-semibold mr-3 text-wrap">
+                        {String.fromCharCode(65 + idx)}.{option}
                       </span>
-                      {option}
                     </Button>
                   ))}
                 </div>
@@ -531,16 +604,83 @@ export default function QuizPage() {
                         })}
                       </div>
 
-                      {!isCorrect && (
-                        <div className="mt-4 p-3 bg-blue-900/20 border border-blue-400/30 rounded-lg">
-                          <p className="text-sm text-blue-300">
-                            <span className="font-semibold">
-                              Correct Answer:
-                            </span>{' '}
-                            {question.options[correctOption]}
-                          </p>
-                        </div>
-                      )}
+                      <div className="mt-4 p-3 bg-blue-900/20 border border-blue-400/30 rounded-lg">
+                        <p className="text-sm text-blue-300">
+                          <span className="font-semibold">
+                            {!isCorrect && 'Correct'} Answer:
+                          </span>{' '}
+                          {question.options[question.correctAnswer]}
+                          <Drawer direction="bottom">
+                            <DrawerTrigger asChild>
+                              <Info
+                                className="inline-block ml-2 text-blue-400"
+                                size={16}
+                                onClick={async () =>
+                                  fetchWikipediaSummary(
+                                    question?.keyword || 'dog'
+                                  )
+                                }
+                              />
+                            </DrawerTrigger>
+                            <DrawerContent className="bg-gradient-to-b from-slate-800 to-slate-900">
+                              <DrawerHeader className="border-b border-slate-700">
+                                <DrawerTitle className="text-cyan-400 text-xl">
+                                  {question.question}
+                                </DrawerTitle>
+                              </DrawerHeader>
+                              <div className="p-6 overflow-y-auto max-h-[70vh]">
+                                {wikipediaSummary ? (
+                                  <div className="space-y-4">
+                                    {wikipediaSummary.thumbnail && (
+                                      <div className="flex justify-center">
+                                        <Image
+                                          src={
+                                            wikipediaSummary?.thumbnail ||
+                                            '/placeholder.png'
+                                          }
+                                          alt={wikipediaSummary?.title}
+                                          width={300}
+                                          height={200}
+                                          className="rounded-lg shadow-lg border border-slate-600"
+                                        />
+                                      </div>
+                                    )}
+                                    <div>
+                                      <h3 className="text-lg font-semibold text-white mb-3">
+                                        {wikipediaSummary.title}
+                                      </h3>
+                                      <p className="text-gray-300 leading-relaxed text-justify">
+                                        {wikipediaSummary.summary}
+                                      </p>
+                                    </div>
+                                    {wikipediaSummary.url && (
+                                      <Button
+                                        asChild
+                                        className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white"
+                                      >
+                                        <a
+                                          href={wikipediaSummary.url}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                        >
+                                          Read Full Article on Wikipedia
+                                        </a>
+                                      </Button>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                                    <Loader className="w-10 h-10 text-cyan-400 animate-spin" />
+                                    <p className="text-gray-400 text-center">
+                                      Loading information...
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            </DrawerContent>
+                          </Drawer>
+                        </p>
+                      </div>
                     </div>
                   );
                 })}

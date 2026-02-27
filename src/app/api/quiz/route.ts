@@ -12,6 +12,7 @@ export async function GET(req: Request) {
     const count = parseInt(searchParams.get('count') || '10');
     const review = searchParams.get('review') === 'true';
     const questionIdsParam = searchParams.get('questionIds');
+    const subCategory = searchParams.get('subCategory');
     const userId = searchParams.get('userId');
 
     let questions;
@@ -38,7 +39,7 @@ export async function GET(req: Request) {
         );
       }
 
-      const pipeline: any[] = [{ $match: { category } }];
+      const pipeline: any[] = [{ $match: { category, subCategory } }];
 
       // Exclude already attempted questions if userId provided
       if (excludedQuestionIds.length > 0) {
