@@ -23,6 +23,9 @@ import {
   Trophy,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import SetMPINDialog from '@/components/SetMPINDialog';
+import QRCodeDisplay from '@/components/QRCodeDisplay';
+import MPINVerificationDialog from '@/components/MPINVerificationDialog';
 
 export default function UserDashboard() {
   const [user, setUser] = useState({
@@ -31,6 +34,7 @@ export default function UserDashboard() {
     loanBalance: 0,
     _id: '',
     fd: 0,
+    mpin: null as string | null,
   });
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
@@ -44,6 +48,12 @@ export default function UserDashboard() {
   const [fdWithdrawDialogOpen, setFdWithdrawDialogOpen] = useState(false);
   const [loanDialogOpen, setLoanDialogOpen] = useState(false);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [showMPINDialog, setShowMPINDialog] = useState(false);
+  const [mpinLoading, setMpinLoading] = useState(false);
+  const [pendingTransfer, setPendingTransfer] = useState<{
+    toUserName: string;
+    amount: number;
+  } | null>(null);
   const [activeChallenges, setActiveChallenges] = useState<
     {
       _id: string;
@@ -97,11 +107,31 @@ export default function UserDashboard() {
 
   async function handleTransferMoney(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setTransferLoading(true);
     const formData = new FormData(e.currentTarget);
     const toUserName = formData.get('toUserName')?.toString().trim();
     const amount = Number(formData.get('amount'));
 
+    if (!toUserName || !amount) {
+      setMessage('❌ Error: Please fill in all fields');
+      return;
+    }
+
+    // If user has MPIN, show verification dialog
+    if (user.mpin) {
+      setPendingTransfer({ toUserName, amount });
+      setShowMPINDialog(true);
+    } else {
+      // If no MPIN, proceed directly (for backward compatibility)
+      await completeTransfer(toUserName, amount, '');
+    }
+  }
+
+  async function completeTransfer(
+    toUserName: string,
+    amount: number,
+    mpin: string
+  ) {
+    setTransferLoading(true);
     try {
       const res = await fetch('/api/transactions/transfer', {
         method: 'POST',
@@ -110,6 +140,7 @@ export default function UserDashboard() {
           fromUserId: user._id,
           toUserName,
           amount,
+          mpin,
         }),
       });
 
@@ -121,7 +152,10 @@ export default function UserDashboard() {
         const userData = await userRes.json();
         setUser(userData.data);
 
-        setTimeout(() => setTransferDialogOpen(false), 1500);
+        setTimeout(() => {
+          setTransferDialogOpen(false);
+          setPendingTransfer(null);
+        }, 1500);
       } else {
         setMessage(`❌ Error: ${data.error}`);
       }
@@ -129,6 +163,21 @@ export default function UserDashboard() {
       setTransferLoading(false);
     }
   }
+
+  const handleMPINVerify = async (mpin: string) => {
+    if (!pendingTransfer) return;
+    setMpinLoading(true);
+    try {
+      await completeTransfer(
+        pendingTransfer.toUserName,
+        pendingTransfer.amount,
+        mpin
+      );
+      setShowMPINDialog(false);
+    } finally {
+      setMpinLoading(false);
+    }
+  };
 
   async function handleTransferToFd(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -497,6 +546,28 @@ export default function UserDashboard() {
               </DialogContent>
             </Dialog>
 
+            {/* Set MPIN Dialog */}
+            <SetMPINDialog
+              userId={user._id}
+              hasMPIN={user.mpin !== null && user.mpin !== undefined}
+              onMPINSet={() => {
+                // Refresh user data to show MPIN is set
+                fetch(`/api/users/${user._id}`)
+                  .then((res) => res.json())
+                  .then((data) => setUser(data.data));
+              }}
+            />
+
+            {/* QR Code Display */}
+            <QRCodeDisplay userId={user._id} userName={user.name} />
+
+            {/* QR Transfer */}
+            <Link href="/user/qr-transfer">
+              <Button className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-semibold py-6 flex items-center gap-2">
+                📱 QR Transfer
+              </Button>
+            </Link>
+
             {/* Transfer Money Dialog */}
             <Dialog
               open={transferDialogOpen}
@@ -819,6 +890,19 @@ export default function UserDashboard() {
             </p>
           )}
         </div>
+
+        {/* MPIN Verification Dialog */}
+        <MPINVerificationDialog
+          isOpen={showMPINDialog}
+          onClose={() => {
+            setShowMPINDialog(false);
+            setPendingTransfer(null);
+          }}
+          onVerify={handleMPINVerify}
+          isLoading={mpinLoading}
+          title="Enter MPIN"
+          description="Enter your 4-digit MPIN to confirm this transfer"
+        />
       </div>
     </main>
   );

@@ -7,7 +7,7 @@ export async function POST(req: Request) {
   try {
     await dbConnect();
     const body = await req.json();
-    const { fromUserId, toUserName, amount } = body;
+    const { fromUserId, toUserName, amount, mpin } = body;
     const trimmedToUserName = toUserName?.trim();
 
     if (!fromUserId || !trimmedToUserName || !amount || amount <= 0) {
@@ -24,6 +24,23 @@ export async function POST(req: Request) {
         { success: false, error: 'Sender not found' },
         { status: 404 }
       );
+    }
+
+    // Verify MPIN if exists
+    if (sender.mpin) {
+      if (!mpin) {
+        return NextResponse.json(
+          { success: false, error: 'MPIN required' },
+          { status: 400 }
+        );
+      }
+      const isValidMPin = await sender.compareMPin(mpin);
+      if (!isValidMPin) {
+        return NextResponse.json(
+          { success: false, error: 'Invalid MPIN' },
+          { status: 400 }
+        );
+      }
     }
 
     // Check sender has sufficient balance
