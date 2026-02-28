@@ -10,8 +10,13 @@ export async function GET(req: Request) {
     const limit = parseInt(searchParams.get('limit') || '10');
 
     // Get top scorers by category
+    const startOfMonth = new Date(
+      new Date().getFullYear(),
+      new Date().getMonth(),
+      1
+    );
     const leaderboard = await QuizResult.aggregate([
-      { $match: { category } },
+      { $match: { category, completedAt: { $gte: startOfMonth } } },
       {
         $group: {
           _id: '$userId',

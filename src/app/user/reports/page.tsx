@@ -1,18 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import HighchartsReact from 'highcharts-react-official';
-import Highcharts from 'highcharts';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import {
-  Loader,
-  TrendingUp,
-  BarChart3,
-  PieChart,
-  Wallet,
-  DollarSign,
-  CreditCard,
-} from 'lucide-react';
+import { Loader } from 'lucide-react';
+import { MetricsCards, QuickStatsCards } from '@/components/reports/ReportsCards';
 
 interface UserReportData {
   user: {
@@ -30,26 +20,117 @@ interface UserReportData {
     totalFdWithdrawals: number;
     totalInterestEarned: number;
     totalInterestAccrued: number;
-    netSavings: number;
-    netFd: number;
-    netLoan: number;
     totalTransactions: number;
-    recentTransactionCount: number;
   };
-  transactionsByType: {
-    [key: string]: number;
-  };
-  monthlyTrends: {
-    [key: string]: number;
-  };
-  monthlySavings: {
-    [key: string]: number;
-  };
-  interestBreakdown: {
-    savingsInterest: number;
-    fdInterest: number;
-    loanInterest: number;
-  };
+}
+
+export default function UserReports() {
+  const [reportData, setReportData] = useState<UserReportData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string>('');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    async function fetchReports() {
+      try {
+        const res = await fetch('/api/user/reports');
+        const result = await res.json();
+
+        if (result.success) {
+          setReportData(result.data);
+        } else {
+          setError(result.error || 'Failed to load reports data');
+        }
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : 'Failed to fetch reports';
+        setError(errorMsg);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    if (mounted) {
+      fetchReports();
+    }
+  }, [mounted]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-slate-950 via-blue-950 to-slate-950">
+        <Loader className="w-8 h-8 animate-spin text-blue-400" />
+      </div>
+    );
+  }
+
+  if (!reportData || error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-slate-950 via-blue-950 to-slate-950 px-4">
+        <p className="text-red-400 text-lg mb-4">{error || 'Failed to load reports data'}</p>
+        <a href="/user/dashboard" className="text-blue-400 hover:text-blue-300 underline">
+          Back to Dashboard
+        </a>
+      </div>
+    );
+  }
+
+  return (
+    <main className="bg-gradient-to-b from-slate-950 via-blue-950 to-slate-950 text-white min-h-screen py-12 px-6">
+      <div className="max-w-6xl mx-auto">
+        <div className="mb-12">
+          <h1 className="text-5xl font-black mb-2">
+            <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+              Financial Reports
+            </span>
+          </h1>
+          <p className="text-gray-200 text-lg">
+            Comprehensive overview of your financial activity
+          </p>
+        </div>
+
+        <MetricsCards
+          savingsBalance={reportData.user.savingsBalance}
+          fdBalance={reportData.user.fdBalance}
+          loanBalance={reportData.user.loanBalance}
+        />
+
+        <QuickStatsCards metrics={reportData.metrics} />
+
+        <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 border border-slate-700 rounded-lg p-6">
+          <h2 className="text-2xl font-bold text-cyan-400 mb-4">Summary</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <p className="text-gray-400 text-sm">Total Interest Earned</p>
+              <p className="text-2xl font-bold text-green-400">
+                ₹{reportData.metrics.totalInterestEarned.toFixed(2)}
+              </p>
+            </div>
+            <div>
+              <p className="text-gray-400 text-sm">Total Interest Accrued</p>
+              <p className="text-2xl font-bold text-blue-400">
+                ₹{reportData.metrics.totalInterestAccrued.toFixed(2)}
+              </p>
+            </div>
+            <div>
+              <p className="text-gray-400 text-sm">Total Loans Taken</p>
+              <p className="text-2xl font-bold text-orange-400">
+                ₹{reportData.metrics.totalLoans.toFixed(2)}
+              </p>
+            </div>
+            <div>
+              <p className="text-gray-400 text-sm">Total Repayments</p>
+              <p className="text-2xl font-bold text-purple-400">
+                ₹{reportData.metrics.totalRepayments.toFixed(2)}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  );
 }
 
 export default function UserReports() {

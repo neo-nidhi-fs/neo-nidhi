@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import {
@@ -11,6 +11,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Loader, QrCode, Download } from 'lucide-react';
+import { useQRCode } from '@/hooks/useServices';
 
 interface QRCodeDisplayProps {
   userId: string;
@@ -21,41 +22,23 @@ export default function QRCodeDisplay({
   userId,
   userName,
 }: QRCodeDisplayProps) {
-  const [qrCode, setQrCode] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
 
-  const generateQRCode = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/users/${userId}/qr-code`);
-      const data = await res.json();
-      if (data.success) {
-        setQrCode(data.data.qrCode);
-      }
-    } catch (error) {
-      console.error('Error generating QR code:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [userId]);
-
-  const downloadQRCode = () => {
-    if (!qrCode) return;
-
-    const link = document.createElement('a');
-    link.href = qrCode;
-    link.download = `${userName}-qr-code.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+  // Use QR Code service via hook - Dependency Inversion
+  const { generateQR, downloadQR, qrCode, loading, error } = useQRCode(
+    userId,
+    userName
+  );
 
   useEffect(() => {
     if (open && !qrCode) {
-      generateQRCode();
+      generateQR();
     }
-  }, [open, qrCode, generateQRCode]);
+  }, [open, qrCode, generateQR]);
+
+  const handleDownload = () => {
+    downloadQR(`${userName}-qr-code.png`);
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -89,11 +72,11 @@ export default function QRCodeDisplay({
                 className="border-4 border-slate-600 rounded-lg"
               />
             </div>
-          ) : (
+          ) : error ? (
             <div className="text-center py-8">
-              <p className="text-red-400">Failed to generate QR code</p>
+              <p className="text-red-400">{error}</p>
             </div>
-          )}
+          ) : null}
 
           <div className="text-center text-gray-300 text-sm">
             <p className="font-semibold">{userName}</p>
@@ -102,7 +85,7 @@ export default function QRCodeDisplay({
 
           {qrCode && (
             <Button
-              onClick={downloadQRCode}
+              onClick={handleDownload}
               className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white flex items-center justify-center gap-2"
             >
               <Download size={18} />
