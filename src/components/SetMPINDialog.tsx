@@ -101,7 +101,7 @@ export default function SetMPINDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white flex items-center gap-2">
+        <Button className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold py-6 flex items-center gap-2">
           <Lock size={18} />
           {hasMPIN ? 'Change MPIN' : 'Set MPIN'}
         </Button>

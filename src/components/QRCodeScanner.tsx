@@ -41,7 +41,11 @@ export default function QRCodeScanner({ onScan }: QRCodeScannerProps) {
       setScanning(true);
 
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+        video: {
+          facingMode: 'environment',
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
       });
 
       streamRef.current = stream;
@@ -210,7 +214,8 @@ export default function QRCodeScanner({ onScan }: QRCodeScannerProps) {
               </div>
 
               <p className="text-gray-400 text-xs text-center">
-                📸 Make sure camera has permission and good lighting for QR scanning
+                📸 Make sure camera has permission and good lighting for QR
+                scanning
               </p>
             </div>
           )}

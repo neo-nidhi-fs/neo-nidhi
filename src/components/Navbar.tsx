@@ -115,6 +115,12 @@ export default function Navbar() {
             >
               Challenges
             </Link>
+            <Link
+              href="/user/online-transfer"
+              className="text-gray-200 hover:text-purple-400 transition-colors duration-300 font-medium"
+            >
+              Online Transfer
+            </Link>
           </>
         )}
 

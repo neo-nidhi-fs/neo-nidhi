@@ -16,8 +16,6 @@ import {
   Wallet,
   Banknote,
   TrendingDown,
-  Send,
-  CreditCard,
   Loader,
   BarChart3,
   Trophy,
@@ -25,7 +23,6 @@ import {
 import { useEffect, useState } from 'react';
 import SetMPINDialog from '@/components/SetMPINDialog';
 import QRCodeDisplay from '@/components/QRCodeDisplay';
-import MPINVerificationDialog from '@/components/MPINVerificationDialog';
 
 export default function UserDashboard() {
   const [user, setUser] = useState({
@@ -38,22 +35,8 @@ export default function UserDashboard() {
   });
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
-  const [transferLoading, setTransferLoading] = useState(false);
-  const [fdTransferLoading, setFdTransferLoading] = useState(false);
-  const [fdWithdrawLoading, setFdWithdrawLoading] = useState(false);
-  const [loanLoading, setLoanLoading] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
-  const [transferDialogOpen, setTransferDialogOpen] = useState(false);
-  const [fdTransferDialogOpen, setFdTransferDialogOpen] = useState(false);
-  const [fdWithdrawDialogOpen, setFdWithdrawDialogOpen] = useState(false);
-  const [loanDialogOpen, setLoanDialogOpen] = useState(false);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
-  const [showMPINDialog, setShowMPINDialog] = useState(false);
-  const [mpinLoading, setMpinLoading] = useState(false);
-  const [pendingTransfer, setPendingTransfer] = useState<{
-    toUserName: string;
-    amount: number;
-  } | null>(null);
   const [activeChallenges, setActiveChallenges] = useState<
     {
       _id: string;
@@ -62,21 +45,6 @@ export default function UserDashboard() {
     }[]
   >([]);
   console.log('activeChallenges ==> ', activeChallenges);
-  const [fdWithdrawInfo, setFdWithdrawInfo] = useState({
-    matureAmount: 0,
-    prematureAmount: 0,
-    totalFd: 0,
-    matureTransactions: [] as {
-      amount: number;
-      date: Date;
-      yearsOld: number;
-    }[],
-    prematureTransactions: [] as {
-      amount: number;
-      date: Date;
-      yearsOld: number;
-    }[],
-  });
 
   async function handleChangePassword(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -102,193 +70,6 @@ export default function UserDashboard() {
       }
     } finally {
       setPasswordLoading(false);
-    }
-  }
-
-  async function handleTransferMoney(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const toUserName = formData.get('toUserName')?.toString().trim();
-    const amount = Number(formData.get('amount'));
-
-    if (!toUserName || !amount) {
-      setMessage('❌ Error: Please fill in all fields');
-      return;
-    }
-
-    // If user has MPIN, show verification dialog
-    if (user.mpin) {
-      setPendingTransfer({ toUserName, amount });
-      setShowMPINDialog(true);
-    } else {
-      // If no MPIN, proceed directly (for backward compatibility)
-      await completeTransfer(toUserName, amount, '');
-    }
-  }
-
-  async function completeTransfer(
-    toUserName: string,
-    amount: number,
-    mpin: string
-  ) {
-    setTransferLoading(true);
-    try {
-      const res = await fetch('/api/transactions/transfer', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fromUserId: user._id,
-          toUserName,
-          amount,
-          mpin,
-        }),
-      });
-
-      const data = await res.json();
-      if (res.ok) {
-        setMessage(`✅ ${data.message}`);
-        // Refresh user data
-        const userRes = await fetch(`/api/users/${user._id}`);
-        const userData = await userRes.json();
-        setUser(userData.data);
-
-        setTimeout(() => {
-          setTransferDialogOpen(false);
-          setPendingTransfer(null);
-        }, 1500);
-      } else {
-        setMessage(`❌ Error: ${data.error}`);
-      }
-    } finally {
-      setTransferLoading(false);
-    }
-  }
-
-  const handleMPINVerify = async (mpin: string) => {
-    if (!pendingTransfer) return;
-    setMpinLoading(true);
-    try {
-      await completeTransfer(
-        pendingTransfer.toUserName,
-        pendingTransfer.amount,
-        mpin
-      );
-      setShowMPINDialog(false);
-    } finally {
-      setMpinLoading(false);
-    }
-  };
-
-  async function handleTransferToFd(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setFdTransferLoading(true);
-    const formData = new FormData(e.currentTarget);
-    const amount = Number(formData.get('fdAmount'));
-
-    try {
-      const res = await fetch('/api/transactions/transfer-fd', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user._id,
-          amount,
-        }),
-      });
-
-      const data = await res.json();
-      if (res.ok) {
-        setMessage(`✅ ${data.message}`);
-        // Refresh user data
-        const userRes = await fetch(`/api/users/${user._id}`);
-        const userData = await userRes.json();
-        setUser(userData.data);
-
-        setTimeout(() => setFdTransferDialogOpen(false), 1500);
-      } else {
-        setMessage(`❌ Error: ${data.error}`);
-      }
-    } finally {
-      setFdTransferLoading(false);
-    }
-  }
-
-  async function fetchFdWithdrawInfo() {
-    try {
-      const res = await fetch(
-        `/api/transactions/withdraw-fd?userId=${user._id}`
-      );
-      const data = await res.json();
-      if (res.ok) {
-        setFdWithdrawInfo(data.data);
-      }
-    } catch (error) {
-      console.error('Error fetching FD info:', error);
-    }
-  }
-
-  async function handleWithdrawFd(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setFdWithdrawLoading(true);
-    const formData = new FormData(e.currentTarget);
-    const amount = Number(formData.get('withdrawAmount'));
-
-    try {
-      const res = await fetch('/api/transactions/withdraw-fd', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user._id,
-          amount,
-        }),
-      });
-
-      const data = await res.json();
-      if (res.ok) {
-        setMessage(`✅ ${data.message}`);
-        // Refresh user data
-        const userRes = await fetch(`/api/users/${user._id}`);
-        const userData = await userRes.json();
-        setUser(userData.data);
-
-        setTimeout(() => setFdWithdrawDialogOpen(false), 1500);
-      } else {
-        setMessage(`❌ Error: ${data.error}`);
-      }
-    } finally {
-      setFdWithdrawLoading(false);
-    }
-  }
-
-  async function handlePayLoan(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setLoanLoading(true);
-    const formData = new FormData(e.currentTarget);
-    const amount = Number(formData.get('loanAmount'));
-
-    try {
-      const res = await fetch('/api/transactions/pay-loan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user._id,
-          amount,
-        }),
-      });
-
-      const data = await res.json();
-      if (res.ok) {
-        setMessage(`✅ ${data.message}`);
-        // Refresh user data
-        const userRes = await fetch(`/api/users/${user._id}`);
-        const userData = await userRes.json();
-        setUser(userData.data);
-
-        setTimeout(() => setLoanDialogOpen(false), 1500);
-      } else {
-        setMessage(`❌ Error: ${data.error}`);
-      }
-    } finally {
-      setLoanLoading(false);
     }
   }
 
@@ -384,7 +165,7 @@ export default function UserDashboard() {
             Manage your finances and track your progress
           </p>
           <Link href="/user/reports">
-            <Button className="bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-2">
+            <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-6 flex items-center gap-2">
               <BarChart3 size={18} />
               View Your Reports
             </Button>
@@ -470,7 +251,7 @@ export default function UserDashboard() {
                       </p>
                     </div>
                     <Link href={`/user/challenges/${challenge._id}`}>
-                      <Button className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold flex items-center justify-center gap-2">
+                      <Button className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-6 flex items-center justify-center gap-2">
                         <Trophy size={18} />
                         Start {challenge.title}
                       </Button>
@@ -560,322 +341,6 @@ export default function UserDashboard() {
 
             {/* QR Code Display */}
             <QRCodeDisplay userId={user._id} userName={user.name} />
-
-            {/* QR Transfer */}
-            <Link href="/user/qr-transfer">
-              <Button className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-semibold py-6 flex items-center gap-2">
-                📱 QR Transfer
-              </Button>
-            </Link>
-
-            {/* Transfer Money Dialog */}
-            <Dialog
-              open={transferDialogOpen}
-              onOpenChange={setTransferDialogOpen}
-            >
-              <DialogTrigger asChild>
-                <Button className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-6 flex items-center gap-2">
-                  <Send size={18} />
-                  Transfer Money
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="bg-slate-800 border-slate-700 w-[90vw] sm:w-full max-w-md max-h-[90vh] overflow-y-auto p-4 sm:p-6 rounded-lg">
-                <DialogHeader>
-                  <DialogTitle className="text-white">
-                    Transfer Money to Another User
-                  </DialogTitle>
-                </DialogHeader>
-                <form onSubmit={handleTransferMoney} className="space-y-4">
-                  <div>
-                    <Label htmlFor="toUserName" className="text-gray-100">
-                      Recipient Name
-                    </Label>
-                    <Input
-                      id="toUserName"
-                      name="toUserName"
-                      type="text"
-                      placeholder="Enter recipient username"
-                      required
-                      disabled={transferLoading}
-                      className="bg-slate-700 border-slate-600 text-white disabled:opacity-50"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="amount" className="text-gray-100">
-                      Amount (₹)
-                    </Label>
-                    <Input
-                      id="amount"
-                      name="amount"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      placeholder="0.00"
-                      required
-                      disabled={transferLoading}
-                      className="bg-slate-700 border-slate-600 text-white disabled:opacity-50"
-                    />
-                  </div>
-                  <Button
-                    type="submit"
-                    disabled={transferLoading}
-                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  >
-                    {transferLoading ? (
-                      <>
-                        <Loader size={18} className="animate-spin" />
-                        Processing...
-                      </>
-                    ) : (
-                      'Transfer'
-                    )}
-                  </Button>
-                </form>
-              </DialogContent>
-            </Dialog>
-
-            {/* Transfer to Fixed Deposit Dialog */}
-            <Dialog
-              open={fdTransferDialogOpen}
-              onOpenChange={setFdTransferDialogOpen}
-            >
-              <DialogTrigger asChild>
-                <Button className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-semibold py-6 flex items-center gap-2">
-                  <Banknote size={18} />
-                  Transfer to FD
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="bg-slate-800 border-slate-700 w-[90vw] sm:w-full max-w-md max-h-[90vh] overflow-y-auto p-4 sm:p-6 rounded-lg">
-                <DialogHeader>
-                  <DialogTitle className="text-white">
-                    Transfer to Fixed Deposit
-                  </DialogTitle>
-                </DialogHeader>
-                <div className="bg-slate-700/50 border border-slate-600 rounded-lg p-3 mb-4">
-                  <p className="text-sm text-gray-300">
-                    Available Balance:{' '}
-                    <span className="font-bold text-green-400">
-                      ₹{user.savingsBalance.toFixed(2)}
-                    </span>
-                  </p>
-                  <p className="text-sm text-gray-300">
-                    Current FD:{' '}
-                    <span className="font-bold text-blue-400">
-                      ₹{(user.fd || 0).toFixed(2)}
-                    </span>
-                  </p>
-                </div>
-                <form onSubmit={handleTransferToFd} className="space-y-4">
-                  <div>
-                    <Label htmlFor="fdAmount" className="text-gray-100">
-                      Amount to Transfer (₹)
-                    </Label>
-                    <Input
-                      id="fdAmount"
-                      name="fdAmount"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      max={user.savingsBalance}
-                      placeholder="0.00"
-                      required
-                      disabled={fdTransferLoading}
-                      className="bg-slate-700 border-slate-600 text-white disabled:opacity-50"
-                    />
-                  </div>
-                  <Button
-                    type="submit"
-                    disabled={fdTransferLoading}
-                    className="w-full bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  >
-                    {fdTransferLoading ? (
-                      <>
-                        <Loader size={18} className="animate-spin" />
-                        Processing...
-                      </>
-                    ) : (
-                      'Transfer to FD'
-                    )}
-                  </Button>
-                </form>
-              </DialogContent>
-            </Dialog>
-
-            {/* Withdraw FD Dialog */}
-            {user.fd > 0 && (
-              <Dialog
-                open={fdWithdrawDialogOpen}
-                onOpenChange={(open) => {
-                  setFdWithdrawDialogOpen(open);
-                  if (open) fetchFdWithdrawInfo();
-                }}
-              >
-                <DialogTrigger asChild>
-                  <Button className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-semibold py-6 flex items-center gap-2">
-                    <Banknote size={18} />
-                    Withdraw FD
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="bg-slate-800 border-slate-700 w-[90vw] sm:w-full max-w-md max-h-[90vh] overflow-y-auto p-4 sm:p-6 rounded-lg">
-                  <DialogHeader>
-                    <DialogTitle className="text-white">
-                      Withdraw Fixed Deposit
-                    </DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-3 mb-4">
-                    <div className="bg-green-900/30 border border-green-500/30 rounded-lg p-3">
-                      <p className="text-sm text-gray-300">
-                        Mature Amount (3+ years):
-                      </p>
-                      <p className="text-2xl font-bold text-green-400">
-                        ₹{fdWithdrawInfo.matureAmount.toFixed(2)}
-                      </p>
-                      {fdWithdrawInfo.matureTransactions.length > 0 && (
-                        <p className="text-xs text-gray-400 mt-2">
-                          {fdWithdrawInfo.matureTransactions.length}{' '}
-                          transaction(s) ready to withdraw
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="bg-orange-900/30 border border-orange-500/30 rounded-lg p-3">
-                      <p className="text-sm text-gray-300">
-                        Premature Amount (under 3 years):
-                      </p>
-                      <p className="text-2xl font-bold text-orange-400">
-                        ₹{fdWithdrawInfo.prematureAmount.toFixed(2)}
-                      </p>
-                      {fdWithdrawInfo.prematureTransactions.length > 0 && (
-                        <p className="text-xs text-gray-400 mt-1">
-                          ⚠️ Lower interest rate applies
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="bg-slate-700/50 border border-slate-600 rounded-lg p-3">
-                      <p className="text-sm text-gray-300">Total FD Balance:</p>
-                      <p className="text-xl font-bold text-blue-400">
-                        ₹{fdWithdrawInfo.totalFd.toFixed(2)}
-                      </p>
-                    </div>
-                  </div>
-
-                  <form onSubmit={handleWithdrawFd} className="space-y-4">
-                    <div>
-                      <Label htmlFor="withdrawAmount" className="text-gray-100">
-                        Amount to Withdraw (₹)
-                      </Label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        max={fdWithdrawInfo.totalFd}
-                        placeholder="0.00"
-                        name="withdrawAmount"
-                        id="withdrawAmount"
-                        required
-                        disabled={fdWithdrawLoading}
-                        className="w-full px-3 py-2 bg-slate-700 border border-slate-600 text-white rounded disabled:opacity-50"
-                      />
-                    </div>
-
-                    <div className="text-xs text-gray-400 space-y-1">
-                      <p>
-                        💡 Mature amount is priority. Interest will be
-                        calculated accordingly.
-                      </p>
-                      <p>• Full interest rate applies to mature FD</p>
-                      <p>
-                        • Reduced interest rate applies to premature withdrawal
-                      </p>
-                    </div>
-
-                    <Button
-                      type="submit"
-                      disabled={
-                        fdWithdrawLoading || fdWithdrawInfo.totalFd === 0
-                      }
-                      className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                    >
-                      {fdWithdrawLoading ? (
-                        <>
-                          <Loader size={18} className="animate-spin" />
-                          Processing...
-                        </>
-                      ) : (
-                        'Withdraw FD'
-                      )}
-                    </Button>
-                  </form>
-                </DialogContent>
-              </Dialog>
-            )}
-
-            {/* Pay Loan Dialog */}
-            {user.loanBalance > 0 && (
-              <Dialog open={loanDialogOpen} onOpenChange={setLoanDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-semibold py-6 flex items-center gap-2">
-                    <CreditCard size={18} />
-                    Pay Loan
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="bg-slate-800 border-slate-700 w-[90vw] sm:w-full max-w-md max-h-[90vh] overflow-y-auto p-4 sm:p-6 rounded-lg">
-                  <DialogHeader>
-                    <DialogTitle className="text-white">
-                      Pay Loan from Savings
-                    </DialogTitle>
-                  </DialogHeader>
-                  <div className="bg-slate-700/50 border border-slate-600 rounded-lg p-3 mb-4">
-                    <p className="text-sm text-gray-300">
-                      Loan Balance:{' '}
-                      <span className="font-bold text-orange-400">
-                        ₹{user.loanBalance.toFixed(2)}
-                      </span>
-                    </p>
-                    <p className="text-sm text-gray-300">
-                      Available Balance:{' '}
-                      <span className="font-bold text-green-400">
-                        ₹{user.savingsBalance.toFixed(2)}
-                      </span>
-                    </p>
-                  </div>
-                  <form onSubmit={handlePayLoan} className="space-y-4">
-                    <div>
-                      <Label htmlFor="loanAmount" className="text-gray-100">
-                        Amount to Pay (₹)
-                      </Label>
-                      <Input
-                        id="loanAmount"
-                        name="loanAmount"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        max={Math.min(user.loanBalance, user.savingsBalance)}
-                        placeholder="0.00"
-                        required
-                        disabled={loanLoading}
-                        className="bg-slate-700 border-slate-600 text-white disabled:opacity-50"
-                      />
-                    </div>
-                    <Button
-                      type="submit"
-                      disabled={loanLoading}
-                      className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                    >
-                      {loanLoading ? (
-                        <>
-                          <Loader size={18} className="animate-spin" />
-                          Processing...
-                        </>
-                      ) : (
-                        'Pay Loan'
-                      )}
-                    </Button>
-                  </form>
-                </DialogContent>
-              </Dialog>
-            )}
           </div>
 
           {message && (
@@ -890,19 +355,6 @@ export default function UserDashboard() {
             </p>
           )}
         </div>
-
-        {/* MPIN Verification Dialog */}
-        <MPINVerificationDialog
-          isOpen={showMPINDialog}
-          onClose={() => {
-            setShowMPINDialog(false);
-            setPendingTransfer(null);
-          }}
-          onVerify={handleMPINVerify}
-          isLoading={mpinLoading}
-          title="Enter MPIN"
-          description="Enter your 4-digit MPIN to confirm this transfer"
-        />
       </div>
     </main>
   );
