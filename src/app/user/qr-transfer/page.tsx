@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Loader, QrCode, Send, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import MPINVerificationDialog from '@/components/MPINVerificationDialog';
+import QRCodeScanner from '@/components/QRCodeScanner';
 
 interface ScannedUser {
   userId: string;
@@ -60,6 +61,14 @@ export default function QRTransferPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleQRScan = (result: { userId: string; userName: string }) => {
+    setScannedUser({
+      userId: result.userId,
+      userName: result.userName,
+    });
+    setStep('amount');
   };
 
   const handleAmountSubmit = (e: React.FormEvent) => {
@@ -187,9 +196,7 @@ export default function QRTransferPage() {
                 </div>
               </div>
 
-              <p className="text-gray-400 text-sm text-center">
-                🔐 Scan the recipient&apos;s QR code using a QR code scanner app
-              </p>
+              <QRCodeScanner onScan={handleQRScan} />
             </CardContent>
           </Card>
         </div>
