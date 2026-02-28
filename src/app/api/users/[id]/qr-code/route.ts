@@ -6,11 +6,12 @@ const QRCode = require('qrcode');
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
-    const userId = params.id;
+    const { id } = await context.params;
+    const userId = id;
 
     // Get user
     const user = await User.findById(userId);

@@ -4,13 +4,14 @@ import { User } from '@/models/User';
 
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
     const body = await req.json();
     const { newMPin, oldMPin } = body;
-    const userId = params.id;
+    const { id } = await context.params;
+    const userId = id;
 
     if (!newMPin || newMPin.length !== 4 || !/^\d+$/.test(newMPin)) {
       return NextResponse.json(
