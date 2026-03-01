@@ -16,6 +16,8 @@ export interface ITransaction extends Document {
     | 'interest_deposit';
   amount: number;
   date: Date;
+  relatedUserId?: mongoose.Types.ObjectId; // For user-to-user transfers
+  relatedUserName?: string; // Display name of the related user in transfer
 }
 
 const TransactionSchema: Schema<ITransaction> = new Schema({
@@ -39,6 +41,8 @@ const TransactionSchema: Schema<ITransaction> = new Schema({
   },
   amount: { type: Number, required: true },
   date: { type: Date, default: Date.now },
+  relatedUserId: { type: Schema.Types.ObjectId, ref: 'User' },
+  relatedUserName: { type: String },
 });
 
 export const Transaction: Model<ITransaction> =

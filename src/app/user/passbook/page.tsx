@@ -12,6 +12,7 @@ type Transaction = {
   type: string;
   amount: number;
   date: string;
+  relatedUserName?: string;
 };
 
 interface CustomSession extends Session {

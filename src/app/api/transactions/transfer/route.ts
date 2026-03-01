@@ -75,6 +75,8 @@ export async function POST(req: Request) {
       type: 'withdrawal',
       amount,
       date: new Date(),
+      relatedUserId: receiver._id,
+      relatedUserName: receiver.name,
     });
 
     await Transaction.create({
@@ -82,6 +84,8 @@ export async function POST(req: Request) {
       type: 'deposit',
       amount,
       date: new Date(),
+      relatedUserId: fromUserId,
+      relatedUserName: sender.name,
     });
 
     return NextResponse.json({
