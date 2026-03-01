@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader, QrCode, Send, DollarSign, CreditCard } from 'lucide-react';
 import MPINVerificationDialog from '@/components/MPINVerificationDialog';
+import { MoneyTransferForm } from '@/components/transfers/MoneyTransferForm';
 import { PayLoanDialog } from '@/components/transfers/PayLoanDialog';
 import { ManageFDDialog } from '@/components/transfers/ManageFDDialog';
 import { User } from '@/types/entities';
@@ -22,6 +23,7 @@ export default function OnlineTransferPage() {
   const [message, setMessage] = useState('');
   const [mpinLoading, setMpinLoading] = useState(false);
   const [showMPINDialog, setShowMPINDialog] = useState(false);
+  const [showTransferForm, setShowTransferForm] = useState(false);
   const [showPayLoanDialog, setShowPayLoanDialog] = useState(false);
   const [showManageFDDialog, setShowManageFDDialog] = useState(false);
   const [fdLoading, setFdLoading] = useState(false);
@@ -90,6 +92,12 @@ export default function OnlineTransferPage() {
       pendingTransfer.amount,
       mpin
     );
+  };
+
+  const handleTransferFormSubmit = (toUserName: string, amount: number) => {
+    setPendingTransfer({ toUserName, amount });
+    setShowTransferForm(false);
+    setShowMPINDialog(true);
   };
 
   async function payLoan(amount: number) {
@@ -257,7 +265,7 @@ export default function OnlineTransferPage() {
           </Link>
 
           <Card
-            onClick={() => setShowMPINDialog(true)}
+            onClick={() => setShowTransferForm(true)}
             className="bg-gradient-to-br from-purple-900/30 to-pink-900/30 border-purple-400/30 hover:border-purple-400/50 transition cursor-pointer"
           >
             <CardHeader>
@@ -350,6 +358,20 @@ export default function OnlineTransferPage() {
             }}
             onVerify={handleMPINVerify}
             isLoading={mpinLoading}
+          />
+        )}
+
+        {/* Money Transfer Form Dialog */}
+        {user && (
+          <MoneyTransferForm
+            open={showTransferForm}
+            onOpenChange={setShowTransferForm}
+            loading={mpinLoading}
+            onSubmit={handleTransferFormSubmit}
+            title="Direct Transfer"
+            description="Enter recipient details to send money"
+            icon={<Send size={20} />}
+            maxAmount={user.savingsBalance}
           />
         )}
 
