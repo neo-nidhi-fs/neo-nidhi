@@ -19,7 +19,7 @@ function isLastDayOfMonth(): boolean {
 }
 
 // Core interest calculation
-export async function processInterest() {
+export async function processInterest(shouldAddToAccount = false) {
   await dbConnect();
   const accounts = await User.find({});
   const schemes = await Scheme.find({});
@@ -110,7 +110,7 @@ export async function processInterest() {
       }
 
       // On last day of month, transfer accrued interest to respective balances as transactions
-      if (isLastDayOfMonth()) {
+      if (isLastDayOfMonth() || shouldAddToAccount) {
         const refreshedAccount = await User.findById(account._id);
         if (refreshedAccount) {
           const updateData: Record<string, number> = {};

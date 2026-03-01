@@ -1,18 +1,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import HighchartsReact from 'highcharts-react-official';
-import Highcharts from 'highcharts';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import {
   Loader,
-  TrendingUp,
-  BarChart3,
-  PieChart,
   Wallet,
   DollarSign,
   CreditCard,
+  BarChart3,
+  PieChart,
+  TrendingUp,
 } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import Highcharts from 'highcharts';
+import HighchartsReact from 'highcharts-react-official';
 
 interface UserReportData {
   user: {
@@ -30,26 +30,16 @@ interface UserReportData {
     totalFdWithdrawals: number;
     totalInterestEarned: number;
     totalInterestAccrued: number;
-    netSavings: number;
-    netFd: number;
-    netLoan: number;
     totalTransactions: number;
-    recentTransactionCount: number;
   };
-  transactionsByType: {
-    [key: string]: number;
-  };
-  monthlyTrends: {
-    [key: string]: number;
-  };
-  monthlySavings: {
-    [key: string]: number;
-  };
+  transactionsByType: Record<string, number>;
   interestBreakdown: {
     savingsInterest: number;
     fdInterest: number;
     loanInterest: number;
   };
+  monthlySavings: Record<string, number>;
+  monthlyTrends: Record<string, number>;
 }
 
 export default function UserReports() {

@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
+import { Loader, Brain, Trophy, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Brain, Loader, Trophy, ArrowRight, Info } from 'lucide-react';
-import Link from 'next/link';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -14,58 +15,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from '@/components/ui/drawer';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from '@/components/ui/drawer';
 import Image from 'next/image';
-import { extractKeywordPhrase } from '@/lib/getKeyword';
+import Link from 'next/link';
+import {
+  Question,
+  AnswerDetail,
+  QuizResult,
+  LeaderboardEntry,
+  Wiki,
+  QuizCategory,
+} from '@/types/quiz';
+import { QUIZ_ENDPOINTS, QUIZ_CONFIG, QUIZ_MESSAGES } from '@/constants/quiz';
+import { extractKeywordPhrase } from '@/lib/helpers';
 
-type Question = {
-  _id: string;
-  question: string;
-  options: string[];
-  keyword?: string;
-  subCategory?: string;
-  difficulty: string;
-  points: number;
-};
-
-type AnswerDetail = {
-  questionId: string;
-  selectedOption: number;
-  isCorrect: boolean;
-  correctAnswer: number;
-};
-
-type QuizResult = {
-  score: number;
-  correctAnswers: number;
-  totalQuestions: number;
-  totalPoints: number;
-  percentage: number;
-};
-
-type LeaderboardEntry = {
-  userId: string;
-  userName: string;
-  totalScore: number;
-  totalAttempts: number;
-  avgScore: number;
-};
-type Wiki = {
-  title: string;
-  thumbnail?: string;
-  summary: string;
-  url?: string;
-};
 
 export default function QuizPage() {
   const { data: session } = useSession();
-  const [category, setCategory] = useState<'finance' | 'general' | null>(null);
+  const [category, setCategory] = useState<QuizCategory | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<
@@ -82,13 +49,12 @@ export default function QuizPage() {
   >([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [wikipediaSummary, setWikipediaSummary] = useState<Wiki | null>(null);
-  // Leaderboard is shown in results screen
 
-  const fetchQuestions = async (selectedCategory: 'finance' | 'general') => {
+  const fetchQuestions = async (selectedCategory: QuizCategory) => {
     setLoading(true);
     try {
       const res = await fetch(
-        `/api/quiz?category=${selectedCategory}&subCategory=${selectedSubCategory}&count=10&userId=${session?.user?.id || ''}`
+        `${QUIZ_ENDPOINTS.FETCH_QUESTIONS}?category=${selectedCategory}&subCategory=${selectedSubCategory}&count=${QUIZ_CONFIG.QUESTIONS_PER_QUIZ}&userId=${session?.user?.id || ''}`
       );
       const data = await res.json();
       if (data.success) {
@@ -107,23 +73,19 @@ export default function QuizPage() {
   const fetchWikipediaSummary = async (query: string) => {
     try {
       const keyword = extractKeywordPhrase(query).replace(' ', '_');
-      const res = await fetch(`/api/quiz/wiki?query=${keyword}`);
+      const res = await fetch(`${QUIZ_ENDPOINTS.FETCH_WIKI}?query=${keyword}`);
       const data = await res.json();
       if (data) {
         setWikipediaSummary(data);
-      } else {
-        return 'No additional information available.';
       }
     } catch (error) {
       console.error('Error fetching Wikipedia summary:', error);
-      return 'No additional information available.';
     }
   };
 
   const fetchSubCategories = async () => {
     try {
-      const res = await fetch(`/api/quiz/subCategory`);
-
+      const res = await fetch(QUIZ_ENDPOINTS.FETCH_SUBCATEGORIES);
       const data = await res.json();
       if (data.success) {
         setSubCategories(data.data);
@@ -133,10 +95,10 @@ export default function QuizPage() {
     }
   };
 
-  const fetchLeaderboard = async (selectedCategory: 'finance' | 'general') => {
+  const fetchLeaderboard = async (selectedCategory: QuizCategory) => {
     try {
       const res = await fetch(
-        `/api/quiz/leaderboard?category=${selectedCategory}&limit=10`
+        `${QUIZ_ENDPOINTS.FETCH_LEADERBOARD}?category=${selectedCategory}&limit=${QUIZ_CONFIG.LEADERBOARD_LIMIT}`
       );
       const data = await res.json();
       if (data.success) {
@@ -160,9 +122,8 @@ export default function QuizPage() {
     };
     setAnswers(newAnswers);
 
-    // Auto-move to next question
     if (currentQuestion < questions.length - 1) {
-      setTimeout(() => setCurrentQuestion(currentQuestion + 1), 300);
+      setTimeout(() => setCurrentQuestion(currentQuestion + 1), QUIZ_CONFIG.AUTO_MOVE_DELAY);
     }
   };
 
@@ -171,7 +132,7 @@ export default function QuizPage() {
 
     setLoading(true);
     try {
-      const res = await fetch('/api/quiz', {
+      const res = await fetch(QUIZ_ENDPOINTS.SUBMIT_QUIZ, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -186,18 +147,14 @@ export default function QuizPage() {
         setResult(data.data);
         setSubmitted(true);
 
-        // Fetch the exact questions that were answered with correct answers
         const questionIds = answers.map((a) => a.questionId).join(',');
         const reviewQuestionsRes = await fetch(
-          `/api/quiz?category=${category}&questionIds=${questionIds}&review=true`
+          `${QUIZ_ENDPOINTS.FETCH_QUESTIONS}?category=${category}&questionIds=${questionIds}&review=true`
         );
         const reviewData = await reviewQuestionsRes.json();
-        const fetchedReviewQuestions = reviewData.success
-          ? reviewData.data
-          : [];
+        const fetchedReviewQuestions = reviewData.success ? reviewData.data : [];
         setReviewQuestions(fetchedReviewQuestions);
 
-        // Build answer details with correct answers for review
         const details: AnswerDetail[] = answers.map((answer, idx) => {
           const correctAnswer = fetchedReviewQuestions[idx]?.correctAnswer || 0;
           return {
@@ -221,7 +178,7 @@ export default function QuizPage() {
   if (!session) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-slate-950 via-blue-950 to-slate-950">
-        <p className="text-gray-100">Please log in to take quizzes</p>
+        <p className="text-gray-100">{QUIZ_MESSAGES.NOT_LOGGED_IN}</p>
       </div>
     );
   }
@@ -263,8 +220,7 @@ export default function QuizPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-gray-300 mb-4">
-                  Learn about money, interest rates, budgeting, and financial
-                  management
+                  Learn about money, interest rates, budgeting, and financial management
                 </p>
                 <Button className="w-full bg-blue-600 hover:bg-blue-700 flex items-center justify-center gap-2">
                   <Brain size={18} />
@@ -325,7 +281,7 @@ export default function QuizPage() {
             <CardContent>
               {leaderboard.length > 0 ? (
                 <div className="space-y-2">
-                  {leaderboard.slice(0, 5).map((entry, idx) => (
+                  {leaderboard.slice(0, QUIZ_CONFIG.LEADERBOARD_PREVIEW_LIMIT).map((entry, idx) => (
                     <div
                       key={idx}
                       className="flex justify-between items-center p-3 bg-slate-700/30 rounded"
@@ -345,7 +301,7 @@ export default function QuizPage() {
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-400">No scores yet. Be the first!</p>
+                <p className="text-gray-400">{QUIZ_MESSAGES.NO_SCORES}</p>
               )}
             </CardContent>
           </Card>
@@ -435,7 +391,6 @@ export default function QuizPage() {
                 ) : (
                   <>
                     Submit Quiz
-                    <ArrowRight size={18} />
                   </>
                 )}
               </Button>
@@ -531,7 +486,7 @@ export default function QuizPage() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-gray-400">No leaderboard data yet</p>
+                  <p className="text-gray-400">{QUIZ_MESSAGES.NO_LEADERBOARD}</p>
                 )}
               </CardContent>
             </Card>
@@ -573,20 +528,15 @@ export default function QuizPage() {
                           let bgColor = 'bg-slate-700/30 border-slate-600';
                           let textColor = 'text-gray-300';
 
-                          // User selected this option
                           if (selectedOption === optIdx) {
                             if (isCorrect) {
-                              // User was correct
                               bgColor = 'bg-green-700/30 border-green-400';
                               textColor = 'text-green-300 font-semibold';
                             } else {
-                              // User was wrong
                               bgColor = 'bg-red-700/30 border-red-400';
                               textColor = 'text-red-300 font-semibold';
                             }
-                          }
-                          // This is the correct answer (and user didn't select it)
-                          else if (optIdx === correctOption && !isCorrect) {
+                          } else if (optIdx === correctOption && !isCorrect) {
                             bgColor = 'bg-blue-700/30 border-blue-400';
                             textColor = 'text-blue-300 font-semibold';
                           }
@@ -609,15 +559,15 @@ export default function QuizPage() {
                           <span className="font-semibold">
                             {!isCorrect && 'Correct'} Answer:
                           </span>{' '}
-                          {question.options[question.correctAnswer]}
+                          {question.options[question.correctAnswer || 0]}
                           <Drawer direction="bottom">
                             <DrawerTrigger asChild>
                               <Info
-                                className="inline-block ml-2 text-blue-400"
+                                className="inline-block ml-2 text-blue-400 cursor-pointer"
                                 size={16}
                                 onClick={async () =>
                                   fetchWikipediaSummary(
-                                    question?.keyword || 'dog'
+                                    question?.keyword || 'information'
                                   )
                                 }
                               />
@@ -672,7 +622,7 @@ export default function QuizPage() {
                                   <div className="flex flex-col items-center justify-center py-12 space-y-4">
                                     <Loader className="w-10 h-10 text-cyan-400 animate-spin" />
                                     <p className="text-gray-400 text-center">
-                                      Loading information...
+                                      {QUIZ_MESSAGES.LOADING_INFO}
                                     </p>
                                   </div>
                                 )}

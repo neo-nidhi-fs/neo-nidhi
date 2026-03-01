@@ -12,6 +12,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader, Lock } from 'lucide-react';
+import { useMPIN } from '@/hooks/useServices';
+import { validators } from '@/lib/validators';
 
 interface SetMPINDialogProps {
   userId: string;
@@ -31,9 +33,11 @@ export default function SetMPINDialog({
   const [oldMPin, setOldMPin] = useState('');
   const [newMPin, setNewMPin] = useState('');
   const [confirmMPin, setConfirmMPin] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
+  const [validationError, setValidationError] = useState('');
+  const [localMessage, setLocalMessage] = useState('');
+
+  // Use the MPIN service via custom hook - Dependency Inversion
+  const { setMPIN, loading, error, success } = useMPIN(userId);
 
   const handleClose = () => {
     setOpen(false);
@@ -41,60 +45,51 @@ export default function SetMPINDialog({
     setOldMPin('');
     setNewMPin('');
     setConfirmMPin('');
-    setError('');
-    setMessage('');
+    setValidationError('');
+    setLocalMessage('');
   };
 
-  const handleNext = () => {
-    setError('');
+  const handleNext = async () => {
+    setValidationError('');
+
     if (hasMPIN && step === 'initial') {
       setStep('old');
     } else if (step === 'old') {
+      // Validate old MPIN format
+      const validation = validators.validateMPIN(oldMPin);
+      if (!validation.valid) {
+        setValidationError(validation.error || 'Invalid MPIN');
+        return;
+      }
       setStep('new');
     } else if (step === 'new') {
-      if (!newMPin || newMPin.length !== 4 || !/^\d+$/.test(newMPin)) {
-        setError('MPIN must be 4 digits');
+      // Validate new MPIN format
+      const validation = validators.validateMPIN(newMPin);
+      if (!validation.valid) {
+        setValidationError(validation.error || 'Invalid MPIN');
         return;
       }
       setStep('confirm');
     } else if (step === 'confirm') {
-      handleSetMPIN();
+      if (newMPin !== confirmMPin) {
+        setValidationError('MPINs do not match');
+        return;
+      }
+      await handleSetMPIN();
     } else if (step === 'initial') {
       setStep('new');
     }
   };
 
   const handleSetMPIN = async () => {
-    if (newMPin !== confirmMPin) {
-      setError('MPINs do not match');
-      return;
-    }
+    const success = await setMPIN(newMPin, hasMPIN ? oldMPin : undefined);
 
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/users/${userId}/mpin`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          newMPin,
-          oldMPin: hasMPIN ? oldMPin : undefined,
-        }),
-      });
-
-      const data = await res.json();
-      if (res.ok) {
-        setMessage(data.message);
-        setTimeout(() => {
-          onMPINSet();
-          handleClose();
-        }, 1500);
-      } else {
-        setError(data.error);
-      }
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setLoading(false);
+    if (success) {
+      setLocalMessage('✅ MPIN updated successfully');
+      setTimeout(() => {
+        onMPINSet();
+        handleClose();
+      }, 1500);
     }
   };
 
@@ -172,7 +167,13 @@ export default function SetMPINDialog({
           )}
 
           {error && <p className="text-red-400 text-sm">{error}</p>}
-          {message && <p className="text-green-400 text-sm">{message}</p>}
+          {validationError && (
+            <p className="text-red-400 text-sm">{validationError}</p>
+          )}
+          {success && <p className="text-green-400 text-sm">{success}</p>}
+          {localMessage && (
+            <p className="text-green-400 text-sm">{localMessage}</p>
+          )}
 
           <div className="flex gap-3 mt-6">
             <Button
