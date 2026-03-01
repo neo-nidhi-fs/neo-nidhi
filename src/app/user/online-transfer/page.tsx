@@ -6,8 +6,14 @@ import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader, QrCode, Send, DollarSign, CreditCard } from 'lucide-react';
 import MPINVerificationDialog from '@/components/MPINVerificationDialog';
+import { PayLoanDialog } from '@/components/transfers/PayLoanDialog';
+import { ManageFDDialog } from '@/components/transfers/ManageFDDialog';
 import { User } from '@/types/entities';
-import { TRANSFER_ENDPOINTS, TRANSFER_MESSAGES, TRANSFER_CONFIG } from '@/constants/transfers';
+import {
+  TRANSFER_ENDPOINTS,
+  TRANSFER_MESSAGES,
+  TRANSFER_CONFIG,
+} from '@/constants/transfers';
 
 export default function OnlineTransferPage() {
   const { data: session } = useSession();
@@ -16,7 +22,13 @@ export default function OnlineTransferPage() {
   const [message, setMessage] = useState('');
   const [mpinLoading, setMpinLoading] = useState(false);
   const [showMPINDialog, setShowMPINDialog] = useState(false);
-  const [pendingTransfer, setPendingTransfer] = useState<{ toUserName: string; amount: number } | null>(null);
+  const [showPayLoanDialog, setShowPayLoanDialog] = useState(false);
+  const [showManageFDDialog, setShowManageFDDialog] = useState(false);
+  const [fdLoading, setFdLoading] = useState(false);
+  const [pendingTransfer, setPendingTransfer] = useState<{
+    toUserName: string;
+    amount: number;
+  } | null>(null);
 
   const fetchUserData = useCallback(async () => {
     try {
@@ -35,14 +47,23 @@ export default function OnlineTransferPage() {
     fetchUserData();
   }, [fetchUserData]);
 
-  async function completeTransfer(toUserName: string, amount: number, mpin: string) {
+  async function completeTransfer(
+    toUserName: string,
+    amount: number,
+    mpin: string
+  ) {
     if (!user) return;
     setMpinLoading(true);
     try {
       const res = await fetch(TRANSFER_ENDPOINTS.TRANSFER, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fromUserId: user._id, toUserName, amount, mpin }),
+        body: JSON.stringify({
+          fromUserId: user._id,
+          toUserName,
+          amount,
+          mpin,
+        }),
       });
 
       const data = await res.json();
@@ -64,8 +85,102 @@ export default function OnlineTransferPage() {
 
   const handleMPINVerify = async (mpin: string) => {
     if (!pendingTransfer) return;
-    await completeTransfer(pendingTransfer.toUserName, pendingTransfer.amount, mpin);
+    await completeTransfer(
+      pendingTransfer.toUserName,
+      pendingTransfer.amount,
+      mpin
+    );
   };
+
+  async function payLoan(amount: number) {
+    if (!user) return;
+    setFdLoading(true);
+    try {
+      const res = await fetch('/api/transactions/pay-loan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user._id, amount }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setMessage(`✅ Loan repayment of ₹${amount} successful`);
+        await fetchUserData();
+        setTimeout(() => {
+          setMessage('');
+          setShowPayLoanDialog(false);
+        }, TRANSFER_CONFIG.RESET_DELAY);
+      } else {
+        setMessage(`❌ ${data.error || 'Loan payment failed'}`);
+      }
+    } catch (error) {
+      setMessage(
+        `❌ ${error instanceof Error ? error.message : 'Loan payment failed'}`
+      );
+    } finally {
+      setFdLoading(false);
+    }
+  }
+
+  async function transferToFD(amount: number) {
+    if (!user) return;
+    setFdLoading(true);
+    try {
+      const res = await fetch('/api/transactions/transfer-fd', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user._id, amount }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setMessage(`✅ ₹${amount} transferred to FD successfully`);
+        await fetchUserData();
+        setTimeout(() => {
+          setMessage('');
+          setShowManageFDDialog(false);
+        }, TRANSFER_CONFIG.RESET_DELAY);
+      } else {
+        setMessage(`❌ ${data.error || 'Transfer to FD failed'}`);
+      }
+    } catch (error) {
+      setMessage(
+        `❌ ${error instanceof Error ? error.message : 'Transfer to FD failed'}`
+      );
+    } finally {
+      setFdLoading(false);
+    }
+  }
+
+  async function withdrawFromFD(amount: number) {
+    if (!user) return;
+    setFdLoading(true);
+    try {
+      const res = await fetch('/api/transactions/withdraw-fd', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user._id, amount }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setMessage(`✅ ₹${amount} withdrawn from FD successfully`);
+        await fetchUserData();
+        setTimeout(() => {
+          setMessage('');
+          setShowManageFDDialog(false);
+        }, TRANSFER_CONFIG.RESET_DELAY);
+      } else {
+        setMessage(`❌ ${data.error || 'Withdrawal from FD failed'}`);
+      }
+    } catch (error) {
+      setMessage(
+        `❌ ${error instanceof Error ? error.message : 'Withdrawal from FD failed'}`
+      );
+    } finally {
+      setFdLoading(false);
+    }
+  }
 
   if (!session) {
     return (
@@ -95,7 +210,10 @@ export default function OnlineTransferPage() {
     <main className="bg-gradient-to-b from-slate-950 via-blue-950 to-slate-950 text-white min-h-screen py-12 px-6">
       <div className="max-w-6xl mx-auto">
         <div className="mb-12">
-          <Link href="/user/dashboard" className="text-blue-400 hover:text-blue-300 mb-4 inline-block">
+          <Link
+            href="/user/online-transfer"
+            className="text-blue-400 hover:text-blue-300 mb-4 inline-block"
+          >
             ← Back to Dashboard
           </Link>
           <h1 className="text-5xl font-black mb-2">
@@ -103,7 +221,9 @@ export default function OnlineTransferPage() {
               Online Transfer
             </span>
           </h1>
-          <p className="text-gray-200 text-lg">Transfer money and manage your accounts</p>
+          <p className="text-gray-200 text-lg">
+            Transfer money and manage your accounts
+          </p>
         </div>
 
         {message && (
@@ -129,12 +249,17 @@ export default function OnlineTransferPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-300 text-sm">Scan QR code to transfer</p>
+                <p className="text-gray-300 text-sm">
+                  Scan QR code to transfer
+                </p>
               </CardContent>
             </Card>
           </Link>
 
-          <Card onClick={() => setShowMPINDialog(true)} className="bg-gradient-to-br from-purple-900/30 to-pink-900/30 border-purple-400/30 hover:border-purple-400/50 transition cursor-pointer">
+          <Card
+            onClick={() => setShowMPINDialog(true)}
+            className="bg-gradient-to-br from-purple-900/30 to-pink-900/30 border-purple-400/30 hover:border-purple-400/50 transition cursor-pointer"
+          >
             <CardHeader>
               <CardTitle className="text-purple-400 flex items-center gap-2">
                 <Send size={24} />
@@ -146,7 +271,10 @@ export default function OnlineTransferPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-blue-900/30 to-indigo-900/30 border-blue-400/30 hover:border-blue-400/50 transition cursor-pointer">
+          <Card
+            onClick={() => setShowManageFDDialog(true)}
+            className="bg-gradient-to-br from-blue-900/30 to-indigo-900/30 border-blue-400/30 hover:border-blue-400/50 transition cursor-pointer"
+          >
             <CardHeader>
               <CardTitle className="text-blue-400 flex items-center gap-2">
                 <DollarSign size={24} />
@@ -158,7 +286,10 @@ export default function OnlineTransferPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-red-900/30 to-rose-900/30 border-red-400/30 hover:border-red-400/50 transition cursor-pointer">
+          <Card
+            onClick={() => setShowPayLoanDialog(true)}
+            className="bg-gradient-to-br from-red-900/30 to-rose-900/30 border-red-400/30 hover:border-red-400/50 transition cursor-pointer"
+          >
             <CardHeader>
               <CardTitle className="text-red-400 flex items-center gap-2">
                 <CreditCard size={24} />
@@ -186,7 +317,9 @@ export default function OnlineTransferPage() {
               </div>
               <div className="bg-slate-700/30 p-4 rounded-lg">
                 <p className="text-gray-400 text-sm">FD Balance</p>
-                <p className="text-2xl font-bold text-blue-400">₹0.00</p>
+                <p className="text-2xl font-bold text-blue-400">
+                  ₹{(user.fd || 0).toFixed(2)}
+                </p>
               </div>
               <div className="bg-slate-700/30 p-4 rounded-lg">
                 <p className="text-gray-400 text-sm">Loan</p>
@@ -197,7 +330,10 @@ export default function OnlineTransferPage() {
               <div className="bg-slate-700/30 p-4 rounded-lg">
                 <p className="text-gray-400 text-sm">Net Worth</p>
                 <p className="text-2xl font-bold text-purple-400">
-                  ₹{((user.savingsBalance || 0) - (user.loanBalance || 0)).toFixed(2)}
+                  ₹
+                  {(
+                    (user.savingsBalance || 0) - (user.loanBalance || 0)
+                  ).toFixed(2)}
                 </p>
               </div>
             </div>
@@ -214,6 +350,31 @@ export default function OnlineTransferPage() {
             }}
             onVerify={handleMPINVerify}
             isLoading={mpinLoading}
+          />
+        )}
+
+        {/* Pay Loan Dialog */}
+        {user && (
+          <PayLoanDialog
+            open={showPayLoanDialog}
+            onOpenChange={setShowPayLoanDialog}
+            loading={fdLoading}
+            onSubmit={payLoan}
+            maxAmount={user.savingsBalance || 0}
+            loanBalance={user.loanBalance || 0}
+          />
+        )}
+
+        {/* Manage FD Dialog */}
+        {user && (
+          <ManageFDDialog
+            open={showManageFDDialog}
+            onOpenChange={setShowManageFDDialog}
+            loading={fdLoading}
+            onTransferToFD={transferToFD}
+            onWithdrawFromFD={withdrawFromFD}
+            savingsBalance={user.savingsBalance || 0}
+            fdBalance={user.fd || 0}
           />
         )}
       </div>
