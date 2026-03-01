@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,9 +9,18 @@ import { Label } from '@/components/ui/label';
 import { Loader, QrCode, Send, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import MPINVerificationDialog from '@/components/MPINVerificationDialog';
-import QRCodeScanner from '@/components/QRCodeScanner';
+import dynamic from 'next/dynamic';
+
+const BarcodeScanner = dynamic(() => import('react-qr-barcode-scanner'), {
+  ssr: false,
+});
 
 interface ScannedUser {
+  userId: string;
+  userName: string;
+}
+
+interface QRScanResult {
   userId: string;
   userName: string;
 }
@@ -24,9 +33,67 @@ export default function QRTransferPage() {
   const [manualUserId, setManualUserId] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [cameraError, setCameraError] = useState('');
   const [message, setMessage] = useState('');
   const [showMPINDialog, setShowMPINDialog] = useState(false);
   const [mpinLoading, setMpinLoading] = useState(false);
+  const [cameraPermission, setCameraPermission] = useState<
+    'granted' | 'denied' | 'prompt' | 'checking'
+  >('checking');
+  const [checkingPermission, setCheckingPermission] = useState(true);
+
+  // Check camera permission on mount
+  useEffect(() => {
+    const checkCameraPermission = async () => {
+      try {
+        // Check if Permissions API is available
+        if (navigator.permissions && navigator.permissions.query) {
+          const permission = await navigator.permissions.query({
+            name: 'camera' as PermissionName,
+          });
+          setCameraPermission(
+            permission.state as 'granted' | 'denied' | 'prompt'
+          );
+          setCheckingPermission(false);
+
+          // Listen for permission changes
+          permission.addEventListener('change', () => {
+            setCameraPermission(
+              permission.state as 'granted' | 'denied' | 'prompt'
+            );
+          });
+        } else {
+          // Fallback: assume 'prompt' if Permissions API not available
+          setCameraPermission('prompt');
+          setCheckingPermission(false);
+        }
+      } catch (err) {
+        console.error('Error checking camera permission:', err);
+        setCameraPermission('prompt');
+        setCheckingPermission(false);
+      }
+    };
+
+    checkCameraPermission();
+  }, []);
+
+  const requestCameraPermission = async () => {
+    try {
+      setCheckingPermission(true);
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      // Stop the stream immediately after we got permission
+      stream.getTracks().forEach((track) => track.stop());
+      setCameraPermission('granted');
+      setCameraError('');
+    } catch (err) {
+      setCameraPermission('denied');
+      const errorMsg =
+        err instanceof Error ? err.message : 'Camera permission denied';
+      setCameraError(errorMsg);
+    } finally {
+      setCheckingPermission(false);
+    }
+  };
 
   if (!session) {
     return (
@@ -63,7 +130,8 @@ export default function QRTransferPage() {
     }
   };
 
-  const handleQRScan = (result: { userId: string; userName: string }) => {
+  const handleQRScan = (result: QRScanResult) => {
+    console.log('result ==> ', result);
     setScannedUser({
       userId: result.userId,
       userName: result.userName,
@@ -196,7 +264,79 @@ export default function QRTransferPage() {
                 </div>
               </div>
 
-              <QRCodeScanner onScan={handleQRScan} />
+              {cameraError && (
+                <p className="text-red-400 text-sm bg-red-500/10 border border-red-500/30 p-3 rounded">
+                  {cameraError}
+                </p>
+              )}
+
+              {checkingPermission ? (
+                <div className="flex flex-col items-center justify-center py-8">
+                  <Loader
+                    size={24}
+                    className="animate-spin text-cyan-400 mb-2"
+                  />
+                  <p className="text-gray-400 text-sm">
+                    Checking camera access...
+                  </p>
+                </div>
+              ) : cameraPermission === 'granted' ? (
+                <BarcodeScanner
+                  width={500}
+                  height={500}
+                  onUpdate={(err, result) => {
+                    if (err) {
+                      console.error('Camera error:', err);
+                      const errorMsg =
+                        err instanceof Error
+                          ? err.message
+                          : 'Camera access denied. Please check browser permissions.';
+                      setCameraError(errorMsg);
+                    } else if (result) {
+                      setCameraError('');
+                      try {
+                        const resultData = result as unknown as {
+                          text?: string;
+                        };
+                        const qrData = JSON.parse(resultData.text || '');
+                        if (qrData.userId && qrData.userName) {
+                          handleQRScan(qrData);
+                        }
+                      } catch {
+                        console.error('Invalid QR code format');
+                      }
+                    }
+                  }}
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center py-8 space-y-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
+                  <p className="text-yellow-400 text-center font-semibold">
+                    Camera Access Required
+                  </p>
+                  <p className="text-gray-300 text-sm text-center">
+                    {cameraPermission === 'denied'
+                      ? 'Camera permission was denied. Please check your browser settings and allow camera access.'
+                      : 'This app needs access to your camera to scan QR codes. Please allow access when prompted.'}
+                  </p>
+                  <Button
+                    onClick={requestCameraPermission}
+                    disabled={checkingPermission}
+                    className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white disabled:opacity-50"
+                  >
+                    {checkingPermission ? (
+                      <>
+                        <Loader size={18} className="animate-spin mr-2" />
+                        Requesting Camera...
+                      </>
+                    ) : (
+                      <>
+                        <QrCode size={18} className="mr-2" />
+                        Allow Camera Access
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

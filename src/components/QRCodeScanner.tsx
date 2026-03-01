@@ -127,11 +127,13 @@ export default function QRCodeScanner({ onScan }: QRCodeScannerProps) {
     }
   };
 
-  const handleClose = () => {
-    stopCamera();
-    setOpen(false);
-    setError('');
-    setMessage('');
+  const handleOpenChange = (isOpen: boolean) => {
+    setOpen(isOpen);
+    if (!isOpen) {
+      stopCamera();
+      setError('');
+      setMessage('');
+    }
   };
 
   useEffect(() => {
@@ -143,7 +145,7 @@ export default function QRCodeScanner({ onScan }: QRCodeScannerProps) {
   }, []);
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white flex items-center gap-2">
           <Scan size={18} />

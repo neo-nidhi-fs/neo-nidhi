@@ -355,21 +355,43 @@ export default function AdminTransactionsPage() {
                     Previous
                   </Button>
                   <div className="hidden sm:flex items-center gap-2">
-                    {Array.from({
-                      length: Math.ceil(transactions.length / ITEMS_PER_PAGE),
-                    }).map((_, i) => (
-                      <Button
-                        key={i + 1}
-                        onClick={() => setTxPage(i + 1)}
-                        className={`w-10 h-10 text-sm ${
-                          txPage === i + 1
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-slate-700 hover:bg-slate-600 text-white'
-                        }`}
-                      >
-                        {i + 1}
-                      </Button>
-                    ))}
+                    {(() => {
+                      const totalPages = Math.ceil(
+                        transactions.length / ITEMS_PER_PAGE
+                      );
+                      const maxPagesToShow = 5;
+                      let startPage = Math.max(
+                        1,
+                        txPage - Math.floor(maxPagesToShow / 2)
+                      );
+                      const endPage = Math.min(
+                        totalPages,
+                        startPage + maxPagesToShow - 1
+                      );
+
+                      if (endPage - startPage + 1 < maxPagesToShow) {
+                        startPage = Math.max(1, endPage - maxPagesToShow + 1);
+                      }
+
+                      return Array.from({
+                        length: endPage - startPage + 1,
+                      }).map((_, i) => {
+                        const pageNum = startPage + i;
+                        return (
+                          <Button
+                            key={pageNum}
+                            onClick={() => setTxPage(pageNum)}
+                            className={`w-10 h-10 text-sm ${
+                              txPage === pageNum
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-slate-700 hover:bg-slate-600 text-white'
+                            }`}
+                          >
+                            {pageNum}
+                          </Button>
+                        );
+                      });
+                    })()}
                   </div>
                   <div className="sm:hidden text-sm text-gray-400">
                     Page {txPage}

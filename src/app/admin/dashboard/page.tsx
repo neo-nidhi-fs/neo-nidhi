@@ -356,6 +356,12 @@ export default function AdminDashboard() {
                 View Reports
               </Button>
             </Link>
+            <Link href="/api/run-interest-manual">
+              <Button className="bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-2">
+                <BarChart3 size={18} />
+                Run interest Manually
+              </Button>
+            </Link>
           </div>
           {message && <p className="mt-4 text-sm">{message}</p>}
         </div>
