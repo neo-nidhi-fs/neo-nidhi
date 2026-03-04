@@ -50,12 +50,12 @@ export function MoneyTransferForm({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogTrigger asChild>
+      {/* <DialogTrigger asChild>
         <Button className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-semibold py-6 flex items-center gap-2">
           {icon}
           {title}
         </Button>
-      </DialogTrigger>
+      </DialogTrigger> */}
       <DialogContent className="bg-slate-800 border-slate-700">
         <DialogHeader>
           <DialogTitle className="text-white">{title}</DialogTitle>
@@ -88,7 +88,9 @@ export function MoneyTransferForm({
               className="bg-slate-700 border-slate-600 text-white disabled:opacity-50"
             />
             {maxAmount && (
-              <p className="text-xs text-gray-400 mt-1">Max: ₹{maxAmount.toFixed(2)}</p>
+              <p className="text-xs text-gray-400 mt-1">
+                Max: ₹{maxAmount.toFixed(2)}
+              </p>
             )}
           </div>
           <Button

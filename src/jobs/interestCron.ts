@@ -20,6 +20,7 @@ function isLastDayOfMonth(): boolean {
 
 // Core interest calculation
 export async function processInterest(shouldAddToAccount = false) {
+  console.log('shouldAddToAccount ==> ', shouldAddToAccount);
   await dbConnect();
   const accounts = await User.find({});
   const schemes = await Scheme.find({});
@@ -101,16 +102,14 @@ export async function processInterest(shouldAddToAccount = false) {
         );
       }
       if (deltaFd !== 0) {
-        const res = await saveAccountInterest(account._id, deltaFd, 'fd');
-        console.log('Updated fd interest for', account._id?.toString(), res);
+        await saveAccountInterest(account._id, deltaFd, 'fd');
       }
       if (deltaLoan !== 0) {
-        const res = await saveAccountInterest(account._id, deltaLoan, 'loan');
-        console.log('Updated loan interest for', account._id?.toString(), res);
+        await saveAccountInterest(account._id, deltaLoan, 'loan');
       }
 
       // On last day of month, transfer accrued interest to respective balances as transactions
-      if (isLastDayOfMonth() || shouldAddToAccount) {
+      if (isLastDayOfMonth()) {
         const refreshedAccount = await User.findById(account._id);
         if (refreshedAccount) {
           const updateData: Record<string, number> = {};

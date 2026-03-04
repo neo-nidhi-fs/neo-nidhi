@@ -218,12 +218,6 @@ export default function OnlineTransferPage() {
     <main className="bg-gradient-to-b from-slate-950 via-blue-950 to-slate-950 text-white min-h-screen py-12 px-6">
       <div className="max-w-6xl mx-auto">
         <div className="mb-12">
-          <Link
-            href="/user/online-transfer"
-            className="text-blue-400 hover:text-blue-300 mb-4 inline-block"
-          >
-            ← Back to Dashboard
-          </Link>
           <h1 className="text-5xl font-black mb-2">
             <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
               Online Transfer
