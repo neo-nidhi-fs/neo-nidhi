@@ -5,6 +5,7 @@ export interface ISettings extends Document {
   loanInterestRate: number;
   fdInterestRate: number;
   fdPrematureInterestRate: number;
+  lastInterestCalculationDate?: Date;
 }
 
 const SettingsSchema: Schema<ISettings> = new Schema({
@@ -12,6 +13,7 @@ const SettingsSchema: Schema<ISettings> = new Schema({
   loanInterestRate: { type: Number, required: true },
   fdInterestRate: { type: Number, required: true, default: 6 },
   fdPrematureInterestRate: { type: Number, required: true, default: 3.5 },
+  lastInterestCalculationDate: { type: Date, default: null },
 });
 
 export const Settings: Model<ISettings> =

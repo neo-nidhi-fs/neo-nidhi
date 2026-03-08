@@ -1,8 +1,9 @@
-import cron from 'node-cron';
+// import cron from 'node-cron';
 import { dbConnect } from '@/lib/dbConnect';
 import { User } from '@/models/User'; // Mongoose model
 import { Scheme } from '@/models/Scheme';
 import { Transaction } from '@/models/Transaction';
+import { Settings } from '@/models/Settings';
 
 // Utility: calculate daily interest
 function calculateDailyInterest(principal: number, annualRate: number): number {
@@ -18,10 +19,28 @@ function isLastDayOfMonth(): boolean {
   return today.getMonth() !== tomorrow.getMonth();
 }
 
+// Utility: check if interest was already calculated today
+function isToday(date: Date | null | undefined): boolean {
+  if (!date) return false;
+  const today = new Date();
+  return (
+    date.getFullYear() === today.getFullYear() &&
+    date.getMonth() === today.getMonth() &&
+    date.getDate() === today.getDate()
+  );
+}
+
 // Core interest calculation
 export async function processInterest(shouldAddToAccount = false) {
   console.log('shouldAddToAccount ==> ', shouldAddToAccount);
   await dbConnect();
+
+  // Check if interest was already calculated today
+  const settings = await Settings.findOne({});
+  if (settings && isToday(settings.lastInterestCalculationDate)) {
+    console.log('Interest already calculated today. Skipping...');
+    return;
+  }
   const accounts = await User.find({});
   const schemes = await Scheme.find({});
 
@@ -204,10 +223,21 @@ export async function processInterest(shouldAddToAccount = false) {
       );
     }
   }
+
+  // Update last calculation date to prevent duplicate runs
+  try {
+    await Settings.findOneAndUpdate(
+      {},
+      { lastInterestCalculationDate: new Date() },
+      { upsert: true, new: true }
+    );
+    console.log('Updated last interest calculation date');
+  } catch (err) {
+    console.error('Failed to update last calculation date:', err);
+  }
 }
 
-// Cron job: run daily at 11:30 PM IST (6:00 PM UTC)
-cron.schedule('0 16 * * *', async () => {
-  console.log('Running daily interest calculation...');
-  await processInterest();
-});
+// cron.schedule('0 16 * * *', async () => {
+//   console.log('Running daily interest calculation...');
+//   await processInterest();
+// });
