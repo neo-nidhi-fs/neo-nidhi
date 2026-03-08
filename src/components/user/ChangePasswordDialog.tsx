@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader } from 'lucide-react';
+import { useAuthPassword } from '@/hooks/useServices';
 
 interface ChangePasswordDialogProps {
   userId: string;
@@ -23,8 +24,7 @@ export function ChangePasswordDialog({
   onPasswordChanged,
 }: ChangePasswordDialogProps) {
   const [open, setOpen] = useState(false);
-  const [message, setMessage] = useState('');
-  const [loading, setLoading] = useState(false);
+  const { changePassword, loading, error, success } = useAuthPassword(userId);
 
   async function handleChangePassword(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -32,26 +32,14 @@ export function ChangePasswordDialog({
     const oldPassword = formData.get('oldPassword')?.toString() || '';
     const newPassword = formData.get('newPassword')?.toString() || '';
 
-    setLoading(true);
-    try {
-      const res = await fetch('/api/auth/change-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, oldPassword, newPassword }),
-      });
+    const result = await changePassword(oldPassword, newPassword);
 
-      const data = await res.json();
-      setMessage(res.ok ? '✅ Password updated successfully' : `❌ ${data.error}`);
-
-      if (res.ok) {
-        setTimeout(() => {
-          setOpen(false);
-          setMessage('');
-          onPasswordChanged?.();
-        }, 1500);
-      }
-    } finally {
-      setLoading(false);
+    if (result) {
+      e.currentTarget.reset();
+      setTimeout(() => {
+        setOpen(false);
+        onPasswordChanged?.();
+      }, 1500);
     }
   }
 
@@ -93,11 +81,8 @@ export function ChangePasswordDialog({
               className="bg-slate-700 border-slate-600 text-white disabled:opacity-50"
             />
           </div>
-          {message && (
-            <p className={`text-sm ${message.includes('✅') ? 'text-green-400' : 'text-red-400'}`}>
-              {message}
-            </p>
-          )}
+          {error && <p className="text-sm text-red-400">❌ {error}</p>}
+          {success && <p className="text-sm text-green-400">✅ {success}</p>}
           <Button
             type="submit"
             disabled={loading}
