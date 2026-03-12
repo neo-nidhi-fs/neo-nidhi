@@ -69,7 +69,7 @@ export async function processInterest(shouldAddToAccount = false) {
   }
 
   for (const account of accounts) {
-    const { savingsBalance, fd, loanBalance } = account;
+    const { savingsBalance, fd, loanBalance, customInterestRates } = account;
 
     // accumulate deltas to minimize writes
     let deltaSaving = 0;
@@ -77,7 +77,32 @@ export async function processInterest(shouldAddToAccount = false) {
     let deltaLoan = 0;
 
     for (const scheme of schemes) {
-      const annualRate = scheme.interestRate / 100;
+      // Check if user has custom interest rate, otherwise use default scheme rate
+      let rate = scheme.interestRate;
+
+      if (customInterestRates) {
+        if (
+          scheme.name === 'deposit' &&
+          customInterestRates.saving !== null &&
+          customInterestRates.saving !== undefined
+        ) {
+          rate = customInterestRates.saving;
+        } else if (
+          scheme.name === 'fd' &&
+          customInterestRates.fd !== null &&
+          customInterestRates.fd !== undefined
+        ) {
+          rate = customInterestRates.fd;
+        } else if (
+          scheme.name === 'loan' &&
+          customInterestRates.loan !== null &&
+          customInterestRates.loan !== undefined
+        ) {
+          rate = customInterestRates.loan;
+        }
+      }
+
+      const annualRate = rate / 100;
       switch (scheme.name) {
         case 'deposit':
           if (savingsBalance > 0) {

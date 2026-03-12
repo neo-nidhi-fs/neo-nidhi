@@ -32,6 +32,7 @@ import {
   BarChart3,
   Banknote,
   Trophy,
+  Percent,
 } from 'lucide-react';
 
 interface User {
@@ -41,6 +42,11 @@ interface User {
   savingsBalance: number;
   loanBalance: number;
   fd?: number;
+  customInterestRates?: {
+    saving?: number | null;
+    fd?: number | null;
+    loan?: number | null;
+  };
 }
 
 interface Scheme {
@@ -84,6 +90,15 @@ export default function AdminDashboard() {
   const [deleteSchemeLoading, setDeleteSchemeLoading] = useState<string | null>(
     null
   );
+  const [interestRateDialogOpen, setInterestRateDialogOpen] = useState(false);
+  const [selectedUserForInterest, setSelectedUserForInterest] =
+    useState<User | null>(null);
+  const [interestRateLoading, setInterestRateLoading] = useState(false);
+  const [interestRateForm, setInterestRateForm] = useState({
+    saving: '',
+    fd: '',
+    loan: '',
+  });
   const [userPage, setUserPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
 
@@ -295,6 +310,64 @@ export default function AdminDashboard() {
       }
     } finally {
       setDeleteSchemeLoading(null);
+    }
+  }
+
+  async function handleUpdateInterestRates(
+    e: React.FormEvent<HTMLFormElement>
+  ) {
+    e.preventDefault();
+    if (!selectedUserForInterest) return;
+
+    setInterestRateLoading(true);
+    try {
+      const updateData: Record<string, number | null> = {};
+
+      if (interestRateForm.saving !== '') {
+        updateData.saving =
+          interestRateForm.saving === 'null'
+            ? null
+            : Number(interestRateForm.saving);
+      }
+      if (interestRateForm.fd !== '') {
+        updateData.fd =
+          interestRateForm.fd === 'null' ? null : Number(interestRateForm.fd);
+      }
+      if (interestRateForm.loan !== '') {
+        updateData.loan =
+          interestRateForm.loan === 'null'
+            ? null
+            : Number(interestRateForm.loan);
+      }
+
+      const res = await fetch(
+        `/api/users/${selectedUserForInterest._id}/interest-rates`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updateData),
+        }
+      );
+
+      const data = await res.json();
+      if (res.ok) {
+        setMessage(
+          `✅ Interest rates updated for ${selectedUserForInterest.name}`
+        );
+        // Update the user in the list
+        setUsers((prev) =>
+          prev.map((u) =>
+            u._id === selectedUserForInterest._id
+              ? { ...u, customInterestRates: data.data }
+              : u
+          )
+        );
+        setTimeout(() => setInterestRateDialogOpen(false), 1500);
+      } else {
+        setMessage(`❌ Error: ${data.error}`);
+      }
+    } finally {
+      setInterestRateLoading(false);
     }
   }
 
@@ -660,12 +733,172 @@ export default function AdminDashboard() {
                                     </DialogContent>
                                   </Dialog>
                                 )}
+                                <Dialog
+                                  open={
+                                    interestRateDialogOpen &&
+                                    selectedUserForInterest?._id === u._id
+                                  }
+                                  onOpenChange={(open) => {
+                                    setInterestRateDialogOpen(open);
+                                    if (open) {
+                                      setSelectedUserForInterest(u);
+                                      // Populate form with existing values
+                                      setInterestRateForm({
+                                        saving:
+                                          u.customInterestRates?.saving?.toString() ||
+                                          '',
+                                        fd:
+                                          u.customInterestRates?.fd?.toString() ||
+                                          '',
+                                        loan:
+                                          u.customInterestRates?.loan?.toString() ||
+                                          '',
+                                      });
+                                    } else {
+                                      setSelectedUserForInterest(null);
+                                      setInterestRateForm({
+                                        saving: '',
+                                        fd: '',
+                                        loan: '',
+                                      });
+                                    }
+                                  }}
+                                >
+                                  <DialogTrigger asChild>
+                                    <Button
+                                      size="sm"
+                                      className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
+                                      title="Edit custom interest rates"
+                                    >
+                                      <Percent size={16} />
+                                    </Button>
+                                  </DialogTrigger>
+                                  <DialogContent className="bg-slate-800 border-slate-700 w-[90vw] sm:w-full max-w-md max-h-[90vh] overflow-y-auto p-4 sm:p-6 rounded-lg">
+                                    <DialogHeader>
+                                      <DialogTitle className="text-white">
+                                        Custom Interest Rates for {u.name}
+                                      </DialogTitle>
+                                    </DialogHeader>
+                                    <form
+                                      onSubmit={handleUpdateInterestRates}
+                                      className="space-y-4"
+                                    >
+                                      <div>
+                                        <Label
+                                          htmlFor={`saving-${u._id}`}
+                                          className="text-gray-100"
+                                        >
+                                          Savings Rate (%) - Leave empty to use
+                                          default
+                                        </Label>
+                                        <Input
+                                          id={`saving-${u._id}`}
+                                          type="number"
+                                          step="0.01"
+                                          min="0"
+                                          placeholder="e.g., 5.5"
+                                          value={interestRateForm.saving}
+                                          onChange={(e) =>
+                                            setInterestRateForm((prev) => ({
+                                              ...prev,
+                                              saving: e.target.value,
+                                            }))
+                                          }
+                                          disabled={interestRateLoading}
+                                          className="bg-slate-700 border-slate-600 text-white disabled:opacity-50"
+                                        />
+                                      </div>
+
+                                      <div>
+                                        <Label
+                                          htmlFor={`fd-${u._id}`}
+                                          className="text-gray-100"
+                                        >
+                                          Fixed Deposit Rate (%) - Leave empty
+                                          to use default
+                                        </Label>
+                                        <Input
+                                          id={`fd-${u._id}`}
+                                          type="number"
+                                          step="0.01"
+                                          min="0"
+                                          placeholder="e.g., 7.2"
+                                          value={interestRateForm.fd}
+                                          onChange={(e) =>
+                                            setInterestRateForm((prev) => ({
+                                              ...prev,
+                                              fd: e.target.value,
+                                            }))
+                                          }
+                                          disabled={interestRateLoading}
+                                          className="bg-slate-700 border-slate-600 text-white disabled:opacity-50"
+                                        />
+                                      </div>
+
+                                      <div>
+                                        <Label
+                                          htmlFor={`loan-${u._id}`}
+                                          className="text-gray-100"
+                                        >
+                                          Loan Rate (%) - Leave empty to use
+                                          default
+                                        </Label>
+                                        <Input
+                                          id={`loan-${u._id}`}
+                                          type="number"
+                                          step="0.01"
+                                          min="0"
+                                          placeholder="e.g., 11.0"
+                                          value={interestRateForm.loan}
+                                          onChange={(e) =>
+                                            setInterestRateForm((prev) => ({
+                                              ...prev,
+                                              loan: e.target.value,
+                                            }))
+                                          }
+                                          disabled={interestRateLoading}
+                                          className="bg-slate-700 border-slate-600 text-white disabled:opacity-50"
+                                        />
+                                      </div>
+
+                                      <div className="text-xs text-gray-400 space-y-1">
+                                        <p>
+                                          💡 Leave fields empty to keep using
+                                          default scheme rates.
+                                        </p>
+                                        <p>
+                                          Leave fields empty to revert to
+                                          defaults.
+                                        </p>
+                                      </div>
+
+                                      <Button
+                                        type="submit"
+                                        disabled={interestRateLoading}
+                                        className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                      >
+                                        {interestRateLoading ? (
+                                          <>
+                                            <Loader
+                                              size={18}
+                                              className="animate-spin"
+                                            />
+                                            Updating...
+                                          </>
+                                        ) : (
+                                          'Update Interest Rates'
+                                        )}
+                                      </Button>
+                                    </form>
+                                  </DialogContent>
+                                </Dialog>
                               </div>
                             ) : col.type === 'currency' ||
                               col.accessor === 'loanBalance' ? (
                               `₹${((u[col.accessor as keyof User] as number) || 0).toFixed(2)}`
-                            ) : (
-                              u[col.accessor as keyof User]
+                            ) : col.accessor ===
+                              'customInterestRates' ? null : (
+                              String(u[col.accessor as keyof User] || '')
                             )}
                           </TableCell>
                         ))}

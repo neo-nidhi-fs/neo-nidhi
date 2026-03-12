@@ -1,6 +1,12 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 import bcrypt from 'bcrypt';
 
+export interface ICustomInterestRate {
+  saving?: number;
+  fd?: number;
+  loan?: number;
+}
+
 export interface IUser extends Document {
   name: string;
   age: number;
@@ -15,6 +21,7 @@ export interface IUser extends Document {
   accruedFdInterest: number;
   accruedLoanInterest: number;
   lastInterestCalc: Date | null;
+  customInterestRates: ICustomInterestRate;
   mpin?: string;
   qrCode?: string;
   comparePassword(candidatePassword: string): Promise<boolean>;
@@ -34,6 +41,14 @@ const UserSchema: Schema<IUser> = new Schema({
   accruedSavingInterest: { type: Number, default: 0 },
   accruedFdInterest: { type: Number, default: 0 },
   accruedLoanInterest: { type: Number, default: 0 },
+  customInterestRates: {
+    type: {
+      saving: { type: Number, default: null },
+      fd: { type: Number, default: null },
+      loan: { type: Number, default: null },
+    },
+    default: {},
+  },
   createdAt: { type: Date, default: Date.now },
   mpin: { type: String, default: null },
   qrCode: { type: String, default: null },
