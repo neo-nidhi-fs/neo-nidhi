@@ -1,8 +1,8 @@
-// app/api/run-interest-manual/route.ts
+// app/api/run-manual-interest/route.ts
 import { NextResponse } from 'next/server';
 import { processInterest } from '@/jobs/interestCron';
 
 export async function GET() {
-  await processInterest(true);
+  await processInterest();
   return NextResponse.json({ status: 'Interest processed manually' });
 }
