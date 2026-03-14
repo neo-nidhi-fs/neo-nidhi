@@ -9,7 +9,7 @@ import { ArrowRight, Loader } from 'lucide-react';
 
 export default function RegisterUserPage() {
   const [name, setName] = useState('');
-  const [age, setAge] = useState<number>(0);
+  const [dob, setDob] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -26,7 +26,7 @@ export default function RegisterUserPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: name.trim(),
-          age,
+          dob,
           role: 'user',
           password,
         }),
@@ -36,7 +36,7 @@ export default function RegisterUserPage() {
       if (res.ok) {
         setMessage('User registered successfully ✅');
         setName('');
-        setAge(0);
+        setDob('');
         setPassword('');
         setTimeout(() => {
           router.push('/admin/dashboard');
@@ -99,17 +99,17 @@ export default function RegisterUserPage() {
               </div>
               <div className="space-y-2">
                 <label
-                  htmlFor="age"
+                  htmlFor="dob"
                   className="text-sm font-medium text-gray-100"
                 >
-                  Age
+                  Date of Birth
                 </label>
                 <Input
-                  id="age"
-                  type="number"
-                  value={age}
-                  onChange={(e) => setAge(Number(e.target.value))}
-                  placeholder="Enter age"
+                  id="dob"
+                  type="date"
+                  value={dob}
+                  onChange={(e) => setDob(e.target.value)}
+                  placeholder="Enter date of birth"
                   required
                   disabled={isLoading}
                   className="bg-slate-700/50 border-slate-600 text-white placeholder:text-gray-500 focus:border-green-400 disabled:opacity-50"

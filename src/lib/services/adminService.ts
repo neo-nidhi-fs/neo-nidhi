@@ -8,6 +8,7 @@ export interface User {
   _id: string;
   name: string;
   age: number;
+  dob?: string | Date | null;
   savingsBalance: number;
   loanBalance: number;
   fd?: number;
@@ -51,11 +52,11 @@ class AdminService {
     return data.data;
   }
 
-  async createUser(name: string, age: number, password: string): Promise<User> {
+  async createUser(name: string, dob: string, password: string): Promise<User> {
     const res = await fetch(`${this.baseUrl}/api/users`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, age, password, role: 'user' }),
+      body: JSON.stringify({ name, dob, password, role: 'user' }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed to create user');

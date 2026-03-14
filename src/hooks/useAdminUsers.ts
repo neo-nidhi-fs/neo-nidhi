@@ -34,10 +34,10 @@ export function useAdminUsers() {
   }, [fetchUsers]);
 
   const addUser = useCallback(
-    async (name: string, age: number, password: string) => {
+    async (name: string, dob: string, password: string) => {
       try {
         setAddUserLoading(true);
-        const newUser = await adminService.createUser(name, age, password);
+        const newUser = await adminService.createUser(name, dob, password);
         setUsers((prev) => [...prev, newUser]);
         return { success: true, message: '✅ User registered successfully' };
       } catch (err) {

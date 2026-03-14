@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState } from 'react';
 import { useAdminUsers } from '@/hooks/useAdminUsers';
 import { useAdminSchemes } from '@/hooks/useAdminSchemes';
 import { useAdminInterestRates } from '@/hooks/useAdminInterestRates';
@@ -10,7 +10,13 @@ import { AdminStats } from '@/components/admin/sections/AdminStats';
 import { UsersSection } from '@/components/admin/sections/UsersSection';
 import { SchemesSection } from '@/components/admin/sections/SchemesSection';
 import { MessageDisplay } from '@/components/admin/MessageDisplay';
-import { User } from '@/lib/services/adminService';
+import { Scheme, User } from '@/lib/services/adminService';
+
+type InterestRateUpdate = {
+  saving?: number | null;
+  fd?: number | null;
+  loan?: number | null;
+};
 
 export default function AdminDashboard() {
   const [message, setMessage] = useState('');
@@ -21,7 +27,7 @@ export default function AdminDashboard() {
   const [interestRateDialogOpen, setInterestRateDialogOpen] = useState(false);
   const [selectedUserForInterest, setSelectedUserForInterest] =
     useState<User | null>(null);
-  const [editingScheme, setEditingScheme] = useState<any>(null);
+  const [editingScheme, setEditingScheme] = useState<Scheme | null>(null);
 
   // Custom hooks encapsulating business logic
   const {
@@ -52,10 +58,10 @@ export default function AdminDashboard() {
   // Handle add user submission
   const handleAddUserSubmit = async (
     name: string,
-    age: number,
+    dob: string,
     password: string
   ) => {
-    const result = await addUser(name, age, password);
+    const result = await addUser(name, dob, password);
     setMessage(result.message);
     setTimeout(() => {
       if (result.success) setUserDialogOpen(false);
@@ -115,7 +121,7 @@ export default function AdminDashboard() {
   };
 
   // Handle interest rate update
-  const handleUpdateInterestRates = async (rates: any) => {
+  const handleUpdateInterestRates = async (rates: InterestRateUpdate) => {
     if (!selectedUserForInterest)
       return { success: false, message: 'No user selected' };
     const result = await updateInterestRates(

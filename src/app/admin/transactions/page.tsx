@@ -26,6 +26,7 @@ interface User {
   _id: string;
   name: string;
   age: number;
+  dob?: Date;
   savingsBalance: number;
   loanBalance: number;
 }

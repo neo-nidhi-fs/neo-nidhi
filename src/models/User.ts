@@ -10,6 +10,7 @@ export interface ICustomInterestRate {
 export interface IUser extends Document {
   name: string;
   age: number;
+  dob?: Date;
   role: 'admin' | 'user';
   savingsBalance: number;
   fd: number;
@@ -31,6 +32,7 @@ export interface IUser extends Document {
 const UserSchema: Schema<IUser> = new Schema({
   name: { type: String, required: true, unique: true },
   age: { type: Number, required: true },
+  dob: { type: Date, default: null },
   role: { type: String, enum: ['admin', 'user'], default: 'user' },
   savingsBalance: { type: Number, default: 0 },
   fd: { type: Number, default: 0 },

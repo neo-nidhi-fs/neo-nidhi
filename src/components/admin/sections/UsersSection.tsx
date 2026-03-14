@@ -22,6 +22,7 @@ import { AddUserDialog } from '../dialogs/AddUserDialog';
 import { FdWithdrawDialog } from '../dialogs/FdWithdrawDialog';
 import { InterestRateDialog } from '../dialogs/InterestRateDialog';
 import { FdWithdrawInfo } from '@/lib/services/adminService';
+import { getDisplayAge } from '@/lib/helpers';
 
 type InterestRateUpdate = {
   saving?: number | null;
@@ -41,7 +42,7 @@ interface UsersSectionProps {
   onUserDialogOpenChange: (open: boolean) => void;
   onAddUser: (
     name: string,
-    age: number,
+    dob: string,
     password: string
   ) => Promise<{ success: boolean; message: string }>;
   addUserLoading: boolean;
@@ -62,9 +63,7 @@ interface UsersSectionProps {
   interestRateDialogOpen: boolean;
   selectedUserForInterest: User | null;
   onInterestRateDialogOpen: (open: boolean, user?: User) => void;
-  onUpdateInterestRates: (
-    rates: InterestRateUpdate
-  ) => Promise<{
+  onUpdateInterestRates: (rates: InterestRateUpdate) => Promise<{
     success: boolean;
     message: string;
     data?: User['customInterestRates'];
@@ -111,8 +110,8 @@ export function UsersSection({
 }: UsersSectionProps) {
   const [userPage, setUserPage] = useState(1);
 
-  const handleAddUser = async (name: string, age: number, password: string) => {
-    const result = await onAddUser(name, age, password);
+  const handleAddUser = async (name: string, dob: string, password: string) => {
+    const result = await onAddUser(name, dob, password);
     if (result.success) {
       onUserDialogOpenChange(false);
       onUserAdded?.();
@@ -200,6 +199,8 @@ export function UsersSection({
                           </div>
                         ) : col.type === 'currency' ? (
                           `₹${((u[col.accessor as keyof User] as number) || 0).toFixed(2)}`
+                        ) : col.accessor === 'age' ? (
+                          getDisplayAge(u.dob, u.age)
                         ) : (
                           String(u[col.accessor as keyof User] || '')
                         )}

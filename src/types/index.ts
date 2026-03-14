@@ -36,6 +36,7 @@ export interface IUserProfile {
   _id: string;
   name: string;
   age: number;
+  dob?: Date;
   role: 'admin' | 'user';
   createdAt: Date;
   mpin?: string | null;

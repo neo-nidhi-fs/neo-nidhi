@@ -3,6 +3,7 @@ import { dbConnect } from '@/lib/dbConnect';
 import { QuizQuestion } from '@/models/QuizQuestion';
 import { QuizResult } from '@/models/QuizResult';
 import { Types } from 'mongoose';
+import type { PipelineStage } from 'mongodb';
 
 export async function GET(req: Request) {
   try {
@@ -39,7 +40,7 @@ export async function GET(req: Request) {
         );
       }
 
-      const pipeline: any[] = [{ $match: { category, subCategory } }];
+      const pipeline: PipelineStage[] = [{ $match: { category, subCategory } }];
 
       // Exclude already attempted questions if userId provided
       if (excludedQuestionIds.length > 0) {

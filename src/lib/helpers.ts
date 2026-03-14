@@ -4,17 +4,53 @@
  */
 export function extractKeywordPhrase(text: string): string {
   const commonWords = new Set([
-    'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 
-    'of', 'with', 'by', 'from', 'as', 'is', 'was', 'be', 'are', 'been',
-    'if', 'what', 'which', 'who', 'when', 'where', 'why', 'how', 'do', 'does',
-    'did', 'have', 'has', 'had', 'could', 'would', 'should', 'may', 'might',
+    'the',
+    'a',
+    'an',
+    'and',
+    'or',
+    'but',
+    'in',
+    'on',
+    'at',
+    'to',
+    'for',
+    'of',
+    'with',
+    'by',
+    'from',
+    'as',
+    'is',
+    'was',
+    'be',
+    'are',
+    'been',
+    'if',
+    'what',
+    'which',
+    'who',
+    'when',
+    'where',
+    'why',
+    'how',
+    'do',
+    'does',
+    'did',
+    'have',
+    'has',
+    'had',
+    'could',
+    'would',
+    'should',
+    'may',
+    'might',
   ]);
 
   const words = text
     .toLowerCase()
     .replace(/[^\w\s]/g, '')
     .split(/\s+/)
-    .filter(word => word.length > 0 && !commonWords.has(word));
+    .filter((word) => word.length > 0 && !commonWords.has(word));
 
   return words.slice(0, 3).join(' ');
 }
@@ -23,9 +59,9 @@ export function extractKeywordPhrase(text: string): string {
  * Formats currency to INR format
  */
 export function formatCurrency(amount: number, currency = '₹'): string {
-  return `${currency}${amount.toLocaleString('en-IN', { 
+  return `${currency}${amount.toLocaleString('en-IN', {
     minimumFractionDigits: 2,
-    maximumFractionDigits: 2 
+    maximumFractionDigits: 2,
   })}`;
 }
 
@@ -51,7 +87,10 @@ export function formatDate(date: string | Date): string {
  * Calculates time remaining in seconds
  */
 export function calculateTimeRemaining(endDate: string | Date): number {
-  return Math.max(0, Math.floor((new Date(endDate).getTime() - Date.now()) / 1000));
+  return Math.max(
+    0,
+    Math.floor((new Date(endDate).getTime() - Date.now()) / 1000)
+  );
 }
 
 /**
@@ -61,6 +100,37 @@ export function formatTimeRemaining(seconds: number): string {
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
   const secs = seconds % 60;
-  
+
   return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+}
+
+/**
+ * Calculates age from date of birth
+ */
+export function calculateAge(
+  dob: Date | string | null | undefined
+): number | null {
+  if (!dob) return null;
+  const birthDate = new Date(dob);
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  if (
+    monthDiff < 0 ||
+    (monthDiff === 0 && today.getDate() < birthDate.getDate())
+  ) {
+    age--;
+  }
+  return age;
+}
+
+/**
+ * Gets display age: calculates from dob if available, otherwise uses stored age
+ */
+export function getDisplayAge(
+  dob: Date | string | null | undefined,
+  storedAge: number
+): number {
+  const calculatedAge = calculateAge(dob);
+  return calculatedAge !== null ? calculatedAge : storedAge;
 }

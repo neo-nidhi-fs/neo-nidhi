@@ -21,7 +21,7 @@ import { FormEvent } from 'react';
 interface AddUserDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (name: string, age: number, password: string) => void;
+  onSubmit: (name: string, dob: string, password: string) => void;
   loading: boolean;
 }
 
@@ -35,9 +35,9 @@ export function AddUserDialog({
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const name = formData.get('name') as string;
-    const age = Number(formData.get('age'));
+    const dob = formData.get('dob') as string;
     const password = formData.get('password') as string;
-    onSubmit(name, age, password);
+    onSubmit(name, dob, password);
     e.currentTarget.reset();
   };
 
@@ -67,13 +67,13 @@ export function AddUserDialog({
             />
           </div>
           <div>
-            <Label htmlFor="age" className="text-gray-100">
-              Age
+            <Label htmlFor="dob" className="text-gray-100">
+              Date of Birth
             </Label>
             <Input
-              id="age"
-              name="age"
-              type="number"
+              id="dob"
+              name="dob"
+              type="date"
               required
               disabled={loading}
               className="bg-slate-700 border-slate-600 text-white disabled:opacity-50"

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { dbConnect } from '@/lib/dbConnect';
 import { User } from '@/models/User';
+import { calculateAge } from '@/lib/helpers';
 
 export async function GET() {
   try {
@@ -18,10 +19,14 @@ export async function POST(req: Request) {
     await dbConnect();
     const body = await req.json();
 
+    const dob = body.dob ? new Date(body.dob) : null;
+    const age = dob ? calculateAge(dob) : body.age || 0;
+
     // Create new user (password will be hashed automatically by pre-save hook in User model)
     const newUser = new User({
       name: body.name?.trim(),
-      age: body.age,
+      age: age,
+      dob: dob,
       role: body.role || 'user', // default to user
       savingsBalance: body.savingsBalance || 0,
       loanBalance: 0,
