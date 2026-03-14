@@ -2,8 +2,7 @@ import { NextResponse } from 'next/server';
 import { dbConnect } from '@/lib/dbConnect';
 import { QuizQuestion } from '@/models/QuizQuestion';
 import { QuizResult } from '@/models/QuizResult';
-import { Types } from 'mongoose';
-import type { PipelineStage } from 'mongodb';
+import { Types, type PipelineStage } from 'mongoose';
 
 export async function GET(req: Request) {
   try {
