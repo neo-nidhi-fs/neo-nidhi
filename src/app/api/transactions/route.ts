@@ -62,6 +62,13 @@ export async function POST(req: Request) {
           { status: 400 }
         );
       }
+
+      if (currentBalances.savingsBalance < amount) {
+        return NextResponse.json(
+          { success: false, error: 'Insufficient savings balance' },
+          { status: 400 }
+        );
+      }
     }
 
     // Create transaction

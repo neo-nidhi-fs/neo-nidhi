@@ -31,7 +31,10 @@ export async function recalculateBalances(
         loanBalance += tx.amount;
         break;
       case 'repayment':
+        // A loan repayment should reduce both the outstanding loan and the available savings.
+        // This keeps the user balance in sync with the UI flows that deduct repayment from deposit.
         loanBalance -= tx.amount;
+        savingsBalance -= tx.amount;
         break;
       case 'interest_deposit':
         savingsBalance += tx.amount;

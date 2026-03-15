@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { dbConnect } from '@/lib/dbConnect';
 import { QuizQuestion } from '@/models/QuizQuestion';
 import { QuizResult } from '@/models/QuizResult';
+import { User } from '@/models/User';
+import { calculateAge } from '@/lib/helpers';
 import { Types, type PipelineStage } from 'mongoose';
 
 export async function GET(req: Request) {
@@ -40,6 +42,25 @@ export async function GET(req: Request) {
       }
 
       const pipeline: PipelineStage[] = [{ $match: { category, subCategory } }];
+
+      // If we have a user, use DOB/age to adjust difficulty for younger users
+      if (userId) {
+        const user = await User.findById(userId);
+        const userAge = user
+          ? calculateAge(user.dob) ?? user.age
+          : null;
+
+        // Age-based difficulty rules (DOB-aware):
+        // - <15: only easy
+        // - 15-19: easy or medium (no hard)
+        if (userAge !== null) {
+          if (userAge < 15) {
+            pipeline.push({ $match: { difficulty: 'easy' } });
+          } else if (userAge < 20) {
+            pipeline.push({ $match: { difficulty: { $ne: 'hard' } } });
+          }
+        }
+      }
 
       // Exclude already attempted questions if userId provided
       if (excludedQuestionIds.length > 0) {
