@@ -35,8 +35,10 @@ export default function AdminDashboard() {
     loading,
     addUserLoading,
     resetPasswordLoading,
+    updateUserLoading,
     addUser,
     resetPassword,
+    updateUserDob,
     refetchUsers,
   } = useAdminUsers();
 
@@ -67,6 +69,21 @@ export default function AdminDashboard() {
       if (result.success) setUserDialogOpen(false);
       setMessage('');
     }, 2000);
+    return result;
+  };
+
+  // Handle updating user DOB
+  const handleUpdateDob = async (userId: string, dob: string | null) => {
+    const result = await updateUserDob(userId, dob);
+    setMessage(result.message);
+    if (result.success) {
+      setTimeout(() => {
+        refetchUsers();
+        setMessage('');
+      }, 1500);
+    } else {
+      setTimeout(() => setMessage(''), 2000);
+    }
     return result;
   };
 
@@ -192,6 +209,8 @@ export default function AdminDashboard() {
           addUserLoading={addUserLoading}
           onResetPassword={handleResetPassword}
           resetPasswordLoading={resetPasswordLoading}
+          onUpdateDob={handleUpdateDob}
+          updateDobLoading={updateUserLoading}
           fdWithdrawInfo={fdWithdrawInfo}
           selectedUserForFd={selectedUserForFd}
           onFdWithdrawDialogOpen={handleFdWithdrawDialogOpen}

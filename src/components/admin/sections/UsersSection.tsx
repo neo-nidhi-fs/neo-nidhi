@@ -15,14 +15,15 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { RotateCcw, Loader } from 'lucide-react';
+import { RotateCcw, Loader, Pencil } from 'lucide-react';
 import { useState } from 'react';
 import { User } from '@/lib/services/adminService';
 import { AddUserDialog } from '../dialogs/AddUserDialog';
 import { FdWithdrawDialog } from '../dialogs/FdWithdrawDialog';
 import { InterestRateDialog } from '../dialogs/InterestRateDialog';
 import { FdWithdrawInfo } from '@/lib/services/adminService';
-import { getDisplayAge } from '@/lib/helpers';
+import { formatDate, getDisplayAge } from '@/lib/helpers';
+import { EditUserDobDialog } from '../dialogs/EditUserDobDialog';
 
 type InterestRateUpdate = {
   saving?: number | null;
@@ -51,6 +52,14 @@ interface UsersSectionProps {
     userName: string
   ) => Promise<{ success: boolean; message: string }>;
   resetPasswordLoading: string | null;
+  onUpdateDob: (
+    userId: string,
+    dob: string | null
+  ) => Promise<{
+    success: boolean;
+    message: string;
+  }>;
+  updateDobLoading: string | null;
   fdWithdrawInfo: FdWithdrawInfo;
   selectedUserForFd: User | null;
   onFdWithdrawDialogOpen: (open: boolean, user?: User) => void;
@@ -76,6 +85,7 @@ const ITEMS_PER_PAGE = 10;
 
 const userTableColumns: UsersTableColumn[] = [
   { header: 'Name', accessor: 'name', type: 'string' },
+  { header: 'DOB', accessor: 'dob', type: 'string' },
   { header: 'Age', accessor: 'age', type: 'number' },
   { header: 'Savings', accessor: 'savingsBalance', type: 'currency' },
   { header: 'SB Int', accessor: 'accruedSavingInterest', type: 'currency' },
@@ -94,6 +104,8 @@ export function UsersSection({
   addUserLoading,
   onResetPassword,
   resetPasswordLoading,
+  onUpdateDob,
+  updateDobLoading,
   fdWithdrawInfo,
   selectedUserForFd,
   onFdWithdrawDialogOpen,
@@ -109,6 +121,11 @@ export function UsersSection({
   onUserAdded,
 }: UsersSectionProps) {
   const [userPage, setUserPage] = useState(1);
+  const [dobDialogOpen, setDobDialogOpen] = useState(false);
+  const [selectedUserForDob, setSelectedUserForDob] = useState<User | null>(
+    null
+  );
+  const [dobDraft, setDobDraft] = useState('');
 
   const handleAddUser = async (name: string, dob: string, password: string) => {
     const result = await onAddUser(name, dob, password);
@@ -118,16 +135,52 @@ export function UsersSection({
     }
   };
 
+  const handleDobDialogOpen = (open: boolean, user?: User) => {
+    setDobDialogOpen(open);
+    if (open && user) {
+      setSelectedUserForDob(user);
+      setDobDraft(
+        user.dob ? new Date(user.dob).toISOString().slice(0, 10) : ''
+      );
+    } else {
+      setSelectedUserForDob(null);
+      setDobDraft('');
+    }
+  };
+
+  const handleUpdateDob = async (userId: string, dob: string | null) => {
+    const result = await onUpdateDob(userId, dob);
+    if (result.success) {
+      setDobDialogOpen(false);
+      onUserAdded?.();
+    }
+    return result;
+  };
+
   return (
     <div className="mb-12">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-3xl font-bold">Registered Users</h2>
-        <AddUserDialog
-          open={userDialogOpen}
-          onOpenChange={onUserDialogOpenChange}
-          onSubmit={handleAddUser}
-          loading={addUserLoading}
-        />
+        <div className="flex items-center gap-2">
+          <AddUserDialog
+            open={userDialogOpen}
+            onOpenChange={onUserDialogOpenChange}
+            onSubmit={handleAddUser}
+            loading={addUserLoading}
+          />
+          <EditUserDobDialog
+            key={selectedUserForDob?._id ?? 'dob-dialog'}
+            user={selectedUserForDob}
+            open={dobDialogOpen}
+            dob={dobDraft}
+            onDobChange={setDobDraft}
+            onOpenChange={(open) =>
+              handleDobDialogOpen(open, selectedUserForDob ?? undefined)
+            }
+            onSubmit={handleUpdateDob}
+            loading={updateDobLoading === selectedUserForDob?._id}
+          />
+        </div>
       </div>
 
       <Card className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 border-slate-700">
@@ -162,6 +215,18 @@ export function UsersSection({
                                 <Loader size={14} className="animate-spin" />
                               ) : (
                                 <RotateCcw size={16} />
+                              )}
+                            </Button>
+                            <Button
+                              onClick={() => handleDobDialogOpen(true, u)}
+                              disabled={updateDobLoading === u._id}
+                              size="sm"
+                              className="bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {updateDobLoading === u._id ? (
+                                <Loader size={14} className="animate-spin" />
+                              ) : (
+                                <Pencil size={16} />
                               )}
                             </Button>
                             <FdWithdrawDialog
@@ -201,6 +266,12 @@ export function UsersSection({
                           `₹${((u[col.accessor as keyof User] as number) || 0).toFixed(2)}`
                         ) : col.accessor === 'age' ? (
                           getDisplayAge(u.dob, u.age)
+                        ) : col.accessor === 'dob' ? (
+                          u.dob ? (
+                            formatDate(u.dob)
+                          ) : (
+                            '-'
+                          )
                         ) : (
                           String(u[col.accessor as keyof User] || '')
                         )}

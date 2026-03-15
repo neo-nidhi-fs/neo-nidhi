@@ -16,6 +16,9 @@ export function useAdminUsers() {
   const [resetPasswordLoading, setResetPasswordLoading] = useState<
     string | null
   >(null);
+  const [updateUserLoading, setUpdateUserLoading] = useState<string | null>(
+    null
+  );
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -73,13 +76,36 @@ export function useAdminUsers() {
     []
   );
 
+  const updateUserDob = useCallback(
+    async (userId: string, dob: string | null) => {
+      try {
+        setUpdateUserLoading(userId);
+        const updatedUser = await adminService.updateUser(userId, { dob });
+        setUsers((prev) =>
+          prev.map((u) => (u._id === userId ? updatedUser : u))
+        );
+        return { success: true, message: '✅ User updated successfully' };
+      } catch (err) {
+        return {
+          success: false,
+          message: `❌ Error: ${(err as Error).message}`,
+        };
+      } finally {
+        setUpdateUserLoading(null);
+      }
+    },
+    []
+  );
+
   return {
     users,
     loading,
     addUserLoading,
     resetPasswordLoading,
+    updateUserLoading,
     addUser,
     resetPassword,
+    updateUserDob,
     refetchUsers: fetchUsers,
   };
 }

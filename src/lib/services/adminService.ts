@@ -63,6 +63,20 @@ class AdminService {
     return data.data;
   }
 
+  async updateUser(
+    userId: string,
+    updates: { dob?: string | null; age?: number }
+  ): Promise<User> {
+    const res = await fetch(`${this.baseUrl}/api/users/${userId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to update user');
+    return data.data;
+  }
+
   async resetPassword(userId: string): Promise<void> {
     const res = await fetch(
       `${this.baseUrl}/api/users/${userId}/reset-password`,
