@@ -154,6 +154,7 @@ export default function QRTransferPage() {
 
   const handleTransferWithMPIN = async (mpin: string) => {
     setMpinLoading(true);
+
     try {
       const res = await fetch('/api/transactions/transfer', {
         method: 'POST',
@@ -167,23 +168,24 @@ export default function QRTransferPage() {
       });
 
       const data = await res.json();
-      if (res.ok) {
-        setMessage(`✅ ${data.message}`);
-        // Reset form
-        setTimeout(() => {
-          setStep('scan');
-          setScannedUser(null);
-          setAmount('');
-          setMessage('');
-          setShowMPINDialog(false);
-        }, 2000);
-      } else {
-        setError(data.error);
-        setShowMPINDialog(false);
+      if (!res.ok) {
+        throw new Error(data.error || 'Transfer failed');
       }
+
+      setMessage(`✅ ${data.message}`);
+
+      // Reset form after a short delay
+      setTimeout(() => {
+        setStep('scan');
+        setScannedUser(null);
+        setAmount('');
+        setMessage('');
+      }, 2000);
+
+      return true;
     } catch (err) {
       setError((err as Error).message);
-      setShowMPINDialog(false);
+      return false;
     } finally {
       setMpinLoading(false);
     }

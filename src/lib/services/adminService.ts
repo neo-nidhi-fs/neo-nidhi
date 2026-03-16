@@ -89,6 +89,15 @@ class AdminService {
     if (!res.ok) throw new Error(data.error || 'Failed to reset password');
   }
 
+  async resetMPIN(userId: string): Promise<void> {
+    const res = await fetch(`${this.baseUrl}/api/users/${userId}/reset-mpin`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to reset MPIN');
+  }
+
   async updateInterestRates(
     userId: string,
     rates: {

@@ -72,6 +72,7 @@ export default function QRTransferPage() {
 
   const handleTransferWithMPIN = async (mpin: string) => {
     setLoading(true);
+
     try {
       const res = await fetch('/api/transactions/transfer', {
         method: 'POST',
@@ -85,22 +86,22 @@ export default function QRTransferPage() {
       });
 
       const data = await res.json();
-      if (res.ok) {
-        setMessage(`✅ ${data.message}`);
-        setTimeout(() => {
-          setStep('scan');
-          setScannedUser(null);
-          setAmount('');
-          setMessage('');
-          setShowMPINDialog(false);
-        }, 2000);
-      } else {
-        setError(data.error);
-        setShowMPINDialog(false);
+      if (!res.ok) {
+        throw new Error(data.error || 'Transfer failed');
       }
+
+      setMessage(`✅ ${data.message}`);
+      setTimeout(() => {
+        setStep('scan');
+        setScannedUser(null);
+        setAmount('');
+        setMessage('');
+      }, 2000);
+
+      return true;
     } catch (err) {
       setError((err as Error).message);
-      setShowMPINDialog(false);
+      return false;
     } finally {
       setLoading(false);
     }
@@ -112,7 +113,10 @@ export default function QRTransferPage() {
         <div className="max-w-md mx-auto">
           <div className="mb-8">
             <Link href="/user/dashboard">
-              <Button variant="ghost" className="text-gray-400 hover:text-white mb-6 flex items-center gap-2">
+              <Button
+                variant="ghost"
+                className="text-gray-400 hover:text-white mb-6 flex items-center gap-2"
+              >
                 <ArrowLeft size={18} />
                 Back to Dashboard
               </Button>
@@ -149,7 +153,8 @@ export default function QRTransferPage() {
               </span>
             </h1>
             <p className="text-gray-200">
-              Sending to <span className="font-semibold">{scannedUser?.userName}</span>
+              Sending to{' '}
+              <span className="font-semibold">{scannedUser?.userName}</span>
             </p>
           </div>
 

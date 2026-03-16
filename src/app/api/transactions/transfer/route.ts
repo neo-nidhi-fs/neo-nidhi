@@ -51,8 +51,13 @@ export async function POST(req: Request) {
       );
     }
 
-    // Get receiver
-    const receiver = await User.findOne({ name: trimmedToUserName });
+    // Get receiver (case-insensitive match)
+    const escapeRegExp = (s: string) =>
+      s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const receiver = await User.findOne({
+      name: { $regex: `^${escapeRegExp(trimmedToUserName)}$`, $options: 'i' },
+    });
+
     if (!receiver) {
       return NextResponse.json(
         { success: false, error: 'Recipient not found' },

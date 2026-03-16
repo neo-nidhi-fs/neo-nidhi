@@ -16,6 +16,7 @@ export function useAdminUsers() {
   const [resetPasswordLoading, setResetPasswordLoading] = useState<
     string | null
   >(null);
+  const [resetMPINLoading, setResetMPINLoading] = useState<string | null>(null);
   const [updateUserLoading, setUpdateUserLoading] = useState<string | null>(
     null
   );
@@ -76,6 +77,24 @@ export function useAdminUsers() {
     []
   );
 
+  const resetMPIN = useCallback(async (userId: string, userName: string) => {
+    try {
+      setResetMPINLoading(userId);
+      await adminService.resetMPIN(userId);
+      return {
+        success: true,
+        message: `✅ MPIN reset to default for ${userName}`,
+      };
+    } catch (err) {
+      return {
+        success: false,
+        message: `❌ Error: ${(err as Error).message}`,
+      };
+    } finally {
+      setResetMPINLoading(null);
+    }
+  }, []);
+
   const updateUserDob = useCallback(
     async (userId: string, dob: string | null) => {
       try {
@@ -102,9 +121,11 @@ export function useAdminUsers() {
     loading,
     addUserLoading,
     resetPasswordLoading,
+    resetMPINLoading,
     updateUserLoading,
     addUser,
     resetPassword,
+    resetMPIN,
     updateUserDob,
     refetchUsers: fetchUsers,
   };

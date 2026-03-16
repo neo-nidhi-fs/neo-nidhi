@@ -15,7 +15,11 @@ import { Loader } from 'lucide-react';
 interface MPINVerificationDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onVerify: (mpin: string) => Promise<void>;
+  /**
+   * Should return true when the MPIN verification succeeds.
+   * Returning false or throwing an error will keep the dialog open.
+   */
+  onVerify: (mpin: string) => Promise<boolean>;
   isLoading: boolean;
   title?: string;
   description?: string;
@@ -40,7 +44,10 @@ export default function MPINVerificationDialog({
 
     try {
       setError('');
-      await onVerify(mpin);
+      const success = await onVerify(mpin);
+      if (!success) {
+        return;
+      }
       setMpin('');
       onClose();
     } catch (err) {

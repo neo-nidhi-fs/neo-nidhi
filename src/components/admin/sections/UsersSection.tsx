@@ -15,8 +15,8 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { RotateCcw, Loader, Pencil } from 'lucide-react';
-import { useState } from 'react';
+import { RotateCcw, Loader, Pencil, Key, MoreVertical } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { User } from '@/lib/services/adminService';
 import { AddUserDialog } from '../dialogs/AddUserDialog';
 import { FdWithdrawDialog } from '../dialogs/FdWithdrawDialog';
@@ -52,6 +52,11 @@ interface UsersSectionProps {
     userName: string
   ) => Promise<{ success: boolean; message: string }>;
   resetPasswordLoading: string | null;
+  onResetMPIN: (
+    userId: string,
+    userName: string
+  ) => Promise<{ success: boolean; message: string }>;
+  resetMPINLoading: string | null;
   onUpdateDob: (
     userId: string,
     dob: string | null
@@ -104,6 +109,8 @@ export function UsersSection({
   addUserLoading,
   onResetPassword,
   resetPasswordLoading,
+  onResetMPIN,
+  resetMPINLoading,
   onUpdateDob,
   updateDobLoading,
   fdWithdrawInfo,
@@ -126,6 +133,23 @@ export function UsersSection({
     null
   );
   const [dobDraft, setDobDraft] = useState('');
+  const [openActionMenuFor, setOpenActionMenuFor] = useState<string | null>(null);
+  const actionMenuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        openActionMenuFor &&
+        actionMenuRef.current &&
+        !actionMenuRef.current.contains(event.target as Node)
+      ) {
+        setOpenActionMenuFor(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [openActionMenuFor]);
 
   const handleAddUser = async (name: string, dob: string, password: string) => {
     const result = await onAddUser(name, dob, password);
@@ -204,31 +228,102 @@ export function UsersSection({
                     {userTableColumns.map((col) => (
                       <TableCell key={col.accessor} className="text-green-200">
                         {col.type === 'action' ? (
-                          <div className="flex gap-2">
+                          <div className="relative">
                             <Button
-                              onClick={() => onResetPassword(u._id, u.name)}
-                              disabled={resetPasswordLoading === u._id}
-                              size="sm"
-                              className="bg-orange-600 hover:bg-orange-700 text-white flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                              variant="ghost"
+                              size="icon"
+                              className="text-gray-200 hover:bg-slate-800"
+                              onClick={() =>
+                                setOpenActionMenuFor(
+                                  openActionMenuFor === u._id ? null : u._id
+                                )
+                              }
                             >
-                              {resetPasswordLoading === u._id ? (
-                                <Loader size={14} className="animate-spin" />
-                              ) : (
-                                <RotateCcw size={16} />
-                              )}
+                              <MoreVertical size={18} />
                             </Button>
-                            <Button
-                              onClick={() => handleDobDialogOpen(true, u)}
-                              disabled={updateDobLoading === u._id}
-                              size="sm"
-                              className="bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              {updateDobLoading === u._id ? (
-                                <Loader size={14} className="animate-spin" />
-                              ) : (
-                                <Pencil size={16} />
-                              )}
-                            </Button>
+
+                            {openActionMenuFor === u._id && (
+                              <div
+                                ref={actionMenuRef}
+                                className="absolute right-0 z-50 mt-2 w-48 overflow-hidden rounded-md border border-slate-700 bg-slate-950 shadow-lg"
+                              >
+                                <button
+                                  onClick={() => {
+                                    onResetPassword(u._id, u.name);
+                                    setOpenActionMenuFor(null);
+                                  }}
+                                  disabled={resetPasswordLoading === u._id}
+                                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-white hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  {resetPasswordLoading === u._id ? (
+                                    <Loader
+                                      size={14}
+                                      className="animate-spin"
+                                    />
+                                  ) : (
+                                    <RotateCcw size={14} />
+                                  )}
+                                  Reset password
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    onResetMPIN(u._id, u.name);
+                                    setOpenActionMenuFor(null);
+                                  }}
+                                  disabled={resetMPINLoading === u._id}
+                                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-white hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  {resetMPINLoading === u._id ? (
+                                    <Loader
+                                      size={14}
+                                      className="animate-spin"
+                                    />
+                                  ) : (
+                                    <Key size={14} />
+                                  )}
+                                  Reset MPIN
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    handleDobDialogOpen(true, u);
+                                    setOpenActionMenuFor(null);
+                                  }}
+                                  disabled={updateDobLoading === u._id}
+                                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-white hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  {updateDobLoading === u._id ? (
+                                    <Loader
+                                      size={14}
+                                      className="animate-spin"
+                                    />
+                                  ) : (
+                                    <Pencil size={14} />
+                                  )}
+                                  Edit DOB
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    onFdWithdrawDialogOpen(true, u);
+                                    setOpenActionMenuFor(null);
+                                  }}
+                                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-white hover:bg-slate-800"
+                                >
+                                  <span className="inline-block h-3 w-3 rounded-full bg-blue-500" />
+                                  Withdraw FD
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    onInterestRateDialogOpen(true, u);
+                                    setOpenActionMenuFor(null);
+                                  }}
+                                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-white hover:bg-slate-800"
+                                >
+                                  <span className="inline-block h-3 w-3 rounded-full bg-emerald-500" />
+                                  Update interest rates
+                                </button>
+                              </div>
+                            )}
+
                             <FdWithdrawDialog
                               user={u}
                               open={

@@ -16,7 +16,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader, Percent } from 'lucide-react';
-import { FormEvent, useState, useEffect } from 'react';
+import { FormEvent, ReactNode, useState, useEffect } from 'react';
 import { User } from '@/lib/services/adminService';
 
 interface InterestRateDialogProps {
@@ -29,6 +29,8 @@ interface InterestRateDialogProps {
     loan?: number | null;
   }) => void;
   loading: boolean;
+  /** Optional trigger element (e.g. a button) to open the dialog. */
+  trigger?: ReactNode;
 }
 
 export function InterestRateDialog({
@@ -37,6 +39,7 @@ export function InterestRateDialog({
   onOpenChange,
   onSubmit,
   loading,
+  trigger,
 }: InterestRateDialogProps) {
   const [form, setForm] = useState({
     saving: '',
@@ -75,15 +78,7 @@ export function InterestRateDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogTrigger asChild>
-        <Button
-          size="sm"
-          className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
-          title="Edit custom interest rates"
-        >
-          <Percent size={16} />
-        </Button>
-      </DialogTrigger>
+      {trigger ? <DialogTrigger asChild>{trigger}</DialogTrigger> : null}
       <DialogContent className="bg-slate-800 border-slate-700 w-[90vw] sm:w-full max-w-md max-h-[90vh] overflow-y-auto p-4 sm:p-6 rounded-lg">
         <DialogHeader>
           <DialogTitle className="text-white">

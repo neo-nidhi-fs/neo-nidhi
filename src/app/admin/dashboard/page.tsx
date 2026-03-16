@@ -35,9 +35,11 @@ export default function AdminDashboard() {
     loading,
     addUserLoading,
     resetPasswordLoading,
+    resetMPINLoading,
     updateUserLoading,
     addUser,
     resetPassword,
+    resetMPIN,
     updateUserDob,
     refetchUsers,
   } = useAdminUsers();
@@ -93,6 +95,17 @@ export default function AdminDashboard() {
       return { success: false, message: 'Cancelled' };
     }
     const result = await resetPassword(userId, userName);
+    setMessage(result.message);
+    setTimeout(() => setMessage(''), 2000);
+    return result;
+  };
+
+  // Handle reset MPIN
+  const handleResetMPIN = async (userId: string, userName: string) => {
+    if (!confirm(`Reset MPIN for ${userName} to default (0000)?`)) {
+      return { success: false, message: 'Cancelled' };
+    }
+    const result = await resetMPIN(userId, userName);
     setMessage(result.message);
     setTimeout(() => setMessage(''), 2000);
     return result;
@@ -209,6 +222,8 @@ export default function AdminDashboard() {
           addUserLoading={addUserLoading}
           onResetPassword={handleResetPassword}
           resetPasswordLoading={resetPasswordLoading}
+          onResetMPIN={handleResetMPIN}
+          resetMPINLoading={resetMPINLoading}
           onUpdateDob={handleUpdateDob}
           updateDobLoading={updateUserLoading}
           fdWithdrawInfo={fdWithdrawInfo}

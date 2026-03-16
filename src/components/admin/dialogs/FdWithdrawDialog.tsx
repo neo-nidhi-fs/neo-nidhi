@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Loader, Banknote } from 'lucide-react';
-import { FormEvent } from 'react';
+import { FormEvent, ReactNode } from 'react';
 import { User, FdWithdrawInfo } from '@/lib/services/adminService';
 
 interface FdWithdrawDialogProps {
@@ -26,6 +26,8 @@ interface FdWithdrawDialogProps {
   onFetchFdInfo: (userId: string) => void;
   onSubmit: (amount: number) => void;
   loading: boolean;
+  /** Optional trigger element (e.g. a button) to open the dialog. */
+  trigger?: ReactNode;
 }
 
 export function FdWithdrawDialog({
@@ -36,6 +38,7 @@ export function FdWithdrawDialog({
   onFetchFdInfo,
   onSubmit,
   loading,
+  trigger,
 }: FdWithdrawDialogProps) {
   const handleOpenChange = (newOpen: boolean) => {
     onOpenChange(newOpen);
@@ -54,16 +57,9 @@ export function FdWithdrawDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        {user.fd && user.fd > 0 && (
-          <Button
-            size="sm"
-            className="bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-2"
-          >
-            <Banknote size={16} />
-          </Button>
-        )}
-      </DialogTrigger>
+      {trigger ? (
+        <DialogTrigger asChild>{trigger}</DialogTrigger>
+      ) : null}
       <DialogContent className="bg-slate-800 border-slate-700 w-[90vw] sm:w-full max-w-md max-h-[90vh] overflow-y-auto p-4 sm:p-6 rounded-lg">
         <DialogHeader>
           <DialogTitle className="text-white">

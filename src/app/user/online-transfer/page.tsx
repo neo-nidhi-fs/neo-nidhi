@@ -31,6 +31,10 @@ export default function OnlineTransferPage() {
     toUserName: string;
     amount: number;
   } | null>(null);
+  const [recentRecipients, setRecentRecipients] = useState<
+    { id: string; name: string }[]
+  >([]);
+  const [initialRecipient, setInitialRecipient] = useState('');
 
   const fetchUserData = useCallback(async () => {
     try {
@@ -45,16 +49,62 @@ export default function OnlineTransferPage() {
     }
   }, [session?.user?.id]);
 
+  const fetchRecentRecipients = useCallback(async () => {
+    try {
+      if (!session?.user?.id) return;
+      const res = await fetch(`/api/users/${session.user.id}/transactions`);
+      const data = await res.json();
+      if (!res.ok || !data?.data) return;
+
+      const transactions = Array.isArray(data.data) ? data.data : [];
+      const seen = new Set<string>();
+      const recipients: { id: string; name: string }[] = [];
+
+      for (const t of transactions) {
+        if (t.type !== 'withdrawal') continue;
+        const relatedId = t.relatedUserId?.toString?.();
+        const relatedName = t.relatedUserName?.trim();
+        if (!relatedId || !relatedName) continue;
+        const key = `${relatedId}:${relatedName}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        recipients.push({ id: relatedId, name: relatedName });
+        if (recipients.length >= 5) break;
+      }
+
+      setRecentRecipients(recipients);
+    } catch (error) {
+      console.error('Error fetching recent recipients:', error);
+    }
+  }, [session?.user?.id]);
+
+  const getInitials = (name: string) =>
+    name
+      .split(' ')
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0].toUpperCase())
+      .join('');
+
+  const handleRecentRecipientClick = (name: string) => {
+    setInitialRecipient(name);
+    setShowTransferForm(true);
+  };
+
   useEffect(() => {
     fetchUserData();
   }, [fetchUserData]);
+
+  useEffect(() => {
+    fetchRecentRecipients();
+  }, [fetchRecentRecipients]);
 
   async function completeTransfer(
     toUserName: string,
     amount: number,
     mpin: string
-  ) {
-    if (!user) return;
+  ): Promise<boolean> {
+    if (!user) return false;
     setMpinLoading(true);
     try {
       const res = await fetch(TRANSFER_ENDPOINTS.TRANSFER, {
@@ -69,25 +119,29 @@ export default function OnlineTransferPage() {
       });
 
       const data = await res.json();
-      if (res.ok) {
-        setMessage(`✅ Transfer successful`);
-        await fetchUserData();
-        setTimeout(() => {
-          setMessage('');
-          setPendingTransfer(null);
-        }, TRANSFER_CONFIG.RESET_DELAY);
-      } else {
-        setMessage(`❌ ${data.error || 'Transfer failed'}`);
+      if (!res.ok) {
+        throw new Error(data.error || 'Transfer failed');
       }
+
+      setMessage(`✅ Transfer successful`);
+      await fetchUserData();
+      await fetchRecentRecipients();
+      setTimeout(() => {
+        setMessage('');
+        setPendingTransfer(null);
+      }, TRANSFER_CONFIG.RESET_DELAY);
+
+      // Close the MPIN dialog once transfer is successful
+      setShowMPINDialog(false);
+      return true;
     } finally {
       setMpinLoading(false);
-      setShowMPINDialog(false);
     }
   }
 
   const handleMPINVerify = async (mpin: string) => {
-    if (!pendingTransfer) return;
-    await completeTransfer(
+    if (!pendingTransfer) return false;
+    return completeTransfer(
       pendingTransfer.toUserName,
       pendingTransfer.amount,
       mpin
@@ -259,7 +313,10 @@ export default function OnlineTransferPage() {
           </Link>
 
           <Card
-            onClick={() => setShowTransferForm(true)}
+            onClick={() => {
+              setInitialRecipient('');
+              setShowTransferForm(true);
+            }}
             className="bg-gradient-to-br from-purple-900/30 to-pink-900/30 border-purple-400/30 hover:border-purple-400/50 transition cursor-pointer"
           >
             <CardHeader>
@@ -342,6 +399,34 @@ export default function OnlineTransferPage() {
           </CardContent>
         </Card>
 
+        {recentRecipients.length > 0 && (
+          <section className="mt-10">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-white">
+                Recently Sent
+              </h2>
+              <p className="text-sm text-gray-400">Tap a user to send again</p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              {recentRecipients.map((recipient) => (
+                <button
+                  key={recipient.id}
+                  type="button"
+                  onClick={() => handleRecentRecipientClick(recipient.name)}
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-800/40 hover:bg-slate-800/60 transition"
+                >
+                  <span className="w-10 h-10 rounded-full bg-indigo-500/80 flex items-center justify-center text-white font-semibold">
+                    {getInitials(recipient.name)}
+                  </span>
+                  <span className="text-sm text-gray-200 truncate max-w-[140px]">
+                    {recipient.name}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
+
         {/* MPIN Dialog */}
         {user?._id && (
           <MPINVerificationDialog
@@ -358,14 +443,21 @@ export default function OnlineTransferPage() {
         {/* Money Transfer Form Dialog */}
         {user && (
           <MoneyTransferForm
+            key={`${showTransferForm}-${initialRecipient}`}
             open={showTransferForm}
-            onOpenChange={setShowTransferForm}
+            onOpenChange={(open) => {
+              setShowTransferForm(open);
+              if (!open) {
+                setInitialRecipient('');
+              }
+            }}
             loading={mpinLoading}
             onSubmit={handleTransferFormSubmit}
             title="Direct Transfer"
             description="Enter recipient details to send money"
             icon={<Send size={20} />}
             maxAmount={user.savingsBalance}
+            initialRecipient={initialRecipient}
           />
         )}
 
