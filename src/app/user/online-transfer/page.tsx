@@ -1,247 +1,176 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
-import Link from 'next/link';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader, QrCode, Send, DollarSign, CreditCard } from 'lucide-react';
-import MPINVerificationDialog from '@/components/MPINVerificationDialog';
-import { MoneyTransferForm } from '@/components/transfers/MoneyTransferForm';
-import { PayLoanDialog } from '@/components/transfers/PayLoanDialog';
-import { ManageFDDialog } from '@/components/transfers/ManageFDDialog';
-import { User } from '@/types/entities';
-import {
-  TRANSFER_ENDPOINTS,
-  TRANSFER_MESSAGES,
-  TRANSFER_CONFIG,
-} from '@/constants/transfers';
+import { useRecentRecipients } from '@/hooks/useRecentRecipients';
+import { useTransfer, useUser } from '@/hooks/useServices';
+import { TRANSFER_MESSAGES, TRANSFER_CONFIG } from '@/constants/transfers';
+import { OnlineTransferHeader } from '@/components/user/online-transfer/OnlineTransferHeader';
+import { MessageBanner } from '@/components/user/online-transfer/MessageBanner';
+import { QuickLinks } from '@/components/user/online-transfer/QuickLinks';
+import { AccountSummary } from '@/components/user/online-transfer/AccountSummary';
+import { RecentRecipients } from '@/components/user/online-transfer/RecentRecipients';
+import { OnlineTransferDialogs } from '@/components/user/online-transfer/OnlineTransferDialogs';
+import { Loader } from 'lucide-react';
 
 export default function OnlineTransferPage() {
-  const { data: session } = useSession();
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: session, status } = useSession();
+  const userId = session?.user?.id;
+  const sessionLoading = status === 'loading';
+
+  const { user, fetchUser, loading: userLoading } = useUser(userId ?? '');
+  const { recipients: recentRecipients, refresh: refreshRecentRecipients } =
+    useRecentRecipients(userId);
+
+  const {
+    transfer,
+    transferToFD,
+    withdrawFD,
+    payLoan,
+    loading: actionLoading,
+    error: actionError,
+    success: actionSuccess,
+  } = useTransfer(userId ?? '');
+
   const [message, setMessage] = useState('');
-  const [mpinLoading, setMpinLoading] = useState(false);
   const [showMPINDialog, setShowMPINDialog] = useState(false);
   const [showTransferForm, setShowTransferForm] = useState(false);
   const [showPayLoanDialog, setShowPayLoanDialog] = useState(false);
   const [showManageFDDialog, setShowManageFDDialog] = useState(false);
-  const [fdLoading, setFdLoading] = useState(false);
   const [pendingTransfer, setPendingTransfer] = useState<{
     toUserName: string;
     amount: number;
   } | null>(null);
-  const [recentRecipients, setRecentRecipients] = useState<
-    { id: string; name: string }[]
-  >([]);
   const [initialRecipient, setInitialRecipient] = useState('');
 
-  const fetchUserData = useCallback(async () => {
-    try {
-      if (!session?.user?.id) return;
-      const res = await fetch(`/api/users/${session.user.id}`);
-      const userData = await res.json();
-      setUser(userData.data);
-    } catch (error) {
-      console.error('Error fetching user:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [session?.user?.id]);
+  const loading = userLoading;
 
-  const fetchRecentRecipients = useCallback(async () => {
-    try {
-      if (!session?.user?.id) return;
-      const res = await fetch(`/api/users/${session.user.id}/transactions`);
-      const data = await res.json();
-      if (!res.ok || !data?.data) return;
+  useEffect(() => {
+    if (!actionError && !actionSuccess) return;
 
-      const transactions = Array.isArray(data.data) ? data.data : [];
-      const seen = new Set<string>();
-      const recipients: { id: string; name: string }[] = [];
+    const timer = window.setTimeout(() => {
+      if (actionError) setMessage(`❌ ${actionError}`);
+      else if (actionSuccess) setMessage(`✅ ${actionSuccess}`);
+    }, 0);
 
-      for (const t of transactions) {
-        if (t.type !== 'withdrawal') continue;
-        const relatedId = t.relatedUserId?.toString?.();
-        const relatedName = t.relatedUserName?.trim();
-        if (!relatedId || !relatedName) continue;
-        const key = `${relatedId}:${relatedName}`;
-        if (seen.has(key)) continue;
-        seen.add(key);
-        recipients.push({ id: relatedId, name: relatedName });
-        if (recipients.length >= 5) break;
-      }
+    return () => window.clearTimeout(timer);
+  }, [actionError, actionSuccess]);
 
-      setRecentRecipients(recipients);
-    } catch (error) {
-      console.error('Error fetching recent recipients:', error);
-    }
-  }, [session?.user?.id]);
+  useEffect(() => {
+    if (!message) return;
+    const timer = window.setTimeout(
+      () => setMessage(''),
+      TRANSFER_CONFIG.RESET_DELAY
+    );
+    return () => window.clearTimeout(timer);
+  }, [message]);
 
-  const getInitials = (name: string) =>
-    name
+  useEffect(() => {
+    if (!userId) return;
+    fetchUser();
+  }, [fetchUser, userId]);
+
+  useEffect(() => {
+    if (!userId) return;
+    refreshRecentRecipients();
+  }, [refreshRecentRecipients, userId]);
+
+  const getInitials = useCallback((name: string) => {
+    return name
       .split(' ')
       .filter(Boolean)
       .slice(0, 2)
       .map((part) => part[0].toUpperCase())
       .join('');
+  }, []);
 
-  const handleRecentRecipientClick = (name: string) => {
+  const handleRecentRecipientClick = useCallback((name: string) => {
     setInitialRecipient(name);
     setShowTransferForm(true);
-  };
+  }, []);
 
-  useEffect(() => {
-    fetchUserData();
-  }, [fetchUserData]);
-
-  useEffect(() => {
-    fetchRecentRecipients();
-  }, [fetchRecentRecipients]);
-
-  async function completeTransfer(
-    toUserName: string,
-    amount: number,
-    mpin: string
-  ): Promise<boolean> {
-    if (!user) return false;
-    setMpinLoading(true);
-    try {
-      const res = await fetch(TRANSFER_ENDPOINTS.TRANSFER, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fromUserId: user._id,
-          toUserName,
-          amount,
-          mpin,
-        }),
+  const completeTransfer = useCallback(
+    async (toUserName: string, amount: number, mpin: string) => {
+      if (!user) return false;
+      const result = await transfer({
+        fromUserId: userId ?? '',
+        toUserName,
+        amount,
+        mpin,
       });
 
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Transfer failed');
-      }
-
-      setMessage(`✅ Transfer successful`);
-      await fetchUserData();
-      await fetchRecentRecipients();
-      setTimeout(() => {
-        setMessage('');
+      if (result) {
+        await fetchUser();
+        refreshRecentRecipients();
         setPendingTransfer(null);
-      }, TRANSFER_CONFIG.RESET_DELAY);
+        setShowMPINDialog(false);
+      }
 
-      // Close the MPIN dialog once transfer is successful
-      setShowMPINDialog(false);
-      return true;
-    } finally {
-      setMpinLoading(false);
-    }
-  }
+      return result;
+    },
+    [fetchUser, refreshRecentRecipients, transfer, user, userId]
+  );
 
-  const handleMPINVerify = async (mpin: string) => {
-    if (!pendingTransfer) return false;
-    return completeTransfer(
-      pendingTransfer.toUserName,
-      pendingTransfer.amount,
-      mpin
+  const handleMPINVerify = useCallback(
+    async (mpin: string) => {
+      if (!pendingTransfer) return false;
+      return completeTransfer(
+        pendingTransfer.toUserName,
+        pendingTransfer.amount,
+        mpin
+      );
+    },
+    [completeTransfer, pendingTransfer]
+  );
+
+  const handleTransferFormSubmit = useCallback(
+    (toUserName: string, amount: number) => {
+      setPendingTransfer({ toUserName, amount });
+      setShowTransferForm(false);
+      setShowMPINDialog(true);
+    },
+    []
+  );
+
+  const handlePayLoan = useCallback(
+    async (amount: number) => {
+      const success = await payLoan(amount);
+      if (success) {
+        await fetchUser();
+        setShowPayLoanDialog(false);
+      }
+    },
+    [fetchUser, payLoan]
+  );
+
+  const handleTransferToFD = useCallback(
+    async (amount: number) => {
+      const success = await transferToFD(amount);
+      if (success) {
+        await fetchUser();
+        setShowManageFDDialog(false);
+      }
+    },
+    [fetchUser, transferToFD]
+  );
+
+  const handleWithdrawFromFD = useCallback(
+    async (amount: number) => {
+      const success = await withdrawFD(amount);
+      if (success) {
+        await fetchUser();
+        setShowManageFDDialog(false);
+      }
+    },
+    [fetchUser, withdrawFD]
+  );
+
+  if (sessionLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-slate-950 via-blue-950 to-slate-950">
+        <Loader className="w-8 h-8 text-cyan-400 animate-spin" />
+      </div>
     );
-  };
-
-  const handleTransferFormSubmit = (toUserName: string, amount: number) => {
-    setPendingTransfer({ toUserName, amount });
-    setShowTransferForm(false);
-    setShowMPINDialog(true);
-  };
-
-  async function payLoan(amount: number) {
-    if (!user) return;
-    setFdLoading(true);
-    try {
-      const res = await fetch('/api/transactions/pay-loan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user._id, amount }),
-      });
-
-      const data = await res.json();
-      if (res.ok) {
-        setMessage(`✅ Loan repayment of ₹${amount} successful`);
-        await fetchUserData();
-        setTimeout(() => {
-          setMessage('');
-          setShowPayLoanDialog(false);
-        }, TRANSFER_CONFIG.RESET_DELAY);
-      } else {
-        setMessage(`❌ ${data.error || 'Loan payment failed'}`);
-      }
-    } catch (error) {
-      setMessage(
-        `❌ ${error instanceof Error ? error.message : 'Loan payment failed'}`
-      );
-    } finally {
-      setFdLoading(false);
-    }
-  }
-
-  async function transferToFD(amount: number) {
-    if (!user) return;
-    setFdLoading(true);
-    try {
-      const res = await fetch('/api/transactions/transfer-fd', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user._id, amount }),
-      });
-
-      const data = await res.json();
-      if (res.ok) {
-        setMessage(`✅ ₹${amount} transferred to FD successfully`);
-        await fetchUserData();
-        setTimeout(() => {
-          setMessage('');
-          setShowManageFDDialog(false);
-        }, TRANSFER_CONFIG.RESET_DELAY);
-      } else {
-        setMessage(`❌ ${data.error || 'Transfer to FD failed'}`);
-      }
-    } catch (error) {
-      setMessage(
-        `❌ ${error instanceof Error ? error.message : 'Transfer to FD failed'}`
-      );
-    } finally {
-      setFdLoading(false);
-    }
-  }
-
-  async function withdrawFromFD(amount: number) {
-    if (!user) return;
-    setFdLoading(true);
-    try {
-      const res = await fetch('/api/transactions/withdraw-fd', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user._id, amount }),
-      });
-
-      const data = await res.json();
-      if (res.ok) {
-        setMessage(`✅ ₹${amount} withdrawn from FD successfully`);
-        await fetchUserData();
-        setTimeout(() => {
-          setMessage('');
-          setShowManageFDDialog(false);
-        }, TRANSFER_CONFIG.RESET_DELAY);
-      } else {
-        setMessage(`❌ ${data.error || 'Withdrawal from FD failed'}`);
-      }
-    } catch (error) {
-      setMessage(
-        `❌ ${error instanceof Error ? error.message : 'Withdrawal from FD failed'}`
-      );
-    } finally {
-      setFdLoading(false);
-    }
   }
 
   if (!session) {
@@ -271,220 +200,49 @@ export default function OnlineTransferPage() {
   return (
     <main className="bg-gradient-to-b from-slate-950 via-blue-950 to-slate-950 text-white min-h-screen py-12 px-6">
       <div className="max-w-6xl mx-auto">
-        <div className="mb-12">
-          <h1 className="text-5xl font-black mb-2">
-            <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
-              Online Transfer
-            </span>
-          </h1>
-          <p className="text-gray-200 text-lg">
-            Transfer money and manage your accounts
-          </p>
-        </div>
+        <OnlineTransferHeader />
 
-        {message && (
-          <p
-            className={`p-3 rounded-lg text-sm mb-8 ${
-              message.includes('❌')
-                ? 'bg-red-500/10 border border-red-500/30 text-red-400'
-                : 'bg-green-500/10 border border-green-500/30 text-green-400'
-            }`}
-          >
-            {message}
-          </p>
-        )}
+        {message && <MessageBanner message={message} />}
 
-        {/* Quick Links */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          <Link href="/user/qr-transfer">
-            <Card className="bg-gradient-to-br from-green-900/30 to-emerald-900/30 border-green-400/30 hover:border-green-400/50 transition cursor-pointer h-full">
-              <CardHeader>
-                <CardTitle className="text-green-400 flex items-center gap-2">
-                  <QrCode size={24} />
-                  QR Transfer
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-300 text-sm">
-                  Scan QR code to transfer
-                </p>
-              </CardContent>
-            </Card>
-          </Link>
+        <QuickLinks
+          onDirectTransfer={() => {
+            setInitialRecipient('');
+            setShowTransferForm(true);
+          }}
+          onManageFD={() => setShowManageFDDialog(true)}
+          onPayLoan={() => setShowPayLoanDialog(true)}
+        />
 
-          <Card
-            onClick={() => {
-              setInitialRecipient('');
-              setShowTransferForm(true);
-            }}
-            className="bg-gradient-to-br from-purple-900/30 to-pink-900/30 border-purple-400/30 hover:border-purple-400/50 transition cursor-pointer"
-          >
-            <CardHeader>
-              <CardTitle className="text-purple-400 flex items-center gap-2">
-                <Send size={24} />
-                Direct Transfer
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-300 text-sm">Send to another user</p>
-            </CardContent>
-          </Card>
+        <AccountSummary user={user} />
 
-          <Card
-            onClick={() => setShowManageFDDialog(true)}
-            className="bg-gradient-to-br from-blue-900/30 to-indigo-900/30 border-blue-400/30 hover:border-blue-400/50 transition cursor-pointer"
-          >
-            <CardHeader>
-              <CardTitle className="text-blue-400 flex items-center gap-2">
-                <DollarSign size={24} />
-                Manage FD
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-300 text-sm">Fixed Deposit options</p>
-            </CardContent>
-          </Card>
+        <RecentRecipients
+          recipients={recentRecipients}
+          getInitials={getInitials}
+          onSelect={handleRecentRecipientClick}
+        />
 
-          <Card
-            onClick={() => setShowPayLoanDialog(true)}
-            className="bg-gradient-to-br from-red-900/30 to-rose-900/30 border-red-400/30 hover:border-red-400/50 transition cursor-pointer"
-          >
-            <CardHeader>
-              <CardTitle className="text-red-400 flex items-center gap-2">
-                <CreditCard size={24} />
-                Pay Loan
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-300 text-sm">Repay your loan</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Account Summary */}
-        <Card className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 border-slate-700">
-          <CardHeader>
-            <CardTitle className="text-cyan-400">Account Summary</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="bg-slate-700/30 p-4 rounded-lg">
-                <p className="text-gray-400 text-sm">Savings</p>
-                <p className="text-2xl font-bold text-green-400">
-                  ₹{(user.savingsBalance || 0).toFixed(2)}
-                </p>
-              </div>
-              <div className="bg-slate-700/30 p-4 rounded-lg">
-                <p className="text-gray-400 text-sm">FD Balance</p>
-                <p className="text-2xl font-bold text-blue-400">
-                  ₹{(user.fd || 0).toFixed(2)}
-                </p>
-              </div>
-              <div className="bg-slate-700/30 p-4 rounded-lg">
-                <p className="text-gray-400 text-sm">Loan</p>
-                <p className="text-2xl font-bold text-red-400">
-                  ₹{(user.loanBalance || 0).toFixed(2)}
-                </p>
-              </div>
-              <div className="bg-slate-700/30 p-4 rounded-lg">
-                <p className="text-gray-400 text-sm">Net Worth</p>
-                <p className="text-2xl font-bold text-purple-400">
-                  ₹
-                  {(
-                    (user.savingsBalance || 0) - (user.loanBalance || 0)
-                  ).toFixed(2)}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {recentRecipients.length > 0 && (
-          <section className="mt-10">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-white">
-                Recently Sent
-              </h2>
-              <p className="text-sm text-gray-400">Tap a user to send again</p>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              {recentRecipients.map((recipient) => (
-                <button
-                  key={recipient.id}
-                  type="button"
-                  onClick={() => handleRecentRecipientClick(recipient.name)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-800/40 hover:bg-slate-800/60 transition"
-                >
-                  <span className="w-10 h-10 rounded-full bg-indigo-500/80 flex items-center justify-center text-white font-semibold">
-                    {getInitials(recipient.name)}
-                  </span>
-                  <span className="text-sm text-gray-200 truncate max-w-[140px]">
-                    {recipient.name}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* MPIN Dialog */}
-        {user?._id && (
-          <MPINVerificationDialog
-            isOpen={showMPINDialog}
-            onClose={() => {
-              setShowMPINDialog(false);
-              setPendingTransfer(null);
-            }}
-            onVerify={handleMPINVerify}
-            isLoading={mpinLoading}
-          />
-        )}
-
-        {/* Money Transfer Form Dialog */}
-        {user && (
-          <MoneyTransferForm
-            key={`${showTransferForm}-${initialRecipient}`}
-            open={showTransferForm}
-            onOpenChange={(open) => {
-              setShowTransferForm(open);
-              if (!open) {
-                setInitialRecipient('');
-              }
-            }}
-            loading={mpinLoading}
-            onSubmit={handleTransferFormSubmit}
-            title="Direct Transfer"
-            description="Enter recipient details to send money"
-            icon={<Send size={20} />}
-            maxAmount={user.savingsBalance}
-            initialRecipient={initialRecipient}
-          />
-        )}
-
-        {/* Pay Loan Dialog */}
-        {user && (
-          <PayLoanDialog
-            open={showPayLoanDialog}
-            onOpenChange={setShowPayLoanDialog}
-            loading={fdLoading}
-            onSubmit={payLoan}
-            maxAmount={user.savingsBalance || 0}
-            loanBalance={user.loanBalance || 0}
-          />
-        )}
-
-        {/* Manage FD Dialog */}
-        {user && (
-          <ManageFDDialog
-            open={showManageFDDialog}
-            onOpenChange={setShowManageFDDialog}
-            loading={fdLoading}
-            onTransferToFD={transferToFD}
-            onWithdrawFromFD={withdrawFromFD}
-            savingsBalance={user.savingsBalance || 0}
-            fdBalance={user.fd || 0}
-          />
-        )}
+        <OnlineTransferDialogs
+          user={user}
+          showMPINDialog={showMPINDialog}
+          setShowMPINDialog={setShowMPINDialog}
+          showTransferForm={showTransferForm}
+          setShowTransferForm={setShowTransferForm}
+          showPayLoanDialog={showPayLoanDialog}
+          setShowPayLoanDialog={setShowPayLoanDialog}
+          showManageFDDialog={showManageFDDialog}
+          setShowManageFDDialog={setShowManageFDDialog}
+          initialRecipient={initialRecipient}
+          setInitialRecipient={setInitialRecipient}
+          actionLoading={actionLoading}
+          pendingTransfer={pendingTransfer}
+          setPendingTransfer={setPendingTransfer}
+          handleMPINVerify={handleMPINVerify}
+          handleTransferFormSubmit={handleTransferFormSubmit}
+          handlePayLoan={handlePayLoan}
+          handleTransferToFD={handleTransferToFD}
+          handleWithdrawFromFD={handleWithdrawFromFD}
+          transferMaxAmount={user.savingsBalance}
+        />
       </div>
     </main>
   );

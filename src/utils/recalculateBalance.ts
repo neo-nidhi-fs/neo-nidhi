@@ -24,6 +24,10 @@ export async function recalculateBalances(
       case 'withdrawal':
         savingsBalance -= tx.amount;
         break;
+      case 'withdrawal_fd':
+        fdBalance -= tx.amount;
+        savingsBalance += tx.amount; // Add back to savings on FD withdrawal
+        break;
       case 'fd':
         fdBalance += tx.amount;
         break;

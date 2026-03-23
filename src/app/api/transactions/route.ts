@@ -45,8 +45,9 @@ export async function POST(req: Request) {
 
     // Validation for specific transaction types
     if (type === 'withdrawal') {
-      const currentSavings = await recalculateBalances(userId);
-      if (currentSavings.savingsBalance < amount) {
+      const { savingsBalance } = user;
+      console.log('currentBalances ==> ', savingsBalance, amount);
+      if (savingsBalance < amount) {
         return NextResponse.json(
           { success: false, error: 'Insufficient savings balance' },
           { status: 400 }

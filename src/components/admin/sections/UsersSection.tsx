@@ -133,7 +133,9 @@ export function UsersSection({
     null
   );
   const [dobDraft, setDobDraft] = useState('');
-  const [openActionMenuFor, setOpenActionMenuFor] = useState<string | null>(null);
+  const [openActionMenuFor, setOpenActionMenuFor] = useState<string | null>(
+    null
+  );
   const actionMenuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
