@@ -48,14 +48,16 @@ export function DashboardStats({ user }: { user: User }) {
           >
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className={`text-lg ${stat.textColor}`}>
+                <CardTitle className={`text-lg text-white`}>
                   {stat.label}
                 </CardTitle>
                 <Icon className={stat.textColor} size={24} />
               </div>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold text-white">{stat.value}</p>
+              <p className={`text-3xl font-bold ${stat.textColor} `}>
+                {stat.value}
+              </p>
             </CardContent>
           </Card>
         );
