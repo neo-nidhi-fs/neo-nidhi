@@ -86,11 +86,11 @@ interface UsersSectionProps {
   onUserAdded?: () => void;
 }
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 14;
 
 const userTableColumns: UsersTableColumn[] = [
   { header: 'Name', accessor: 'name', type: 'string' },
-  { header: 'DOB', accessor: 'dob', type: 'string' },
+  // { header: 'DOB', accessor: 'dob', type: 'string' },
   { header: 'Age', accessor: 'age', type: 'number' },
   { header: 'Savings', accessor: 'savingsBalance', type: 'currency' },
   { header: 'SB Int', accessor: 'accruedSavingInterest', type: 'currency' },

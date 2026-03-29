@@ -7,6 +7,45 @@ export interface ICustomInterestRate {
   loan?: number;
 }
 
+export interface IAsset extends Document {
+  _id: mongoose.Types.ObjectId;
+  type: 'fd' | 'rd' | 'equity' | 'mutual_fund' | 'epfo' | 'other';
+  category: string;
+  amount: number;
+  quantity?: number;
+  purchaseValue?: number;
+  marketValue: number;
+  symbolOrCode?: string;
+  startDate?: Date;
+  metadata?: Record<string, any>;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ILiability extends Document {
+  _id: mongoose.Types.ObjectId;
+  type: string;
+  amount: number;
+  interestRate?: number;
+  dueDate?: Date;
+  status: 'active' | 'paid_off' | 'closed';
+  metadata?: Record<string, any>;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ICashFlow extends Document {
+  _id: mongoose.Types.ObjectId;
+  date: Date;
+  type: 'income' | 'expense';
+  category: string;
+  amount: number;
+  source: string;
+  note?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface IUser extends Document {
   name: string;
   age: number;
@@ -25,6 +64,9 @@ export interface IUser extends Document {
   customInterestRates: ICustomInterestRate;
   mpin?: string;
   qrCode?: string;
+  assetPortfolio: IAsset[];
+  liabilities: ILiability[];
+  cashFlows: ICashFlow[];
   comparePassword(candidatePassword: string): Promise<boolean>;
   compareMPin(candidateMPin: string): Promise<boolean>;
 }
@@ -54,6 +96,53 @@ const UserSchema: Schema<IUser> = new Schema({
   createdAt: { type: Date, default: Date.now },
   mpin: { type: String, default: null },
   qrCode: { type: String, default: null },
+  assetPortfolio: [
+    {
+      type: {
+        type: String,
+        enum: ['fd', 'rd', 'equity', 'mutual_fund', 'epfo', 'other'],
+        required: true,
+      },
+      category: { type: String, required: true },
+      amount: { type: Number, required: true },
+      quantity: { type: Number, default: null },
+      purchaseValue: { type: Number, default: null },
+      marketValue: { type: Number, required: true },
+      symbolOrCode: { type: String, default: null },
+      startDate: { type: Date, default: null },
+      metadata: { type: Schema.Types.Mixed, default: {} },
+      createdAt: { type: Date, default: Date.now },
+      updatedAt: { type: Date, default: Date.now },
+    },
+  ],
+  liabilities: [
+    {
+      type: { type: String, required: true },
+      amount: { type: Number, required: true },
+      interestRate: { type: Number, default: null },
+      dueDate: { type: Date, default: null },
+      status: {
+        type: String,
+        enum: ['active', 'paid_off', 'closed'],
+        default: 'active',
+      },
+      metadata: { type: Schema.Types.Mixed, default: {} },
+      createdAt: { type: Date, default: Date.now },
+      updatedAt: { type: Date, default: Date.now },
+    },
+  ],
+  cashFlows: [
+    {
+      date: { type: Date, required: true },
+      type: { type: String, enum: ['income', 'expense'], required: true },
+      category: { type: String, required: true },
+      amount: { type: Number, required: true },
+      source: { type: String, required: true },
+      note: { type: String, default: null },
+      createdAt: { type: Date, default: Date.now },
+      updatedAt: { type: Date, default: Date.now },
+    },
+  ],
 });
 
 // Hash password before saving

@@ -77,7 +77,9 @@ export default function ChallengesPage() {
       });
 
       const data = await res.json();
-      const msg = res.ok ? '✅ Successfully joined challenge!' : `❌ ${data.error}`;
+      const msg = res.ok
+        ? '✅ Successfully joined challenge!'
+        : `❌ ${data.error}`;
       setMessage(msg);
       setTimeout(() => setMessage(''), 3000);
 
@@ -101,10 +103,14 @@ export default function ChallengesPage() {
     );
   }
 
-  const registrationChallenges = challenges.filter((c) => c.status === 'registration');
+  const registrationChallenges = challenges.filter(
+    (c) => c.status === 'registration'
+  );
   const userJoinedChallenges = challenges.filter((c) =>
     userChallenges.some(
-      (uc) => uc.challengeId === c._id && ['registered', 'started'].includes(uc.status)
+      (uc) =>
+        uc.challengeId === c._id &&
+        ['registered', 'started'].includes(uc.status)
     )
   );
 
@@ -148,14 +154,17 @@ export default function ChallengesPage() {
         />
 
         <div>
-          <h2 className="text-2xl font-bold text-purple-400 mb-6">Available Challenges</h2>
+          <h2 className="text-2xl font-bold text-purple-400 mb-6">
+            Available Challenges
+          </h2>
           {registrationChallenges.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {registrationChallenges.map((challenge) => {
                 const isAlreadyJoined = userChallenges.some(
                   (uc) => uc.challengeId === challenge._id
                 );
-                const isFull = challenge.currentParticipants >= challenge.maxParticipants;
+                const isFull =
+                  challenge.currentParticipants >= challenge.maxParticipants;
 
                 return (
                   <ChallengeCard

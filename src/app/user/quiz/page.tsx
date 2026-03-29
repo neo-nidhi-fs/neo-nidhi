@@ -15,7 +15,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from '@/components/ui/drawer';
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from '@/components/ui/drawer';
 import Image from 'next/image';
 import Link from 'next/link';
 import {
@@ -28,7 +34,6 @@ import {
 } from '@/types/quiz';
 import { QUIZ_ENDPOINTS, QUIZ_CONFIG, QUIZ_MESSAGES } from '@/constants/quiz';
 import { extractKeywordPhrase } from '@/lib/helpers';
-
 
 export default function QuizPage() {
   const { data: session } = useSession();
@@ -123,7 +128,10 @@ export default function QuizPage() {
     setAnswers(newAnswers);
 
     if (currentQuestion < questions.length - 1) {
-      setTimeout(() => setCurrentQuestion(currentQuestion + 1), QUIZ_CONFIG.AUTO_MOVE_DELAY);
+      setTimeout(
+        () => setCurrentQuestion(currentQuestion + 1),
+        QUIZ_CONFIG.AUTO_MOVE_DELAY
+      );
     }
   };
 
@@ -152,7 +160,9 @@ export default function QuizPage() {
           `${QUIZ_ENDPOINTS.FETCH_QUESTIONS}?category=${category}&questionIds=${questionIds}&review=true`
         );
         const reviewData = await reviewQuestionsRes.json();
-        const fetchedReviewQuestions = reviewData.success ? reviewData.data : [];
+        const fetchedReviewQuestions = reviewData.success
+          ? reviewData.data
+          : [];
         setReviewQuestions(fetchedReviewQuestions);
 
         const details: AnswerDetail[] = answers.map((answer, idx) => {
@@ -220,7 +230,8 @@ export default function QuizPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-gray-300 mb-4">
-                  Learn about money, interest rates, budgeting, and financial management
+                  Learn about money, interest rates, budgeting, and financial
+                  management
                 </p>
                 <Button className="w-full bg-blue-600 hover:bg-blue-700 flex items-center justify-center gap-2">
                   <Brain size={18} />
@@ -281,24 +292,26 @@ export default function QuizPage() {
             <CardContent>
               {leaderboard.length > 0 ? (
                 <div className="space-y-2">
-                  {leaderboard.slice(0, QUIZ_CONFIG.LEADERBOARD_PREVIEW_LIMIT).map((entry, idx) => (
-                    <div
-                      key={idx}
-                      className="flex justify-between items-center p-3 bg-slate-700/30 rounded"
-                    >
-                      <div>
-                        <p className="font-semibold text-green-400">
-                          #{idx + 1} {entry.userName}
-                        </p>
-                        <p className="text-sm text-gray-400">
-                          {entry.totalAttempts} attempts
+                  {leaderboard
+                    .slice(0, QUIZ_CONFIG.LEADERBOARD_PREVIEW_LIMIT)
+                    .map((entry, idx) => (
+                      <div
+                        key={idx}
+                        className="flex justify-between items-center p-3 bg-slate-700/30 rounded"
+                      >
+                        <div>
+                          <p className="font-semibold text-green-400">
+                            #{idx + 1} {entry.userName}
+                          </p>
+                          <p className="text-sm text-gray-400">
+                            {entry.totalAttempts} attempts
+                          </p>
+                        </div>
+                        <p className="text-2xl font-bold text-blue-400">
+                          {entry.totalScore}
                         </p>
                       </div>
-                      <p className="text-2xl font-bold text-blue-400">
-                        {entry.totalScore}
-                      </p>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               ) : (
                 <p className="text-gray-400">{QUIZ_MESSAGES.NO_SCORES}</p>
@@ -389,9 +402,7 @@ export default function QuizPage() {
                     Submitting...
                   </>
                 ) : (
-                  <>
-                    Submit Quiz
-                  </>
+                  <>Submit Quiz</>
                 )}
               </Button>
             ) : (
@@ -486,7 +497,9 @@ export default function QuizPage() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-gray-400">{QUIZ_MESSAGES.NO_LEADERBOARD}</p>
+                  <p className="text-gray-400">
+                    {QUIZ_MESSAGES.NO_LEADERBOARD}
+                  </p>
                 )}
               </CardContent>
             </Card>

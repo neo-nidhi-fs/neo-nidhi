@@ -120,15 +120,17 @@ export async function GET() {
     // User balance distribution
     const balanceRanges = {
       '0-10k': users.filter(
-        (u) => u.savingsBalance >= 0 && u.savingsBalance < 10000
+        (u) => u.savingsBalance + u.fd >= 0 && u.savingsBalance + u.fd < 10000
       ).length,
       '10k-50k': users.filter(
-        (u) => u.savingsBalance >= 10000 && u.savingsBalance < 50000
+        (u) =>
+          u.savingsBalance + u.fd >= 10000 && u.savingsBalance + u.fd < 50000
       ).length,
       '50k-100k': users.filter(
-        (u) => u.savingsBalance >= 50000 && u.savingsBalance < 100000
+        (u) =>
+          u.savingsBalance + u.fd >= 50000 && u.savingsBalance + u.fd < 100000
       ).length,
-      '100k+': users.filter((u) => u.savingsBalance >= 100000).length,
+      '100k+': users.filter((u) => u.savingsBalance + u.fd >= 100000).length,
     };
 
     return Response.json({
