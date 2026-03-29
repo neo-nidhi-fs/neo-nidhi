@@ -1,5 +1,6 @@
 import { dbConnect } from '@/lib/dbConnect';
 import { User } from '@/models/User';
+import { enforceFinanceFeatureEnabled } from '@/lib/featureFlags';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../auth/[...nextauth]/route';
 import { NextResponse } from 'next/server';
@@ -24,10 +25,18 @@ export async function GET() {
       );
     }
 
-    return NextResponse.json({
-      success: true,
-      data: user.cashFlows || [],
-    });
+    const featureFlagError = enforceFinanceFeatureEnabled(user);
+    if (featureFlagError) {
+      return featureFlagError;
+    }
+
+    return NextResponse.json(
+      {
+        success: true,
+        data: user.cashFlows || [],
+      },
+      { status: 200 }
+    );
   } catch (error: unknown) {
     return NextResponse.json(
       { success: false, error: (error as Error).message },

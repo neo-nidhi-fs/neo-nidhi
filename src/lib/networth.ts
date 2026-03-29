@@ -1,4 +1,4 @@
-import { IUser } from '@/models/User';
+import { IUser, IAsset, ILiability, ICashFlow } from '@/models/User';
 
 export interface INetWorthSummary {
   totalAssets: number;
@@ -43,7 +43,7 @@ export interface ICashFlowSummary {
 export function calculateTotalAssets(user: IUser): number {
   const legacyAssets = user.savingsBalance + user.fd;
   const portfolioAssets = (user.assetPortfolio || []).reduce(
-    (sum: number, asset: any) => sum + (asset.marketValue || 0),
+    (sum: number, asset: IAsset) => sum + (asset.marketValue || 0),
     0
   );
   return legacyAssets + portfolioAssets;
@@ -55,7 +55,7 @@ export function calculateTotalAssets(user: IUser): number {
 export function calculateTotalLiabilities(user: IUser): number {
   const legacyLiabilities = user.loanBalance;
   const portfolioLiabilities = (user.liabilities || []).reduce(
-    (sum: number, liability: any) => sum + (liability.amount || 0),
+    (sum: number, liability: ILiability) => sum + (liability.amount || 0),
     0
   );
   return legacyLiabilities + portfolioLiabilities;
@@ -79,16 +79,19 @@ export function getAssetBreakdown(user: IUser): IAssetBreakdown {
     savings: user.savingsBalance,
     fd: user.fd,
     portfolio: (user.assetPortfolio || []).reduce(
-      (sum: number, asset: any) => sum + (asset.marketValue || 0),
+      (sum: number, asset: IAsset) => sum + (asset.marketValue || 0),
       0
     ),
-    byType: (user.assetPortfolio || []).reduce((acc: any, asset: any) => {
-      if (!acc[asset.type]) {
-        acc[asset.type] = 0;
-      }
-      acc[asset.type] += asset.marketValue || 0;
-      return acc;
-    }, {}),
+    byType: (user.assetPortfolio || []).reduce(
+      (acc: Record<string, number>, asset: IAsset) => {
+        if (!acc[asset.type]) {
+          acc[asset.type] = 0;
+        }
+        acc[asset.type] += asset.marketValue || 0;
+        return acc;
+      },
+      {} as Record<string, number>
+    ),
   };
 }
 
@@ -99,16 +102,19 @@ export function getLiabilityBreakdown(user: IUser): ILiabilityBreakdown {
   return {
     loans: user.loanBalance,
     portfolio: (user.liabilities || []).reduce(
-      (sum: number, liability: any) => sum + (liability.amount || 0),
+      (sum: number, liability: ILiability) => sum + (liability.amount || 0),
       0
     ),
-    byType: (user.liabilities || []).reduce((acc: any, liability: any) => {
-      if (!acc[liability.type]) {
-        acc[liability.type] = 0;
-      }
-      acc[liability.type] += liability.amount || 0;
-      return acc;
-    }, {}),
+    byType: (user.liabilities || []).reduce(
+      (acc: Record<string, number>, liability: ILiability) => {
+        if (!acc[liability.type]) {
+          acc[liability.type] = 0;
+        }
+        acc[liability.type] += liability.amount || 0;
+        return acc;
+      },
+      {} as Record<string, number>
+    ),
   };
 }
 
@@ -125,7 +131,7 @@ export function calculateCurrentCashFlows(user: IUser): {
   const currentYear = now.getFullYear();
 
   const income = (user.cashFlows || [])
-    .filter((cf: any) => {
+    .filter((cf: ICashFlow) => {
       const cfDate = new Date(cf.date);
       return (
         cf.type === 'income' &&
@@ -133,10 +139,10 @@ export function calculateCurrentCashFlows(user: IUser): {
         cfDate.getFullYear() === currentYear
       );
     })
-    .reduce((sum: number, cf: any) => sum + (cf.amount || 0), 0);
+    .reduce((sum: number, cf: ICashFlow) => sum + (cf.amount || 0), 0);
 
   const expenses = (user.cashFlows || [])
-    .filter((cf: any) => {
+    .filter((cf: ICashFlow) => {
       const cfDate = new Date(cf.date);
       return (
         cf.type === 'expense' &&
@@ -144,7 +150,7 @@ export function calculateCurrentCashFlows(user: IUser): {
         cfDate.getFullYear() === currentYear
       );
     })
-    .reduce((sum: number, cf: any) => sum + (cf.amount || 0), 0);
+    .reduce((sum: number, cf: ICashFlow) => sum + (cf.amount || 0), 0);
 
   return {
     income,
@@ -164,7 +170,7 @@ export function calculateCashFlowSummary(user: IUser): ICashFlowSummary {
     };
   } = {};
 
-  user.cashFlows.forEach((cf: any) => {
+  user.cashFlows.forEach((cf: ICashFlow) => {
     const date = new Date(cf.date);
     const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 
@@ -195,12 +201,12 @@ export function calculateCashFlowSummary(user: IUser): ICashFlowSummary {
   });
 
   const totalIncome = user.cashFlows
-    .filter((cf: any) => cf.type === 'income')
-    .reduce((sum: number, cf: any) => sum + (cf.amount || 0), 0);
+    .filter((cf: ICashFlow) => cf.type === 'income')
+    .reduce((sum: number, cf: ICashFlow) => sum + (cf.amount || 0), 0);
 
   const totalExpenses = user.cashFlows
-    .filter((cf: any) => cf.type === 'expense')
-    .reduce((sum: number, cf: any) => sum + (cf.amount || 0), 0);
+    .filter((cf: ICashFlow) => cf.type === 'expense')
+    .reduce((sum: number, cf: ICashFlow) => sum + (cf.amount || 0), 0);
 
   return {
     income: totalIncome,
@@ -248,7 +254,7 @@ export function calculateUnrealizedGains(user: IUser): {
     };
   } = {};
 
-  user.assetPortfolio.forEach((asset: any) => {
+  user.assetPortfolio.forEach((asset: IAsset) => {
     if (
       (asset.type === 'equity' || asset.type === 'mutual_fund') &&
       asset.purchaseValue

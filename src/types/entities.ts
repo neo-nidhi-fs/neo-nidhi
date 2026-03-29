@@ -68,6 +68,7 @@ export interface User {
   loanBalance?: number;
   phoneNumber?: string;
   mpin?: string;
+  financeFeaturesEnabled?: boolean;
 }
 
 export interface Metric {

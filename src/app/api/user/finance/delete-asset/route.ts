@@ -1,5 +1,6 @@
 import { dbConnect } from '@/lib/dbConnect';
 import { User } from '@/models/User';
+import { enforceFinanceFeatureEnabled } from '@/lib/featureFlags';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../auth/[...nextauth]/route';
 import { NextResponse } from 'next/server';
@@ -32,6 +33,11 @@ export async function DELETE(req: Request) {
         { success: false, error: 'User not found' },
         { status: 404 }
       );
+    }
+
+    const featureFlagError = enforceFinanceFeatureEnabled(user);
+    if (featureFlagError) {
+      return featureFlagError;
     }
 
     // Ensure assetPortfolio array exists for backward compatibility

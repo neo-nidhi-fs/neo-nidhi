@@ -20,6 +20,9 @@ export function useAdminUsers() {
   const [updateUserLoading, setUpdateUserLoading] = useState<string | null>(
     null
   );
+  const [updateFeatureToggleLoading, setUpdateFeatureToggleLoading] = useState<
+    string | null
+  >(null);
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -116,6 +119,29 @@ export function useAdminUsers() {
     []
   );
 
+  const updateUserFinanceFeatures = useCallback(
+    async (userId: string, enabled: boolean) => {
+      try {
+        setUpdateFeatureToggleLoading(userId);
+        const updatedUser = await adminService.updateUser(userId, {
+          financeFeaturesEnabled: enabled,
+        });
+        setUsers((prev) =>
+          prev.map((u) => (u._id === userId ? updatedUser : u))
+        );
+        return { success: true, message: '✅ User finance flag updated' };
+      } catch (err) {
+        return {
+          success: false,
+          message: `❌ Error: ${(err as Error).message}`,
+        };
+      } finally {
+        setUpdateFeatureToggleLoading(null);
+      }
+    },
+    []
+  );
+
   return {
     users,
     loading,
@@ -123,10 +149,12 @@ export function useAdminUsers() {
     resetPasswordLoading,
     resetMPINLoading,
     updateUserLoading,
+    updateFeatureToggleLoading,
     addUser,
     resetPassword,
     resetMPIN,
     updateUserDob,
+    updateUserFinanceFeatures,
     refetchUsers: fetchUsers,
   };
 }

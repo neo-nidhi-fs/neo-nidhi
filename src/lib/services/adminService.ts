@@ -12,6 +12,7 @@ export interface User {
   savingsBalance: number;
   loanBalance: number;
   fd?: number;
+  financeFeaturesEnabled?: boolean;
   customInterestRates?: {
     saving?: number | null;
     fd?: number | null;
@@ -65,7 +66,11 @@ class AdminService {
 
   async updateUser(
     userId: string,
-    updates: { dob?: string | null; age?: number }
+    updates: {
+      dob?: string | null;
+      age?: number;
+      financeFeaturesEnabled?: boolean;
+    }
   ): Promise<User> {
     const res = await fetch(`${this.baseUrl}/api/users/${userId}`, {
       method: 'PUT',

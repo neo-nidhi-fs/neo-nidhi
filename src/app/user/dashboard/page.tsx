@@ -14,10 +14,6 @@ import {
   Liability,
   CashFlow,
 } from '@/hooks/useUserFinance';
-import NetWorthSummaryCard from '@/components/user/finance/NetWorthSummaryCard';
-import AssetManager from '@/components/user/finance/AssetManager';
-import LiabilityManager from '@/components/user/finance/LiabilityManager';
-import CashFlowManager from '@/components/user/finance/CashFlowManager';
 import AssetForm from '@/components/user/finance/AssetForm';
 import LiabilityForm from '@/components/user/finance/LiabilityForm';
 import CashFlowForm from '@/components/user/finance/CashFlowForm';
@@ -26,9 +22,6 @@ export default function UserDashboard() {
   const [userId, setUserId] = useState<string>('');
   const [userName, setUserName] = useState<string>('');
   const [pageLoading, setPageLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<
-    'assets' | 'liabilities' | 'cashflow'
-  >('assets');
 
   // Finance form states
   const [showAssetForm, setShowAssetForm] = useState(false);
@@ -43,6 +36,9 @@ export default function UserDashboard() {
   >();
 
   const { user, fetchUser } = useUser(userId);
+  const [financeFeatureEnabled, setFinanceFeatureEnabled] =
+    useState<boolean>(false);
+
   const {
     activeChallenges,
     fetchActiveChallenges,
@@ -50,10 +46,6 @@ export default function UserDashboard() {
   } = useChallenges(userId);
 
   const {
-    assets,
-    liabilities,
-    cashFlows,
-    netWorth,
     loading: financeLoading,
     fetchAssets,
     fetchLiabilities,
@@ -61,13 +53,10 @@ export default function UserDashboard() {
     fetchNetWorth,
     addAsset,
     updateAsset,
-    deleteAsset,
     addLiability,
     updateLiability,
-    deleteLiability,
     addCashFlow,
     updateCashFlow,
-    deleteCashFlow,
   } = useUserFinance();
 
   async function initializeUser() {
@@ -87,12 +76,18 @@ export default function UserDashboard() {
 
   async function fetchUserData() {
     try {
-      await fetchUser();
+      const currentUser = await fetchUser();
       await fetchActiveChallenges();
-      await fetchNetWorth();
-      await fetchAssets();
-      await fetchLiabilities();
-      await fetchCashFlows();
+
+      const financeEnabled =
+        currentUser?.financeFeaturesEnabled ?? financeFeatureEnabled;
+
+      if (financeEnabled) {
+        await fetchNetWorth();
+        await fetchAssets();
+        await fetchLiabilities();
+        await fetchCashFlows();
+      }
     } catch (error) {
       console.error('Error fetching user data:', error);
     }
@@ -105,6 +100,7 @@ export default function UserDashboard() {
     fetchAssets,
     fetchLiabilities,
     fetchCashFlows,
+    financeFeatureEnabled,
   ]);
 
   // Initialize session on mount
@@ -118,6 +114,12 @@ export default function UserDashboard() {
       fetchUserDataMemo();
     }
   }, [userId, fetchUserDataMemo]);
+
+  useEffect(() => {
+    if (user?.financeFeaturesEnabled !== undefined) {
+      setFinanceFeatureEnabled(user.financeFeaturesEnabled);
+    }
+  }, [user]);
 
   const handleAddAsset = async (data: Omit<Asset, '_id'>) => {
     if (editingAsset) {
@@ -147,21 +149,6 @@ export default function UserDashboard() {
       await addCashFlow(data);
     }
     setShowCashFlowForm(false);
-  };
-
-  const handleEditAsset = (asset: Asset) => {
-    setEditingAsset(asset);
-    setShowAssetForm(true);
-  };
-
-  const handleEditLiability = (liability: Liability) => {
-    setEditingLiability(liability);
-    setShowLiabilityForm(true);
-  };
-
-  const handleEditCashFlow = (cashflow: CashFlow) => {
-    setEditingCashFlow(cashflow);
-    setShowCashFlowForm(true);
   };
 
   const handleCloseAssetForm = () => {
@@ -207,79 +194,22 @@ export default function UserDashboard() {
         {/* Existing Hero Stats */}
         <DashboardStats user={user} />
 
-        {/* Net Worth Section */}
-        <div className="mt-8 mb-8">
-          <NetWorthSummaryCard data={netWorth} loading={financeLoading} />
-        </div>
-
-        {/* Finance Management Section */}
-        <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 border border-slate-700 backdrop-blur-sm rounded-lg overflow-hidden shadow-2xl">
-          {/* Tabs */}
-          <div className="flex border-b border-slate-600">
-            <button
-              onClick={() => setActiveTab('assets')}
-              className={`px-6 py-4 font-medium text-sm transition-colors ${
-                activeTab === 'assets'
-                  ? 'text-blue-400 border-b-2 border-blue-400'
-                  : 'text-gray-300 hover:text-white'
-              }`}
-            >
-              Assets
-            </button>
-            <button
-              onClick={() => setActiveTab('liabilities')}
-              className={`px-6 py-4 font-medium text-sm transition-colors ${
-                activeTab === 'liabilities'
-                  ? 'text-red-400 border-b-2 border-red-400'
-                  : 'text-gray-300 hover:text-white'
-              }`}
-            >
-              Liabilities
-            </button>
-            <button
-              onClick={() => setActiveTab('cashflow')}
-              className={`px-6 py-4 font-medium text-sm transition-colors ${
-                activeTab === 'cashflow'
-                  ? 'text-green-400 border-b-2 border-green-400'
-                  : 'text-gray-300 hover:text-white'
-              }`}
-            >
-              Income & Expenses
-            </button>
-          </div>
-
-          {/* Tab Content */}
-          <div className="p-6">
-            {activeTab === 'assets' && (
-              <AssetManager
-                assets={assets}
-                loading={financeLoading}
-                onEdit={handleEditAsset}
-                onDelete={deleteAsset}
-                onAddClick={() => setShowAssetForm(true)}
-              />
-            )}
-
-            {activeTab === 'liabilities' && (
-              <LiabilityManager
-                liabilities={liabilities}
-                loading={financeLoading}
-                onEdit={handleEditLiability}
-                onDelete={deleteLiability}
-                onAddClick={() => setShowLiabilityForm(true)}
-              />
-            )}
-
-            {activeTab === 'cashflow' && (
-              <CashFlowManager
-                cashflows={cashFlows}
-                loading={financeLoading}
-                onEdit={handleEditCashFlow}
-                onDelete={deleteCashFlow}
-                onAddClick={() => setShowCashFlowForm(true)}
-              />
-            )}
-          </div>
+        {/* Finance Feature Toggle Section */}
+        <div className="mb-8">
+          <a
+            href="/user/finance-feature"
+            className={`inline-block px-6 py-3 rounded bg-blue-700 text-white font-semibold shadow hover:bg-blue-800 transition-colors ${!financeFeatureEnabled ? 'opacity-50 pointer-events-none' : ''}`}
+            aria-disabled={!financeFeatureEnabled}
+          >
+            Go to Personal Finance
+          </a>
+          {!financeFeatureEnabled && (
+            <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-6 mt-8 text-gray-300">
+              Personal finance features are currently disabled. Enable them in
+              Settings to use net worth, assets, liabilities, and cashflow
+              management.
+            </div>
+          )}
         </div>
 
         {/* Active Challenges Section */}

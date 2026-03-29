@@ -55,6 +55,10 @@ export async function PUT(
       updateData.age = body.age;
     }
 
+    if (body.financeFeaturesEnabled !== undefined) {
+      updateData.financeFeaturesEnabled = body.financeFeaturesEnabled;
+    }
+
     const updatedUser = await User.findByIdAndUpdate(id, updateData, {
       new: true,
     });

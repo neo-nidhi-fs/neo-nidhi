@@ -192,14 +192,13 @@ export class QRCodeService {
 export class UserService {
   constructor(private httpClient: IHttpClient) {}
 
-  async getUserById(
-    userId: string
-  ): Promise<
+  async getUserById(userId: string): Promise<
     IApiResponse<{
       savingsBalance: number;
       fd: number;
       loanBalance: number;
       mpin?: string | null;
+      financeFeaturesEnabled?: boolean;
     }>
   > {
     if (!userId) {
@@ -217,6 +216,21 @@ export class UserService {
     }
 
     return this.httpClient.get(`/api/users/${userId}/fd-withdraw-info`);
+  }
+
+  async updateUser(
+    userId: string,
+    data: {
+      financeFeaturesEnabled?: boolean;
+      dob?: string | null;
+      age?: number;
+    }
+  ): Promise<IApiResponse<unknown>> {
+    if (!userId) {
+      return { success: false, error: 'User ID is required' };
+    }
+
+    return this.httpClient.put(`/api/users/${userId}`, data);
   }
 }
 

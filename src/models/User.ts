@@ -64,6 +64,7 @@ export interface IUser extends Document {
   customInterestRates: ICustomInterestRate;
   mpin?: string;
   qrCode?: string;
+  financeFeaturesEnabled: boolean;
   assetPortfolio: IAsset[];
   liabilities: ILiability[];
   cashFlows: ICashFlow[];
@@ -96,6 +97,7 @@ const UserSchema: Schema<IUser> = new Schema({
   createdAt: { type: Date, default: Date.now },
   mpin: { type: String, default: null },
   qrCode: { type: String, default: null },
+  financeFeaturesEnabled: { type: Boolean, default: false },
   assetPortfolio: [
     {
       type: {

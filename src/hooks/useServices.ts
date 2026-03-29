@@ -237,6 +237,7 @@ export function useUser(userId: string) {
     fd: number;
     loanBalance: number;
     mpin?: string | null;
+    financeFeaturesEnabled?: boolean;
   } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -252,10 +253,10 @@ export function useUser(userId: string) {
 
     if (result.success && result.data) {
       setUser(result.data);
-      return true;
+      return result.data;
     } else {
       setError(result.error || 'Failed to fetch user');
-      return false;
+      return null;
     }
   }, [userId, userService]);
 
@@ -274,7 +275,29 @@ export function useUser(userId: string) {
     }
   }, [userId, userService]);
 
-  return { user, fetchUser, getFDWithdrawInfo, loading, error };
+  const updateUser = useCallback(
+    async (updateData: { financeFeaturesEnabled?: boolean }) => {
+      setLoading(true);
+      setError('');
+
+      const result = await userService.updateUser(userId, updateData);
+      setLoading(false);
+
+      if (result.success && user) {
+        setUser({ ...user, ...updateData });
+      }
+
+      if (!result.success) {
+        setError(result.error || 'Failed to update user');
+        return false;
+      }
+
+      return true;
+    },
+    [userId, user, userService]
+  );
+
+  return { user, fetchUser, getFDWithdrawInfo, updateUser, loading, error };
 }
 
 // Hook for handling challenges
