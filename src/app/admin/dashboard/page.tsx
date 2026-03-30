@@ -37,12 +37,10 @@ export default function AdminDashboard() {
     resetPasswordLoading,
     resetMPINLoading,
     updateUserLoading,
-    updateFeatureToggleLoading,
     addUser,
     resetPassword,
     resetMPIN,
     updateUserDob,
-    updateUserFinanceFeatures,
     refetchUsers,
   } = useAdminUsers();
 
@@ -79,24 +77,6 @@ export default function AdminDashboard() {
   // Handle updating user DOB
   const handleUpdateDob = async (userId: string, dob: string | null) => {
     const result = await updateUserDob(userId, dob);
-    setMessage(result.message);
-    if (result.success) {
-      setTimeout(() => {
-        refetchUsers();
-        setMessage('');
-      }, 1500);
-    } else {
-      setTimeout(() => setMessage(''), 2000);
-    }
-    return result;
-  };
-
-  // Handle finance feature toggle updates
-  const handleUpdateFinanceFeatures = async (
-    userId: string,
-    enabled: boolean
-  ) => {
-    const result = await updateUserFinanceFeatures(userId, enabled);
     setMessage(result.message);
     if (result.success) {
       setTimeout(() => {
@@ -258,8 +238,6 @@ export default function AdminDashboard() {
           onInterestRateDialogOpen={handleInterestRateDialogOpen}
           onUpdateInterestRates={handleUpdateInterestRates}
           interestRateLoading={interestRateLoading}
-          onUpdateFinanceFeatures={handleUpdateFinanceFeatures}
-          updateFeatureToggleLoading={updateFeatureToggleLoading}
           onUserAdded={refetchUsers}
         />
 

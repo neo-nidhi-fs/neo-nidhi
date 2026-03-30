@@ -65,11 +65,6 @@ interface UsersSectionProps {
     message: string;
   }>;
   updateDobLoading: string | null;
-  onUpdateFinanceFeatures: (
-    userId: string,
-    enabled: boolean
-  ) => Promise<{ success: boolean; message: string }>;
-  updateFeatureToggleLoading: string | null;
   fdWithdrawInfo: FdWithdrawInfo;
   selectedUserForFd: User | null;
   onFdWithdrawDialogOpen: (open: boolean, user?: User) => void;
@@ -95,11 +90,6 @@ const ITEMS_PER_PAGE = 14;
 
 const userTableColumns: UsersTableColumn[] = [
   { header: 'Name', accessor: 'name', type: 'string' },
-  {
-    header: 'Finance Active',
-    accessor: 'financeFeaturesEnabled',
-    type: 'boolean',
-  },
   // { header: 'DOB', accessor: 'dob', type: 'string' },
   { header: 'Age', accessor: 'age', type: 'number' },
   { header: 'Savings', accessor: 'savingsBalance', type: 'currency' },
@@ -123,8 +113,6 @@ export function UsersSection({
   resetMPINLoading,
   onUpdateDob,
   updateDobLoading,
-  onUpdateFinanceFeatures,
-  updateFeatureToggleLoading,
   fdWithdrawInfo,
   selectedUserForFd,
   onFdWithdrawDialogOpen,
@@ -371,37 +359,11 @@ export function UsersSection({
                               loading={interestRateLoading}
                             />
                           </div>
-                        ) : col.accessor === 'financeFeaturesEnabled' ? (
-                          <label className="inline-flex items-center gap-2 text-sm">
-                            <input
-                              type="checkbox"
-                              className="form-checkbox h-4 w-4"
-                              checked={Boolean(u.financeFeaturesEnabled)}
-                              disabled={updateFeatureToggleLoading === u._id}
-                              onChange={async (e) => {
-                                const result = await onUpdateFinanceFeatures(
-                                  u._id,
-                                  e.target.checked
-                                );
-                                if (!result.success) {
-                                  alert(result.message);
-                                }
-                              }}
-                            />
-                            {updateFeatureToggleLoading === u._id ? (
-                              <span className="text-xs text-gray-400">
-                                Updating...
-                              </span>
-                            ) : (
-                              <span className="text-xs">
-                                {u.financeFeaturesEnabled
-                                  ? 'Enabled'
-                                  : 'Disabled'}
-                              </span>
-                            )}
-                          </label>
                         ) : col.type === 'currency' ? (
-                          `₹${((u[col.accessor as keyof User] as number) || 0).toFixed(2)}`
+                          '₹' +
+                          (
+                            (u[col.accessor as keyof User] as number) || 0
+                          ).toFixed(2)
                         ) : col.accessor === 'age' ? (
                           getDisplayAge(u.dob, u.age)
                         ) : col.accessor === 'dob' ? (

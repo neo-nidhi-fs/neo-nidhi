@@ -86,6 +86,12 @@ export default function Navbar() {
             >
               Transactions
             </Link>
+            <Link
+              href="/admin/feature-toggles"
+              className="text-gray-200 hover:text-blue-400 transition-colors duration-300 font-medium"
+            >
+              Feature Toggles
+            </Link>
           </>
         )}
 
