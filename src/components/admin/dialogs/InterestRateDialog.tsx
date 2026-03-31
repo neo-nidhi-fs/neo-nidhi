@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader, Percent } from 'lucide-react';
+import { Loader } from 'lucide-react';
 import { FormEvent, ReactNode, useState, useEffect } from 'react';
 import { User } from '@/lib/services/adminService';
 

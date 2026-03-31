@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { dbConnect } from '@/lib/dbConnect';
 import { Challenge } from '@/models/Challenge';
 
-export async function GET(req: Request) {
+export async function GET() {
   try {
     await dbConnect();
 
@@ -26,7 +26,7 @@ export async function GET(req: Request) {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST() {
   return NextResponse.json(
     { success: false, error: 'Only admins can create challenges' },
     { status: 403 }

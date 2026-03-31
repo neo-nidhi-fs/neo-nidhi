@@ -87,7 +87,7 @@ export default function ChallengesPage() {
         fetchChallenges();
         fetchUserChallenges();
       }
-    } catch (error) {
+    } catch {
       setMessage('❌ Error joining challenge');
       setTimeout(() => setMessage(''), 3000);
     } finally {

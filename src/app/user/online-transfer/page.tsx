@@ -234,8 +234,6 @@ export default function OnlineTransferPage() {
           initialRecipient={initialRecipient}
           setInitialRecipient={setInitialRecipient}
           actionLoading={actionLoading}
-          pendingTransfer={pendingTransfer}
-          setPendingTransfer={setPendingTransfer}
           handleMPINVerify={handleMPINVerify}
           handleTransferFormSubmit={handleTransferFormSubmit}
           handlePayLoan={handlePayLoan}

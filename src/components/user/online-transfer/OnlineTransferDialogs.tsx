@@ -18,10 +18,6 @@ interface DialogsProps {
   initialRecipient: string;
   setInitialRecipient: React.Dispatch<React.SetStateAction<string>>;
   actionLoading: boolean;
-  pendingTransfer: { toUserName: string; amount: number } | null;
-  setPendingTransfer: React.Dispatch<
-    React.SetStateAction<{ toUserName: string; amount: number } | null>
-  >;
   handleMPINVerify: (mpin: string) => Promise<boolean>;
   handleTransferFormSubmit: (toUserName: string, amount: number) => void;
   handlePayLoan: (amount: number) => Promise<void>;
@@ -43,8 +39,6 @@ export function OnlineTransferDialogs({
   initialRecipient,
   setInitialRecipient,
   actionLoading,
-  pendingTransfer,
-  setPendingTransfer,
   handleMPINVerify,
   handleTransferFormSubmit,
   handlePayLoan,
@@ -58,7 +52,6 @@ export function OnlineTransferDialogs({
         isOpen={showMPINDialog}
         onClose={() => {
           setShowMPINDialog(false);
-          setPendingTransfer(null);
         }}
         onVerify={handleMPINVerify}
         isLoading={actionLoading}

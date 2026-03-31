@@ -19,7 +19,6 @@ import {
   Trash2,
   Play,
   Loader,
-  Pause,
   StopCircleIcon,
 } from 'lucide-react';
 

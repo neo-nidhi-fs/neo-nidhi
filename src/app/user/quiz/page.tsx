@@ -5,8 +5,7 @@ import { useSession } from 'next-auth/react';
 import { Loader, Brain, Trophy, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+// ...existing code...
 import {
   Select,
   SelectContent,

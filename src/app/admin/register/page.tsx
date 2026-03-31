@@ -45,7 +45,7 @@ export default function RegisterUserPage() {
         setMessage(`Error: ${data.error}`);
         setIsLoading(false);
       }
-    } catch (err) {
+    } catch {
       setMessage('Something went wrong. Please try again.');
       setIsLoading(false);
     }

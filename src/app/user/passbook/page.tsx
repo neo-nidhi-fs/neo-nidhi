@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { useSession } from 'next-auth/react';
 import { Session } from 'next-auth';
-import { Loader, History } from 'lucide-react';
+import { History } from 'lucide-react';
 import { TransactionTable } from '@/components/passbook/TransactionTable';
 
 type Transaction = {
@@ -60,27 +60,37 @@ export default function PassbookPage() {
               Transaction Passbook
             </span>
           </h1>
-          <p className="text-gray-200 text-lg">View your complete transaction history</p>
+          <p className="text-gray-200 text-lg">
+            View your complete transaction history
+          </p>
         </div>
 
         {/* Stats Card */}
         <Card className="bg-gradient-to-br from-slate-800 to-slate-900 border-cyan-400/30 mb-12">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-lg text-cyan-400">Total Transactions</CardTitle>
+              <CardTitle className="text-lg text-cyan-400">
+                Total Transactions
+              </CardTitle>
               <History className="text-cyan-400" size={24} />
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-4xl font-bold text-green-900">{transactions.length}</p>
-            <p className="text-gray-200 text-sm mt-2">Transaction records on file</p>
+            <p className="text-4xl font-bold text-green-900">
+              {transactions.length}
+            </p>
+            <p className="text-gray-200 text-sm mt-2">
+              Transaction records on file
+            </p>
           </CardContent>
         </Card>
 
         {/* Transactions Table */}
         <Card className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 border-slate-700">
           <CardHeader>
-            <CardTitle className="text-2xl text-cyan-400">Transaction History</CardTitle>
+            <CardTitle className="text-2xl text-cyan-400">
+              Transaction History
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <TransactionTable

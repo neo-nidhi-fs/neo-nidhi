@@ -1,30 +1,7 @@
-import { CheckCircle, Link } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Button } from './ui/button';
-
-type UserChallenge = {
-  challengeId: string;
-  status: 'registered' | 'started' | 'completed';
-  userChallenges: {
-    _id: string;
-    title: string;
-    description: string;
-    category: 'finance' | 'general';
-    questionCount: number;
-    registrationFee: number;
-    maxParticipants: number;
-    currentParticipants: number;
-    status: 'registration' | 'started' | 'completed' | 'cancelled';
-    createdBy: {
-      _id: string;
-      name: string;
-    };
-    startDate: string | null;
-    endDate: string | null;
-    durationMinutes: number;
-    totalPrizePool: number;
-  };
-};
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { CheckCircle } from 'lucide-react';
+import Link from 'next/link';
 
 export default function UserJoinedChallenges({
   userJoinedChallenges,

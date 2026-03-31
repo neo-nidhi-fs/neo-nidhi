@@ -14,7 +14,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Loader, Banknote } from 'lucide-react';
+import { Loader } from 'lucide-react';
 import { FormEvent, ReactNode } from 'react';
 import { User, FdWithdrawInfo } from '@/lib/services/adminService';
 
