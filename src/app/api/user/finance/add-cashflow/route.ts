@@ -1,5 +1,6 @@
 import { dbConnect } from '@/lib/dbConnect';
 import { User } from '@/models/User';
+import { CashFlow } from '@/models/CashFlow';
 import { enforceFinanceFeatureEnabled } from '@/lib/featureFlags';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../auth/[...nextauth]/route';
@@ -56,28 +57,15 @@ export async function POST(req: Request) {
       return featureFlagError;
     }
 
-    // Ensure cashFlows array exists for backward compatibility
-    if (!user.cashFlows) {
-      user.cashFlows = [];
-    }
-
-    const newCashFlow = {
+    const createdCashFlow = await CashFlow.create({
+      user: user._id,
       date: new Date(date),
       type,
       category,
       amount,
       source,
       note: note || null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    user.cashFlows.push(newCashFlow as any);
-    await user.save();
-
-    // Get the created cashflow with ID from the saved user
-    const createdCashFlow = user.cashFlows[user.cashFlows.length - 1];
+    });
 
     return NextResponse.json(
       {

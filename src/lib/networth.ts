@@ -1,4 +1,5 @@
-import { IUser, IAsset, ILiability, ICashFlow } from '@/models/User';
+import { IUser, IAsset, ILiability } from '@/models/User';
+import { ICashFlow } from '@/models/CashFlow';
 
 export interface INetWorthSummary {
   totalAssets: number;
@@ -121,7 +122,7 @@ export function getLiabilityBreakdown(user: IUser): ILiabilityBreakdown {
 /**
  * Calculate monthly income and expenses for current month
  */
-export function calculateCurrentCashFlows(user: IUser): {
+export function calculateCurrentCashFlows(cashFlows: ICashFlow[]): {
   income: number;
   expenses: number;
   savings: number;
@@ -130,7 +131,7 @@ export function calculateCurrentCashFlows(user: IUser): {
   const currentMonth = now.getMonth();
   const currentYear = now.getFullYear();
 
-  const income = (user.cashFlows || [])
+  const income = (cashFlows || [])
     .filter((cf: ICashFlow) => {
       const cfDate = new Date(cf.date);
       return (
@@ -141,7 +142,7 @@ export function calculateCurrentCashFlows(user: IUser): {
     })
     .reduce((sum: number, cf: ICashFlow) => sum + (cf.amount || 0), 0);
 
-  const expenses = (user.cashFlows || [])
+  const expenses = (cashFlows || [])
     .filter((cf: ICashFlow) => {
       const cfDate = new Date(cf.date);
       return (
@@ -162,7 +163,7 @@ export function calculateCurrentCashFlows(user: IUser): {
 /**
  * Calculate cashflow summary with monthly breakdown
  */
-export function calculateCashFlowSummary(user: IUser): ICashFlowSummary {
+export function calculateCashFlowSummary(cashFlows: ICashFlow[]): ICashFlowSummary {
   const monthlyData: {
     [month: string]: {
       income: number;
@@ -170,7 +171,7 @@ export function calculateCashFlowSummary(user: IUser): ICashFlowSummary {
     };
   } = {};
 
-  user.cashFlows.forEach((cf: ICashFlow) => {
+  (cashFlows || []).forEach((cf: ICashFlow) => {
     const date = new Date(cf.date);
     const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 
@@ -200,11 +201,11 @@ export function calculateCashFlowSummary(user: IUser): ICashFlowSummary {
     };
   });
 
-  const totalIncome = user.cashFlows
+  const totalIncome = (cashFlows || [])
     .filter((cf: ICashFlow) => cf.type === 'income')
     .reduce((sum: number, cf: ICashFlow) => sum + (cf.amount || 0), 0);
 
-  const totalExpenses = user.cashFlows
+  const totalExpenses = (cashFlows || [])
     .filter((cf: ICashFlow) => cf.type === 'expense')
     .reduce((sum: number, cf: ICashFlow) => sum + (cf.amount || 0), 0);
 
@@ -219,20 +220,20 @@ export function calculateCashFlowSummary(user: IUser): ICashFlowSummary {
 /**
  * Get complete net worth summary
  */
-export function getNetWorthSummary(user: IUser): INetWorthSummary {
+export function getNetWorthSummary(user: IUser, cashFlows: ICashFlow[]): INetWorthSummary {
   const totalAssets = calculateTotalAssets(user);
   const totalLiabilities = calculateTotalLiabilities(user);
   const netWorth = calculateNetWorth(totalAssets, totalLiabilities);
 
-  const cashFlows = calculateCurrentCashFlows(user);
+  const cashFlowStats = calculateCurrentCashFlows(cashFlows);
 
   return {
     totalAssets,
     totalLiabilities,
     netWorth,
-    monthlyIncome: cashFlows.income,
-    monthlyExpenses: cashFlows.expenses,
-    monthlySavings: cashFlows.savings,
+    monthlyIncome: cashFlowStats.income,
+    monthlyExpenses: cashFlowStats.expenses,
+    monthlySavings: cashFlowStats.savings,
     totalInterestEarned: user.accruedSavingInterest + user.accruedFdInterest,
     totalInterestAccrued: user.accruedLoanInterest,
   };

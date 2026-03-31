@@ -35,12 +35,27 @@ export async function processInterest(shouldAddToAccount = false) {
   console.log('shouldAddToAccount ==> ', shouldAddToAccount);
   await dbConnect();
 
-  // Check if interest was already calculated today
-  const settings = await Settings.findOne({});
-  if (settings && isToday(settings.lastInterestCalculationDate)) {
+  const now = new Date();
+  const startOfToday = new Date(now);
+  startOfToday.setHours(0, 0, 0, 0);
+
+  // Atomic claim to prevent concurrent same-day runs
+  const lock = await Settings.findOneAndUpdate(
+    {
+      $or: [
+        { lastInterestCalculationDate: { $exists: false } },
+        { lastInterestCalculationDate: { $lt: startOfToday } },
+      ],
+    },
+    { $set: { lastInterestCalculationDate: now } },
+    { upsert: true, new: true }
+  );
+
+  if (!lock) {
     console.log('Interest already calculated today. Skipping...');
     return;
   }
+
   const accounts = await User.find({});
   const schemes = await Scheme.find({});
 
@@ -249,18 +264,10 @@ export async function processInterest(shouldAddToAccount = false) {
     }
   }
 
-  // Update last calculation date to prevent duplicate runs
-  try {
-    await Settings.findOneAndUpdate(
-      {},
-      { lastInterestCalculationDate: new Date() },
-      { upsert: true, new: true }
-    );
-    console.log('Updated last interest calculation date');
-  } catch (err) {
-    console.error('Failed to update last calculation date:', err);
-  }
+  // lastInterestCalculationDate was set at the start with the atomic lock.
+  console.log('Interest calculation completed for the day.');
 }
+
 
 // cron.schedule('0 16 * * *', async () => {
 //   console.log('Running daily interest calculation...');

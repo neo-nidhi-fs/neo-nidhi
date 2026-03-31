@@ -34,18 +34,6 @@ export interface ILiability extends Document {
   updatedAt: Date;
 }
 
-export interface ICashFlow extends Document {
-  _id: mongoose.Types.ObjectId;
-  date: Date;
-  type: 'income' | 'expense';
-  category: string;
-  amount: number;
-  source: string;
-  note?: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
 export interface IUser extends Document {
   name: string;
   age: number;
@@ -67,7 +55,6 @@ export interface IUser extends Document {
   financeFeaturesEnabled: boolean;
   assetPortfolio: IAsset[];
   liabilities: ILiability[];
-  cashFlows: ICashFlow[];
   comparePassword(candidatePassword: string): Promise<boolean>;
   compareMPin(candidateMPin: string): Promise<boolean>;
 }
@@ -129,18 +116,6 @@ const UserSchema: Schema<IUser> = new Schema({
         default: 'active',
       },
       metadata: { type: Schema.Types.Mixed, default: {} },
-      createdAt: { type: Date, default: Date.now },
-      updatedAt: { type: Date, default: Date.now },
-    },
-  ],
-  cashFlows: [
-    {
-      date: { type: Date, required: true },
-      type: { type: String, enum: ['income', 'expense'], required: true },
-      category: { type: String, required: true },
-      amount: { type: Number, required: true },
-      source: { type: String, required: true },
-      note: { type: String, default: null },
       createdAt: { type: Date, default: Date.now },
       updatedAt: { type: Date, default: Date.now },
     },

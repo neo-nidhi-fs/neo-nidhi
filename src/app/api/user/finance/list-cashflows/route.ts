@@ -1,5 +1,6 @@
 import { dbConnect } from '@/lib/dbConnect';
 import { User } from '@/models/User';
+import { CashFlow } from '@/models/CashFlow';
 import { enforceFinanceFeatureEnabled } from '@/lib/featureFlags';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../auth/[...nextauth]/route';
@@ -30,10 +31,12 @@ export async function GET() {
       return featureFlagError;
     }
 
+    const cashFlows = await CashFlow.find({ user: user._id }).sort({ date: -1 });
+
     return NextResponse.json(
       {
         success: true,
-        data: user.cashFlows || [],
+        data: cashFlows,
       },
       { status: 200 }
     );

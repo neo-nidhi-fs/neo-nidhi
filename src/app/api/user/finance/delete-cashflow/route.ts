@@ -1,5 +1,6 @@
 import { dbConnect } from '@/lib/dbConnect';
 import { User } from '@/models/User';
+import { CashFlow } from '@/models/CashFlow';
 import { enforceFinanceFeatureEnabled } from '@/lib/featureFlags';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../auth/[...nextauth]/route';
@@ -40,23 +41,17 @@ export async function DELETE(req: Request) {
       return featureFlagError;
     }
 
-    // Ensure cashFlows array exists for backward compatibility
-    if (!user.cashFlows) {
-      user.cashFlows = [];
-    }
+    const deletedCashFlow = await CashFlow.findOneAndDelete({
+      _id: cashflowId,
+      user: user._id,
+    });
 
-    const cashflowIndex = user.cashFlows.findIndex(
-      (c) => c._id.toString() === cashflowId
-    );
-    if (cashflowIndex === -1) {
+    if (!deletedCashFlow) {
       return NextResponse.json(
         { success: false, error: 'Cashflow not found' },
         { status: 404 }
       );
     }
-
-    user.cashFlows.splice(cashflowIndex, 1);
-    await user.save();
 
     return NextResponse.json({
       success: true,

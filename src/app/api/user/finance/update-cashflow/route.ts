@@ -1,5 +1,6 @@
 import { dbConnect } from '@/lib/dbConnect';
 import { User } from '@/models/User';
+import { CashFlow } from '@/models/CashFlow';
 import { enforceFinanceFeatureEnabled } from '@/lib/featureFlags';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../auth/[...nextauth]/route';
@@ -40,37 +41,31 @@ export async function PUT(req: Request) {
       return featureFlagError;
     }
 
-    // Ensure cashFlows array exists for backward compatibility
-    if (!user.cashFlows) {
-      user.cashFlows = [];
-    }
+    const updates: Partial<Record<string, any>> = {};
+    if (date !== undefined) updates.date = new Date(date);
+    if (type !== undefined) updates.type = type;
+    if (category !== undefined) updates.category = category;
+    if (amount !== undefined) updates.amount = amount;
+    if (source !== undefined) updates.source = source;
+    if (note !== undefined) updates.note = note;
+    updates.updatedAt = new Date();
 
-    const cashflowIndex = user.cashFlows.findIndex(
-      (c) => c._id.toString() === cashflowId
+    const updatedCashFlow = await CashFlow.findOneAndUpdate(
+      { _id: cashflowId, user: user._id },
+      { $set: updates },
+      { new: true }
     );
-    if (cashflowIndex === -1) {
+
+    if (!updatedCashFlow) {
       return NextResponse.json(
         { success: false, error: 'Cashflow not found' },
         { status: 404 }
       );
     }
 
-    // Update cashflow fields if provided
-    if (date !== undefined) user.cashFlows[cashflowIndex].date = new Date(date);
-    if (type !== undefined) user.cashFlows[cashflowIndex].type = type;
-    if (category !== undefined)
-      user.cashFlows[cashflowIndex].category = category;
-    if (amount !== undefined) user.cashFlows[cashflowIndex].amount = amount;
-    if (source !== undefined) user.cashFlows[cashflowIndex].source = source;
-    if (note !== undefined) user.cashFlows[cashflowIndex].note = note;
-
-    user.cashFlows[cashflowIndex].updatedAt = new Date();
-
-    await user.save();
-
     return NextResponse.json({
       success: true,
-      data: user.cashFlows[cashflowIndex],
+      data: updatedCashFlow,
     });
   } catch (error: unknown) {
     return NextResponse.json(
