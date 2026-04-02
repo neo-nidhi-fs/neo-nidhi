@@ -30,7 +30,9 @@ async function migrationRunner() {
       }
     );
 
-    console.log(`✓ Normalized asset/liability for ${assetLiabilityResult.modifiedCount} users`);
+    console.log(
+      `✓ Normalized asset/liability for ${assetLiabilityResult.modifiedCount} users`
+    );
 
     // 2) Migrate existing embedded cashFlows to dedicated collection.
     const userCashFlowCursor = User.collection.find(

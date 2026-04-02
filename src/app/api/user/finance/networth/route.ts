@@ -5,10 +5,7 @@ import { enforceFinanceFeatureEnabled } from '@/lib/featureFlags';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../auth/[...nextauth]/route';
 import { NextResponse } from 'next/server';
-import {
-  calculateCurrentCashFlows,
-  getNetWorthSummary,
-} from '@/lib/networth';
+import { getNetWorthSummary, getAssetBreakdown } from '@/lib/networth';
 
 export async function GET() {
   try {
@@ -35,33 +32,18 @@ export async function GET() {
       return featureFlagError;
     }
 
-    const cashFlows = await CashFlow.find({ user: user._id }).sort({ date: -1 });
+    const cashFlows = await CashFlow.find({ user: user._id }).sort({
+      date: -1,
+    });
 
     const netWorthData = getNetWorthSummary(user, cashFlows);
-    const cashFlowData = calculateCurrentCashFlows(cashFlows);
+    const assetBreakdown = getAssetBreakdown(user);
 
     return NextResponse.json({
       success: true,
       data: {
         summary: netWorthData,
-        assetBreakdown: {
-          savings: user.savingsBalance,
-          fd: user.fd,
-          portfolio: (user.assetPortfolio || []).reduce(
-            (sum: number, asset) => sum + (asset.marketValue || 0),
-            0
-          ),
-          byType: (user.assetPortfolio || []).reduce(
-            (acc: { [key: string]: number }, asset) => {
-              if (!acc[asset.type]) {
-                acc[asset.type] = 0;
-              }
-              acc[asset.type] += asset.marketValue || 0;
-              return acc;
-            },
-            {}
-          ),
-        },
+        assetBreakdown,
         liabilityBreakdown: {
           loans: user.loanBalance,
           portfolio: (user.liabilities || []).reduce(

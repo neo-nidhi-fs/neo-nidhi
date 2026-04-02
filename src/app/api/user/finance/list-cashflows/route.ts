@@ -31,7 +31,9 @@ export async function GET() {
       return featureFlagError;
     }
 
-    const cashFlows = await CashFlow.find({ user: user._id }).sort({ date: -1 });
+    const cashFlows = await CashFlow.find({ user: user._id }).sort({
+      date: -1,
+    });
 
     return NextResponse.json(
       {

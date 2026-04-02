@@ -1,6 +1,7 @@
 import { dbConnect } from '@/lib/dbConnect';
 import { User } from '@/models/User';
 import { enforceFinanceFeatureEnabled } from '@/lib/featureFlags';
+import { calculateLoanProjection } from '@/lib/networth';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../auth/[...nextauth]/route';
 import { NextResponse } from 'next/server';
@@ -29,10 +30,17 @@ export async function GET() {
     if (featureFlagError) {
       return featureFlagError;
     }
+    const liabilitiesWithProjections = (user.liabilities || []).map(
+      (liability) => ({
+        ...liability.toObject(),
+        projection: calculateLoanProjection(liability),
+      })
+    );
+
     return NextResponse.json(
       {
         success: true,
-        data: user.liabilities || [],
+        data: liabilitiesWithProjections,
       },
       { status: 200 }
     );

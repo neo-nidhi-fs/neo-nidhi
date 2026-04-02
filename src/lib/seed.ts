@@ -4148,7 +4148,7 @@ function generateGeneralKnowledgeQuestions(count: number): QuizQuestionData[] {
     {
       q: 'Simplify: 3/4 + 2/3',
       opts: ['17/12', '13/12', '5/7', '19/12'],
-      ans: 1,
+      ans: 0,
       difficulty: 'easy',
       wikiKeyword: 'Fraction',
     },
@@ -4454,7 +4454,7 @@ function generateGeneralKnowledgeQuestions(count: number): QuizQuestionData[] {
     {
       q: 'A trader marks goods 20% above cost price and allows a discount of 10%. What is the profit percentage?',
       opts: ['8%', '10%', '12%', '15%'],
-      ans: 2,
+      ans: 0,
       difficulty: 'hard',
       wikiKeyword: 'Profit_(accounting)',
     },
@@ -5539,7 +5539,7 @@ function generateGeneralKnowledgeQuestions(count: number): QuizQuestionData[] {
     {
       q: 'Simplify: 3/4 + 2/3',
       opts: ['17/12', '13/12', '5/7', '19/12'],
-      ans: 1,
+      ans: 0,
       difficulty: 'easy',
       wikiKeyword: 'Fraction',
     },
@@ -5628,7 +5628,7 @@ function generateGeneralKnowledgeQuestions(count: number): QuizQuestionData[] {
     {
       q: 'A trader marks goods 20% above cost price and allows a discount of 10%. What is the profit percentage?',
       opts: ['8%', '10%', '12%', '15%'],
-      ans: 2,
+      ans: 0,
       difficulty: 'hard',
       wikiKeyword: 'Profit_(accounting)',
     },
@@ -5779,7 +5779,7 @@ function generateGeneralKnowledgeQuestions(count: number): QuizQuestionData[] {
     {
       q: 'Volume of a cone with radius 3 and height 5?',
       opts: ['15', '30', '45', '60'],
-      ans: 0,
+      ans: 2,
       difficulty: 'medium',
       wikiKeyword: 'Cone',
     },
@@ -5926,7 +5926,7 @@ function generateGeneralKnowledgeQuestions(count: number): QuizQuestionData[] {
     {
       q: 'Series: 2, 6, 12, 20, ?',
       opts: ['28', '30', '32', '34'],
-      ans: 0,
+      ans: 1,
       difficulty: 'medium',
       wikiKeyword: 'Number_series',
     },
@@ -5954,7 +5954,7 @@ function generateGeneralKnowledgeQuestions(count: number): QuizQuestionData[] {
     {
       q: 'Direction: Facing East, turn right, then left. Final direction?',
       opts: ['North', 'South', 'East', 'West'],
-      ans: 1,
+      ans: 2,
       difficulty: 'medium',
       wikiKeyword: 'Cardinal_direction',
     },
@@ -6005,7 +6005,7 @@ function generateGeneralKnowledgeQuestions(count: number): QuizQuestionData[] {
     {
       q: 'If today is Monday, what day will it be after 45 days?',
       opts: ['Wednesday', 'Thursday', 'Friday', 'Saturday'],
-      ans: 2,
+      ans: 1,
       difficulty: 'medium',
       wikiKeyword: 'Calendar',
     },
@@ -6026,14 +6026,14 @@ function generateGeneralKnowledgeQuestions(count: number): QuizQuestionData[] {
     {
       q: 'How many minutes between 4:15 and 5:00?',
       opts: ['30', '35', '40', '45'],
-      ans: 1,
+      ans: 3,
       difficulty: 'easy',
       wikiKeyword: 'Clock',
     },
     {
       q: 'If 1 Jan 2000 was Saturday, what was 1 Jan 2001?',
       opts: ['Sunday', 'Monday', 'Tuesday', 'Wednesday'],
-      ans: 0,
+      ans: 1,
       difficulty: 'medium',
       wikiKeyword: 'Calendar',
     },
@@ -6049,7 +6049,7 @@ function generateGeneralKnowledgeQuestions(count: number): QuizQuestionData[] {
     {
       q: 'If a student scores 80, 90, 70, average is?',
       opts: ['75', '80', '85', '90'],
-      ans: 2,
+      ans: 1,
       difficulty: 'easy',
       wikiKeyword: 'Average',
     },
@@ -6077,7 +6077,7 @@ function generateGeneralKnowledgeQuestions(count: number): QuizQuestionData[] {
     {
       q: 'Table: If 4 students scored 50, 60, 70, 80, total score?',
       opts: ['240', '250', '260', '270'],
-      ans: 0,
+      ans: 2,
       difficulty: 'easy',
       wikiKeyword: 'Data_analysis',
     },
@@ -6098,7 +6098,7 @@ function generateGeneralKnowledgeQuestions(count: number): QuizQuestionData[] {
     {
       q: 'Line graph: If population grows 10% annually, initial=1000, after 1 year?',
       opts: ['1050', '1100', '1150', '1200'],
-      ans: 0,
+      ans: 1,
       difficulty: 'medium',
       wikiKeyword: 'Line_chart',
     },
@@ -6140,7 +6140,7 @@ function generateGeneralKnowledgeQuestions(count: number): QuizQuestionData[] {
     },
     {
       q: 'A clock shows 3:15. What is the angle between hands?',
-      opts: ['37.5°', '45°', '47.5°', '50°'],
+      opts: ['7.5°', '45°', '47.5°', '50°'],
       ans: 0,
       difficulty: 'hard',
       wikiKeyword: 'Clock',
@@ -6230,6 +6230,138 @@ function generateGeneralKnowledgeQuestions(count: number): QuizQuestionData[] {
   ];
 
   // Additional miscellaneous questions
+  const mathMentalAbilityExpectedAnswers: Record<string, string> = {
+    'What is 25% of 200?': '50',
+    'Simplify: 3/4 + 2/3': '17/12',
+    'A shopkeeper buys an item for ₹500 and sells it for ₹600. What is the profit percentage?':
+      '20%',
+    'If 12 workers can complete a task in 8 days, how many days will 24 workers take?':
+      '4',
+    'A train travels 120 km in 2 hours. What is its average speed?': '60 km/h',
+    'The average of 10, 20, 30, 40, and 50 is:': '30',
+    'Find the compound interest on ₹1000 at 10% per annum for 2 years.': '₹210',
+    'Solve: If x + 5 = 12, then x = ?': '7',
+    'A man spends 1/3 of his salary on rent and 1/4 on food. If his salary is ₹12,000, how much is left?':
+      '₹5000',
+    'The ratio of ages of A and B is 3:5. If A is 15 years old, how old is B?':
+      '25',
+    'Find the simple interest on ₹2000 at 5% per annum for 4 years.': '₹400',
+    'Divide ₹900 in the ratio 2:1.': '₹600 and ₹300',
+    'If 5 kg of rice costs ₹250, what is the cost of 8 kg?': '₹400',
+    'A trader marks goods 20% above cost price and allows a discount of 10%. What is the profit percentage?':
+      '8%',
+    'A car travels 240 km in 4 hours. What is its speed?': '60 km/h',
+    'Solve: 2x + 5 = 15': 'x=5',
+    'Solve: x² - 9 = 0': 'x=±3',
+    'Simplify: (x+2)(x+3)': 'x²+5x+6',
+    'If 2x=10, then x=?': '5',
+    'Solve: x²+2x+1=0': 'x=-1',
+    'Simplify: (x-1)(x-1)': 'x²-2x+1',
+    'Solve: 3x-7=11': 'x=6',
+    'Solve: x²-4=0': 'x=±2',
+    'Simplify: (x+5)(x-5)': 'x²-25',
+    'Solve: 5x=25': 'x=5',
+    'Area of a rectangle with length 10 and breadth 5?': '50',
+    'Area of a triangle with base 6 and height 4?': '12',
+    'Circumference of a circle with radius 7?': '44',
+    'Volume of a cube with side 3?': '27',
+    'Surface area of a sphere with radius 7?': '616',
+    'Area of a square with side 8?': '64',
+    'Volume of a cylinder with radius 7 and height 10?': '1540',
+    'Area of a parallelogram with base 12 and height 5?': '60',
+    'Surface area of a cube with side 4?': '96',
+    'Volume of a cone with radius 3 and height 5?': '45',
+    'The mean of 5, 10, 15, 20, 25 is:': '15',
+    'The median of 2, 4, 6, 8, 10 is:': '6',
+    'The mode of 2, 3, 3, 4, 5 is:': '3',
+    'If a coin is tossed once, probability of getting heads is:': '0.5',
+    'If a die is rolled, probability of getting an even number is:': '1/2',
+    'Number of ways to arrange 3 books on a shelf:': '6',
+    'Number of ways to choose 2 items from 4:': '6',
+    'Probability of drawing a red card from a deck of 52:': '1/2',
+    'Mean of first 5 natural numbers:': '3',
+    'Variance measures:': 'Spread of data',
+    'Find the missing term: 2, 4, 8, 16, ?': '32',
+    'Find the odd one out: Apple, Banana, Mango, Carrot': 'Carrot',
+    'If A=1, B=2, then CAT = ?': '30',
+    'Father’s son’s son is?': 'Grandson',
+    'If North is 0°, East is 90°, then South is?': '180°',
+    'In a row of 10 people, A is 3rd from left. Position from right?': '8th',
+    'All cats are animals. All animals are living beings. Conclusion: All cats are living beings?':
+      'True',
+    'Venn diagram: Students, Boys, Girls — correct relation?':
+      'Overlapping circles',
+    'Analogy: Hand : Glove :: Foot : ?': 'Shoe',
+    'Series: 2, 6, 12, 20, ?': '30',
+    'Odd one: Circle, Square, Triangle, Rectangle': 'Circle',
+    'Coding: If CAT=3120, then DOG=?': '4156',
+    'Blood relation: A is B’s mother. B is C’s father. Relation of A to C?':
+      'Grandmother',
+    'Direction: Facing East, turn right, then left. Final direction?': 'East',
+    'Puzzle: If 5 pens cost ₹50, how much do 12 pens cost?': '120',
+    'How many days are there in a leap year?': '366',
+    'If 1 Jan 2020 was Wednesday, what day was 1 Jan 2021?': 'Friday',
+    'Angle between hands of clock at 3:00?': '90°',
+    'Angle between hands at 6:00?': '180°',
+    'Day after 100 days from 1 Jan 2022?': '11 April',
+    'If today is Monday, what day will it be after 45 days?': 'Thursday',
+    'How many right angles in a clock at 12 hours?': '22',
+    'If 15 August 1947 was Friday, what was 15 August 1948?': 'Saturday',
+    'How many minutes between 4:15 and 5:00?': '45',
+    'If 1 Jan 2000 was Saturday, what was 1 Jan 2001?': 'Monday',
+    'If a student scores 80, 90, 70, average is?': '80',
+    'Pie chart: If 25% students study Science, 50% Arts, 25% Commerce, which stream has maximum students?':
+      'Arts',
+    'Bar graph: If sales in Jan=200, Feb=300, Mar=250, which month had highest sales?':
+      'Feb',
+    'Line graph: If production rises from 100 to 200 in 5 years, average increase per year?':
+      '20',
+    'Table: If 4 students scored 50, 60, 70, 80, total score?': '260',
+    'Pie chart: If 40% employees are male, 60% female, ratio of male to female?':
+      '2:3',
+    'Bar graph: If sales doubled from 200 to 400, percentage increase?': '100%',
+    'Line graph: If population grows 10% annually, initial=1000, after 1 year?':
+      '1100',
+    'Table: If 5 workers produce 100 units, average per worker?': '20',
+    'Pie chart: If 30% students passed, 70% failed, ratio of pass to fail?':
+      '3:7',
+    'Five friends are sitting in a row. A is left of B, C is right of B, D is left of A, E is right of C. Who is in the middle?':
+      'B',
+    'In a family of 6, P is father, Q is mother, R and S are sons, T and U are daughters. How many females?':
+      '3',
+    'If 2 pencils cost ₹10, how much do 12 pencils cost?': '60',
+    'A clock shows 3:15. What is the angle between hands?': '7.5°',
+    'If 1=2, 2=4, 3=6, then 5=?': '10',
+    'Arrange: Mango, Apple, Banana, Orange alphabetically.':
+      'Apple, Banana, Mango, Orange',
+    'If A is taller than B, B taller than C, who is shortest?': 'C',
+    'Find missing term: 3, 6, 12, 24, ?': '48',
+    'If 1 Jan 2020 was Wednesday, what day was 1 Jan 2022?': 'Saturday',
+    'Puzzle: A man has 3 sons. Each son has 2 sisters. How many children?': '5',
+    'If 2x=10, then 4x=?': '20',
+    'Odd one: Dog, Cat, Cow, Chair': 'Chair',
+    'Analogy: Bird : Nest :: Bee : ?': 'Hive',
+    'Coding: If CAT=3120, then BAT=?': '2120',
+    'Puzzle: If 3 men can dig a pit in 6 days, how many days will 6 men take?':
+      '3',
+  };
+
+  mathMentalAbilityQuestions.forEach((item, index) => {
+    const selected = item.opts[item.ans];
+    const expected = mathMentalAbilityExpectedAnswers[item.q];
+    if (expected && selected !== expected) {
+      const expectedIndex = item.opts.indexOf(expected);
+      if (expectedIndex >= 0) {
+        item.ans = expectedIndex;
+      } else {
+        // If expected value is not among options, fall back to the original behavior (no change)
+        console.warn(
+          `mathMentalAbilityQuestions[${index}] expected answer "${expected}" not in options for question: ${item.q}`
+        );
+      }
+    }
+  });
+
   const miscQuestions = [
     {
       q: 'What is the largest continent by area?',

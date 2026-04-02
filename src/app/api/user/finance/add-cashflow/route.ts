@@ -19,12 +19,19 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { date, type, category, amount, source, note } = body;
+    const { date, type, category, amount, source, liabilityId, note } = body;
 
     // Validation
     if (!date || !type || !category || amount === undefined || !source) {
       return NextResponse.json(
         { success: false, error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
+
+    if (liabilityId && type !== 'expense') {
+      return NextResponse.json(
+        { success: false, error: 'Liability linked payments must be expenses' },
         { status: 400 }
       );
     }
@@ -57,6 +64,35 @@ export async function POST(req: Request) {
       return featureFlagError;
     }
 
+    // Apply cashflow to liability if provided
+    if (liabilityId) {
+      const liabilityIndex = user.liabilities.findIndex(
+        (l) => l._id.toString() === liabilityId
+      );
+      if (liabilityIndex === -1) {
+        return NextResponse.json(
+          { success: false, error: 'Linked liability not found' },
+          { status: 404 }
+        );
+      }
+
+      const existingLiability = user.liabilities[liabilityIndex];
+      const paymentAmount = Math.min(amount, existingLiability.amount || 0);
+      const remaining = Math.max(0, (existingLiability.amount || 0) - amount);
+
+      user.liabilities[liabilityIndex].amount = remaining;
+      user.liabilities[liabilityIndex].status =
+        remaining === 0 ? 'paid_off' : 'active';
+      user.liabilities[liabilityIndex].metadata = {
+        ...user.liabilities[liabilityIndex].metadata,
+        lastPayment: paymentAmount,
+        lastPaymentDate: new Date(),
+      };
+
+      user.loanBalance = Math.max(0, (user.loanBalance || 0) - paymentAmount);
+      await user.save();
+    }
+
     const createdCashFlow = await CashFlow.create({
       user: user._id,
       date: new Date(date),
@@ -64,6 +100,7 @@ export async function POST(req: Request) {
       category,
       amount,
       source,
+      liabilityId: liabilityId || null,
       note: note || null,
     });
 

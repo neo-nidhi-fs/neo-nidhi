@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Liability } from '@/hooks/useUserFinance';
@@ -10,6 +11,8 @@ interface LiabilityManagerProps {
   loading?: boolean;
   onEdit?: (liability: Liability) => void;
   onDelete?: (liabilityId: string) => void;
+  onRepay?: (liabilityId: string) => void;
+  onClose?: (liabilityId: string) => void;
   onAddClick?: () => void;
 }
 
@@ -18,6 +21,8 @@ export default function LiabilityManager({
   loading = false,
   onEdit,
   onDelete,
+  onRepay,
+  onClose,
   onAddClick,
 }: LiabilityManagerProps) {
   const formatCurrency = (value: number) => {
@@ -42,6 +47,31 @@ export default function LiabilityManager({
       'bg-slate-100 text-slate-900 dark:bg-slate-700 dark:text-slate-200'
     );
   };
+
+  const [selectedType, setSelectedType] = useState<string | null>(null);
+
+  const typeGroups = liabilities?.reduce(
+    (acc, liability) => {
+      const categoryKey = liability.type?.trim() || 'Uncategorized';
+      if (!acc[categoryKey]) {
+        acc[categoryKey] = {
+          totalOutstanding: 0,
+          liabilities: [] as Liability[],
+        };
+      }
+      const outstanding = liability.projection?.outstanding ?? liability.amount;
+      acc[categoryKey].totalOutstanding += outstanding;
+      acc[categoryKey].liabilities.push(liability);
+      return acc;
+    },
+    {} as Record<string, { totalOutstanding: number; liabilities: Liability[] }>
+  );
+
+  const selectedLiabilities = selectedType
+    ? typeGroups?.[selectedType]?.liabilities || []
+    : [];
+
+  const isTypeView = !selectedType;
 
   if (loading) {
     return (
@@ -74,78 +104,102 @@ export default function LiabilityManager({
         <div className="text-center py-12">
           <p className="text-gray-300">No liabilities recorded.</p>
         </div>
+      ) : isTypeView ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Object.entries(typeGroups || {}).map(([type, group]) => (
+            <div
+              key={type}
+              className="p-4 bg-slate-800/70 border border-red-500/30 rounded-xl shadow-xl hover:-translate-y-1 transition-transform cursor-pointer"
+              onClick={() => setSelectedType(type)}
+            >
+              <h4 className="text-lg font-semibold text-white">{type}</h4>
+              <p className="text-xs text-gray-400">
+                {group.liabilities.length} liability(ies)
+              </p>
+              <p className="mt-2 text-sm text-red-300 font-semibold">
+                Outstanding: {formatCurrency(group.totalOutstanding)}
+              </p>
+            </div>
+          ))}
+        </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-slate-600">
-                <th className="text-left py-3 px-4 font-semibold text-white">
-                  Type
-                </th>
-                <th className="text-left py-3 px-4 font-semibold text-white">
-                  Amount
-                </th>
-                <th className="text-left py-3 px-4 font-semibold text-white">
-                  Interest Rate
-                </th>
-                <th className="text-left py-3 px-4 font-semibold text-white">
-                  Due Date
-                </th>
-                <th className="text-left py-3 px-4 font-semibold text-white">
-                  Status
-                </th>
-                <th className="text-right py-3 px-4 font-semibold text-white">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {liabilities.map((liability) => (
-                <tr
-                  key={liability._id}
-                  className="border-b border-slate-600 hover:bg-slate-700/30 transition-colors"
-                >
-                  <td className="py-4 px-4 text-gray-200 font-medium">
+        <div>
+          <div className="mb-4">
+            <p className="text-sm text-gray-300">
+              {selectedLiabilities.length} liability(ies) in category{' '}
+              <strong className="text-white">{selectedType}</strong>
+            </p>
+            <p className="text-sm text-gray-400">
+              Total outstanding:{' '}
+              {formatCurrency(
+                typeGroups?.[selectedType || '']?.totalOutstanding || 0
+              )}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {selectedLiabilities.map((liability) => (
+              <div
+                key={liability._id}
+                className="p-4 bg-slate-800/70 border border-slate-700 rounded-xl shadow-xl"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-gray-400">
                     {liability.type}
-                  </td>
-                  <td className="py-4 px-4 font-semibold text-white">
-                    {formatCurrency(liability.amount)}
-                  </td>
-                  <td className="py-4 px-4 text-gray-200">
-                    {liability.interestRate
-                      ? `${liability.interestRate.toFixed(2)}% p.a.`
-                      : '-'}
-                  </td>
-                  <td className="py-4 px-4 text-gray-200">
-                    {liability.dueDate
-                      ? new Date(liability.dueDate).toLocaleDateString('en-IN')
-                      : '-'}
-                  </td>
-                  <td className="py-4 px-4">
-                    <span
-                      className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(liability.status)}`}
-                    >
-                      {liability.status.replace('_', ' ')}
-                    </span>
-                  </td>
-                  <td className="py-4 px-4 text-right space-x-2">
-                    <button
-                      onClick={() => onEdit && onEdit(liability)}
-                      className="inline-flex items-center px-2 py-1 text-blue-400 hover:bg-blue-400/10 rounded transition-colors"
-                    >
-                      <Edit2 size={16} />
-                    </button>
-                    <button
-                      onClick={() => onDelete && onDelete(liability._id)}
-                      className="inline-flex items-center px-2 py-1 text-red-400 hover:bg-red-400/10 rounded transition-colors"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </span>
+                  <span className="text-xs text-gray-300">
+                    {liability.status.replace('_', ' ')}
+                  </span>
+                </div>
+
+                <p className="text-white font-bold text-lg">
+                  {formatCurrency(liability.amount)}
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  Due:{' '}
+                  {liability.dueDate
+                    ? new Date(liability.dueDate).toLocaleDateString('en-IN')
+                    : '-'}
+                </p>
+                <p className="text-xs text-gray-400">
+                  Rate:{' '}
+                  {liability.interestRate
+                    ? `${liability.interestRate.toFixed(2)}%`
+                    : '-'}
+                </p>
+                <p className="text-sm text-red-200 mt-2">
+                  Outstanding:{' '}
+                  {formatCurrency(
+                    liability.projection?.outstanding || liability.amount
+                  )}
+                </p>
+
+                <div className="mt-3 flex gap-2">
+                  <button
+                    onClick={() => onEdit && onEdit(liability)}
+                    className="flex-1 px-2 py-1 text-blue-400 bg-blue-900/20 rounded"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => onDelete && onDelete(liability._id)}
+                    className="flex-1 px-2 py-1 text-red-400 bg-red-900/20 rounded"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-4">
+            <Button
+              onClick={() => setSelectedType(null)}
+              className="bg-slate-600 hover:bg-slate-500 text-white"
+            >
+              ← Back to Liability Types
+            </Button>
+          </div>
         </div>
       )}
     </Card>

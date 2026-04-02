@@ -8,6 +8,9 @@ interface LiabilityFormData {
   type: string;
   amount: number;
   interestRate?: number;
+  startDate?: string;
+  termMonths?: number;
+  additionalCharges?: number;
   dueDate?: string;
   status: Liability['status'];
   metadata?: Record<string, string | number | boolean>;
@@ -26,11 +29,25 @@ export default function LiabilityForm({
   onCancel,
   loading = false,
 }: LiabilityFormProps) {
+  const formatInputDate = (date?: string | Date | null): string => {
+    if (!date) return '';
+    const d = date instanceof Date ? date : new Date(date);
+    if (Number.isNaN(d.getTime())) return '';
+    return d.toISOString().split('T')[0];
+  };
+
   const [formData, setFormData] = useState({
     type: liability?.type || '',
     amount: liability?.amount || 0,
     interestRate: liability?.interestRate || 0,
-    dueDate: liability?.dueDate || '',
+    startDate:
+      formatInputDate(liability?.startDate) ||
+      formatInputDate(liability?.metadata?.startDate),
+    termMonths: liability?.metadata?.termMonths || 0,
+    additionalCharges: liability?.metadata?.additionalCharges || 0,
+    dueDate:
+      formatInputDate(liability?.dueDate) ||
+      formatInputDate(liability?.metadata?.dueDate),
     status: liability?.status || 'active',
   });
 
@@ -40,6 +57,12 @@ export default function LiabilityForm({
       alert('Please fill in all required fields');
       return;
     }
+
+    if (!formData.dueDate && !formData.termMonths) {
+      alert('Please provide either a due date or a term duration (months)');
+      return;
+    }
+
     onSubmit(formData);
   };
 
@@ -111,6 +134,61 @@ export default function LiabilityForm({
               className="w-full px-3 py-2 border border-slate-600 rounded-md bg-slate-700/50 text-white focus:outline-none focus:ring-2 focus:ring-red-500"
               placeholder="0"
               step="0.01"
+            />
+          </div>
+
+          {/* Start Date */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">
+              Start Date
+            </label>
+            <input
+              type="date"
+              value={formData.startDate}
+              onChange={(e) =>
+                setFormData({ ...formData, startDate: e.target.value })
+              }
+              className="w-full px-3 py-2 border border-slate-600 rounded-md bg-slate-700/50 text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+            />
+          </div>
+
+          {/* Additional Charges */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">
+              Additional Charges (₹)
+            </label>
+            <input
+              type="number"
+              value={formData.additionalCharges}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  additionalCharges: parseFloat(e.target.value) || 0,
+                })
+              }
+              className="w-full px-3 py-2 border border-slate-600 rounded-md bg-slate-700/50 text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+              placeholder="0"
+              step="0.01"
+            />
+          </div>
+
+          {/* Term */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">
+              Loan Term (months)
+            </label>
+            <input
+              type="number"
+              value={formData.termMonths}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  termMonths: parseInt(e.target.value, 10) || 0,
+                })
+              }
+              className="w-full px-3 py-2 border border-slate-600 rounded-md bg-slate-700/50 text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+              placeholder="e.g., 60"
+              min={0}
             />
           </div>
 

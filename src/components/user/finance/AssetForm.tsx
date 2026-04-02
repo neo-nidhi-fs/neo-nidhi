@@ -43,8 +43,10 @@ export default function AssetForm({
   const {
     fetchStockQuotes,
     fetchMutualFundQuotes,
+    fetchCommodityQuotes,
     stockQuotes,
     mutualFundQuotes,
+    commodityQuotes,
   } = useQuotes();
 
   const handleSymbolChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -56,6 +58,8 @@ export default function AssetForm({
         await fetchStockQuotes([symbol]);
       } else if (formData.type === 'mutual_fund') {
         await fetchMutualFundQuotes([symbol]);
+      } else if (['gold', 'silver', 'etf'].includes(formData.type)) {
+        await fetchCommodityQuotes([symbol]);
       }
     }
   };
@@ -65,6 +69,11 @@ export default function AssetForm({
       return stockQuotes[formData.symbolOrCode]?.price || null;
     } else if (formData.type === 'mutual_fund' && formData.symbolOrCode) {
       return mutualFundQuotes[formData.symbolOrCode]?.nav || null;
+    } else if (
+      ['gold', 'silver', 'etf'].includes(formData.type) &&
+      formData.symbolOrCode
+    ) {
+      return commodityQuotes[formData.symbolOrCode]?.price || null;
     }
     return null;
   };
@@ -122,7 +131,10 @@ export default function AssetForm({
               <option value="fd">Fixed Deposit</option>
               <option value="rd">Recurring Deposit</option>
               <option value="equity">Equity</option>
-              <option value="mutual_fund">Mutual Fund</option>
+              <option value="mutual_fund">Mutual Fund</option>{' '}
+              <option value="etf">ETF</option>
+              <option value="gold">Gold</option>
+              <option value="silver">Silver</option>{' '}
               <option value="epfo">EPFO</option>
               <option value="other">Other</option>
             </select>
@@ -145,10 +157,18 @@ export default function AssetForm({
           </div>
 
           {/* Symbol or Code */}
-          {(formData.type === 'equity' || formData.type === 'mutual_fund') && (
+          {['equity', 'mutual_fund', 'etf', 'gold', 'silver'].includes(
+            formData.type
+          ) && (
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">
-                {formData.type === 'equity' ? 'Stock Symbol' : 'Fund Code'}
+                {formData.type === 'equity'
+                  ? 'Stock Symbol'
+                  : formData.type === 'mutual_fund'
+                    ? 'Fund Code'
+                    : formData.type === 'etf'
+                      ? 'ETF Code'
+                      : `${formData.type.charAt(0).toUpperCase()}${formData.type.slice(1)} Code`}
               </label>
               <input
                 type="text"
@@ -156,7 +176,15 @@ export default function AssetForm({
                 onChange={handleSymbolChange}
                 className="w-full px-3 py-2 border border-slate-600 rounded-md bg-slate-700/50 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
                 placeholder={
-                  formData.type === 'equity' ? 'e.g., TCS' : 'e.g., DSP-EQUITY'
+                  formData.type === 'equity'
+                    ? 'e.g., TCS'
+                    : formData.type === 'mutual_fund'
+                      ? 'e.g., DSP-EQUITY'
+                      : formData.type === 'etf'
+                        ? 'e.g., NIFTYBEES'
+                        : formData.type === 'gold'
+                          ? 'e.g., GOLD'
+                          : 'e.g., SILVER'
                 }
               />
               {quoteValue && (

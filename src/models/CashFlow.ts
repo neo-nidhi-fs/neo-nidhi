@@ -8,6 +8,7 @@ export interface ICashFlow extends Document {
   category: string;
   amount: number;
   source: string;
+  liabilityId?: mongoose.Types.ObjectId | null;
   note?: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -21,6 +22,7 @@ const CashFlowSchema: Schema<ICashFlow> = new Schema(
     category: { type: String, required: true },
     amount: { type: Number, required: true },
     source: { type: String, required: true },
+    liabilityId: { type: Schema.Types.ObjectId, ref: 'User', default: null },
     note: { type: String, default: null },
   },
   {
@@ -29,4 +31,5 @@ const CashFlowSchema: Schema<ICashFlow> = new Schema(
 );
 
 export const CashFlow: Model<ICashFlow> =
-  mongoose.models.CashFlow || mongoose.model<ICashFlow>('CashFlow', CashFlowSchema);
+  mongoose.models.CashFlow ||
+  mongoose.model<ICashFlow>('CashFlow', CashFlowSchema);

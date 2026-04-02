@@ -9,7 +9,16 @@ export interface ICustomInterestRate {
 
 export interface IAsset extends Document {
   _id: mongoose.Types.ObjectId;
-  type: 'fd' | 'rd' | 'equity' | 'mutual_fund' | 'epfo' | 'other';
+  type:
+    | 'fd'
+    | 'rd'
+    | 'equity'
+    | 'mutual_fund'
+    | 'epfo'
+    | 'etf'
+    | 'gold'
+    | 'silver'
+    | 'other';
   category: string;
   amount: number;
   quantity?: number;
@@ -27,6 +36,7 @@ export interface ILiability extends Document {
   type: string;
   amount: number;
   interestRate?: number;
+  startDate?: Date;
   dueDate?: Date;
   status: 'active' | 'paid_off' | 'closed';
   metadata?: Record<string, any>;
@@ -89,7 +99,17 @@ const UserSchema: Schema<IUser> = new Schema({
     {
       type: {
         type: String,
-        enum: ['fd', 'rd', 'equity', 'mutual_fund', 'epfo', 'other'],
+        enum: [
+          'fd',
+          'rd',
+          'equity',
+          'mutual_fund',
+          'epfo',
+          'etf',
+          'gold',
+          'silver',
+          'other',
+        ],
         required: true,
       },
       category: { type: String, required: true },
@@ -109,6 +129,7 @@ const UserSchema: Schema<IUser> = new Schema({
       type: { type: String, required: true },
       amount: { type: Number, required: true },
       interestRate: { type: Number, default: null },
+      startDate: { type: Date, default: null },
       dueDate: { type: Date, default: null },
       status: {
         type: String,

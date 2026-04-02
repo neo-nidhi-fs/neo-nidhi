@@ -4,7 +4,16 @@ import { useState, useCallback } from 'react';
 
 export interface Asset {
   _id: string;
-  type: 'fd' | 'rd' | 'equity' | 'mutual_fund' | 'epfo' | 'other';
+  type:
+    | 'fd'
+    | 'rd'
+    | 'equity'
+    | 'mutual_fund'
+    | 'epfo'
+    | 'etf'
+    | 'gold'
+    | 'silver'
+    | 'other';
   category: string;
   amount: number;
   quantity?: number;
@@ -20,9 +29,18 @@ export interface Liability {
   type: string;
   amount: number;
   interestRate?: number;
+  startDate?: string;
   dueDate?: string;
   status: 'active' | 'paid_off' | 'closed';
   metadata?: Record<string, any>;
+  projection?: {
+    outstanding: number;
+    monthlyEMI: number;
+    remainingMonths: number;
+    payoffDate: string | null;
+    totalPayment: number;
+    totalInterest: number;
+  };
 }
 
 export interface CashFlow {
@@ -32,6 +50,7 @@ export interface CashFlow {
   category: string;
   amount: number;
   source: string;
+  liabilityId?: string;
   note?: string;
 }
 
@@ -45,6 +64,20 @@ export interface NetWorthSummary {
     monthlySavings: number;
     totalInterestEarned: number;
     totalInterestAccrued: number;
+    totalOutstandingLoans: number;
+    debtFreeDate: string | null;
+    fireCorpus: number;
+    fireCorpusInflationAdjusted: number;
+    fireData: {
+      monthsTracked: number;
+      monthlyExpense: number;
+      annualExpense: number;
+      fireCorpus: number;
+      fireCorpusInflationAdjusted: number;
+      inflationRate: number;
+      safeWithdrawalRate: number;
+    };
+    loanProjections: Record<string, any>;
   };
   assetBreakdown: any;
   liabilityBreakdown: any;

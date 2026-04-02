@@ -18,7 +18,17 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { type, amount, interestRate, dueDate, status, metadata } = body;
+    const {
+      type,
+      amount,
+      interestRate,
+      startDate,
+      termMonths,
+      additionalCharges,
+      dueDate,
+      status,
+      metadata,
+    } = body;
 
     // Validation
     if (!type || amount === undefined) {
@@ -53,13 +63,28 @@ export async function POST(req: Request) {
       user.liabilities = [];
     }
 
+    const initialStartDate = startDate ? new Date(startDate) : null;
+    const initialTermMonths = termMonths || 0;
+
+    let computedDueDate = dueDate ? new Date(dueDate) : null;
+    if (!computedDueDate && initialStartDate && initialTermMonths > 0) {
+      computedDueDate = new Date(initialStartDate);
+      computedDueDate.setMonth(computedDueDate.getMonth() + initialTermMonths);
+    }
+
     const newLiability = {
       type,
       amount,
       interestRate: interestRate || null,
-      dueDate: dueDate ? new Date(dueDate) : null,
+      dueDate: computedDueDate,
       status: status || 'active',
-      metadata: metadata || {},
+      metadata: {
+        ...metadata,
+        startDate: initialStartDate || null,
+        termMonths: initialTermMonths,
+        additionalCharges: additionalCharges || 0,
+        originalAmount: amount,
+      },
       createdAt: new Date(),
       updatedAt: new Date(),
     };

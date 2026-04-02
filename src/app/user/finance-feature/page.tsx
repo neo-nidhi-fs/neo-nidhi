@@ -150,6 +150,63 @@ export default function UserFinanceFeaturePage() {
     setShowCashFlowForm(true);
   };
 
+  const handleRepayLiability = async (liabilityId: string) => {
+    const amount = parseFloat(
+      prompt('Enter part-payment amount (₹) for liability:', '0') || '0'
+    );
+    if (isNaN(amount) || amount <= 0) {
+      return;
+    }
+
+    setPageLoading(true);
+    try {
+      const res = await fetch('/api/user/finance/update-liability', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ liabilityId, paymentAmount: amount }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        await fetchLiabilities();
+        await fetchNetWorth();
+      } else {
+        alert(result.error || 'Could not process repayment');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Payment failed.');
+    } finally {
+      setPageLoading(false);
+    }
+  };
+
+  const handleCloseLiability = async (liabilityId: string) => {
+    if (!confirm('Mark this liability as fully paid off?')) {
+      return;
+    }
+
+    setPageLoading(true);
+    try {
+      const res = await fetch('/api/user/finance/update-liability', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ liabilityId, close: true }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        await fetchLiabilities();
+        await fetchNetWorth();
+      } else {
+        alert(result.error || 'Could not close liability');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Close liability failed.');
+    } finally {
+      setPageLoading(false);
+    }
+  };
+
   const handleCloseAssetForm = () => {
     setShowAssetForm(false);
     setEditingAsset(undefined);
@@ -251,6 +308,8 @@ export default function UserFinanceFeaturePage() {
                     loading={financeLoading}
                     onEdit={handleEditLiability}
                     onDelete={deleteLiability}
+                    onRepay={handleRepayLiability}
+                    onClose={handleCloseLiability}
                     onAddClick={() => setShowLiabilityForm(true)}
                   />
                 )}
@@ -293,6 +352,7 @@ export default function UserFinanceFeaturePage() {
         {showCashFlowForm && (
           <CashFlowForm
             cashflow={editingCashFlow}
+            liabilities={liabilities}
             onSubmit={handleAddCashFlow}
             onCancel={handleCloseCashFlowForm}
             loading={financeLoading}

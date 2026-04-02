@@ -6,9 +6,121 @@ import { Transaction } from '@/models/Transaction';
 import { Settings } from '@/models/Settings';
 
 // Utility: calculate daily interest
-function calculateDailyInterest(principal: number, annualRate: number): number {
+export function calculateDailyInterest(
+  principal: number,
+  annualRate: number
+): number {
   const dailyRate = annualRate / 365; // simple daily rate
   return principal * dailyRate;
+}
+
+export type DailyInterestAccountSlice = {
+  savingsBalance: number;
+  fd: number;
+  loanBalance: number;
+  customInterestRates?: {
+    saving?: number | null;
+    fd?: number | null;
+    loan?: number | null;
+  } | null;
+};
+
+type SchemeRateSlice = { name: string; interestRate: number };
+
+/** One day of accrued interest per product, using the same rules as the daily cron. */
+export function computeDailyInterestDeltas(
+  account: DailyInterestAccountSlice,
+  schemes: SchemeRateSlice[]
+): { deltaSaving: number; deltaFd: number; deltaLoan: number } {
+  const { savingsBalance, fd, loanBalance, customInterestRates } = account;
+  let deltaSaving = 0;
+  let deltaFd = 0;
+  let deltaLoan = 0;
+
+  for (const scheme of schemes) {
+    let rate = scheme.interestRate;
+
+    if (customInterestRates) {
+      if (
+        scheme.name === 'deposit' &&
+        customInterestRates.saving !== null &&
+        customInterestRates.saving !== undefined
+      ) {
+        rate = customInterestRates.saving;
+      } else if (
+        scheme.name === 'fd' &&
+        customInterestRates.fd !== null &&
+        customInterestRates.fd !== undefined
+      ) {
+        rate = customInterestRates.fd;
+      } else if (
+        scheme.name === 'loan' &&
+        customInterestRates.loan !== null &&
+        customInterestRates.loan !== undefined
+      ) {
+        rate = customInterestRates.loan;
+      }
+    }
+
+    const annualRate = rate / 100;
+    switch (scheme.name) {
+      case 'deposit':
+        if (savingsBalance > 0) {
+          deltaSaving += calculateDailyInterest(savingsBalance, annualRate);
+        }
+        break;
+      case 'fd':
+        if (fd > 0) {
+          deltaFd += calculateDailyInterest(fd, annualRate);
+        }
+        break;
+      case 'loan':
+        if (loanBalance > 0) {
+          deltaLoan += calculateDailyInterest(loanBalance, annualRate);
+        }
+        break;
+    }
+  }
+
+  return { deltaSaving, deltaFd, deltaLoan };
+}
+
+/**
+ * Replaces accrued interest fields for every user: one day's interest (current balances &
+ * rates) × calendar days elapsed in the month (e.g. on the 2nd, multiplier is 2).
+ */
+export async function recalculateAccruedInterestMonthToDate(
+  referenceDate = new Date()
+) {
+  await dbConnect();
+
+  const schemes = await Scheme.find({});
+  if (!schemes.length) {
+    return { usersUpdated: 0, daysElapsed: 0, error: 'No schemes found' };
+  }
+
+  const daysElapsed = referenceDate.getDate();
+  const accounts = await User.find({});
+
+  for (const account of accounts) {
+    const { deltaSaving, deltaFd, deltaLoan } = computeDailyInterestDeltas(
+      account,
+      schemes
+    );
+    await User.findByIdAndUpdate(account._id, {
+      $set: {
+        accruedSavingInterest: deltaSaving * daysElapsed,
+        accruedFdInterest: deltaFd * daysElapsed,
+        accruedLoanInterest: deltaLoan * daysElapsed,
+      },
+    });
+  }
+
+  return {
+    usersUpdated: accounts.length,
+    daysElapsed,
+    error: null,
+  };
 }
 
 // Utility: check if today is the last day of the month
@@ -39,20 +151,35 @@ export async function processInterest(shouldAddToAccount = false) {
   const startOfToday = new Date(now);
   startOfToday.setHours(0, 0, 0, 0);
 
-  // Atomic claim to prevent concurrent same-day runs
+  // Ensure only a single Settings document is used as the global lock anchor.
+  const globalSettings = await Settings.findOne({}).sort({ _id: 1 });
+  if (!globalSettings) {
+    console.warn('No settings record found. Interest calculation aborted.');
+    return;
+  }
+
+  // If last interest was already calculated today, skip.
+  if (isToday(globalSettings.lastInterestCalculationDate)) {
+    console.log('Interest already calculated today (today check). Skipping...');
+    return;
+  }
+
+  // Atomic claim to prevent concurrent same-day runs for the selected settings record
   const lock = await Settings.findOneAndUpdate(
     {
+      _id: globalSettings._id,
       $or: [
         { lastInterestCalculationDate: { $exists: false } },
+        { lastInterestCalculationDate: null },
         { lastInterestCalculationDate: { $lt: startOfToday } },
       ],
     },
     { $set: { lastInterestCalculationDate: now } },
-    { upsert: true, new: true }
+    { new: true }
   );
 
   if (!lock) {
-    console.log('Interest already calculated today. Skipping...');
+    console.log('Interest already calculated today (lock failed). Skipping...');
     return;
   }
 
@@ -84,67 +211,10 @@ export async function processInterest(shouldAddToAccount = false) {
   }
 
   for (const account of accounts) {
-    const { savingsBalance, fd, loanBalance, customInterestRates } = account;
-
-    // accumulate deltas to minimize writes
-    let deltaSaving = 0;
-    let deltaFd = 0;
-    let deltaLoan = 0;
-
-    for (const scheme of schemes) {
-      // Check if user has custom interest rate, otherwise use default scheme rate
-      let rate = scheme.interestRate;
-
-      if (customInterestRates) {
-        if (
-          scheme.name === 'deposit' &&
-          customInterestRates.saving !== null &&
-          customInterestRates.saving !== undefined
-        ) {
-          rate = customInterestRates.saving;
-        } else if (
-          scheme.name === 'fd' &&
-          customInterestRates.fd !== null &&
-          customInterestRates.fd !== undefined
-        ) {
-          rate = customInterestRates.fd;
-        } else if (
-          scheme.name === 'loan' &&
-          customInterestRates.loan !== null &&
-          customInterestRates.loan !== undefined
-        ) {
-          rate = customInterestRates.loan;
-        }
-      }
-
-      const annualRate = rate / 100;
-      switch (scheme.name) {
-        case 'deposit':
-          if (savingsBalance > 0) {
-            const dailyInterest = calculateDailyInterest(
-              savingsBalance,
-              annualRate
-            );
-            deltaSaving += dailyInterest;
-          }
-          break;
-        case 'fd':
-          if (fd > 0) {
-            const dailyInterest = calculateDailyInterest(fd, annualRate);
-            deltaFd += dailyInterest;
-          }
-          break;
-        case 'loan':
-          if (loanBalance > 0) {
-            const dailyInterest = calculateDailyInterest(
-              loanBalance,
-              annualRate
-            );
-            deltaLoan += dailyInterest;
-          }
-          break;
-      }
-    }
+    const { deltaSaving, deltaFd, deltaLoan } = computeDailyInterestDeltas(
+      account,
+      schemes
+    );
 
     // persist accumulated deltas
     try {
@@ -267,7 +337,6 @@ export async function processInterest(shouldAddToAccount = false) {
   // lastInterestCalculationDate was set at the start with the atomic lock.
   console.log('Interest calculation completed for the day.');
 }
-
 
 // cron.schedule('0 16 * * *', async () => {
 //   console.log('Running daily interest calculation...');

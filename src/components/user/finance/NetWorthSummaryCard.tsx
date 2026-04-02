@@ -108,6 +108,34 @@ export default function NetWorthSummaryCard({
           </p>
         </div>
       </div>
+
+      {/* FIRE & Debt Free */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+        <div className="bg-gradient-to-br from-violet-900/30 to-violet-950/30 rounded-lg p-4 shadow-sm border border-violet-400/30">
+          <p className="text-sm font-medium text-gray-300">FIRE Corpus (25x)</p>
+          <p className="text-xl font-bold text-violet-300 mt-2">
+            {formatCurrency(summary.fireCorpus)}
+          </p>
+        </div>
+
+        <div className="bg-gradient-to-br from-fuchsia-900/30 to-fuchsia-950/30 rounded-lg p-4 shadow-sm border border-fuchsia-400/30">
+          <p className="text-sm font-medium text-gray-300">
+            FIRE Corpus (Inflation adj.)
+          </p>
+          <p className="text-xl font-bold text-fuchsia-300 mt-2">
+            {formatCurrency(summary.fireCorpusInflationAdjusted)}
+          </p>
+        </div>
+
+        <div className="bg-gradient-to-br from-orange-900/30 to-orange-950/30 rounded-lg p-4 shadow-sm border border-orange-400/30">
+          <p className="text-sm font-medium text-gray-300">Debt-Free Date</p>
+          <p className="text-xl font-bold text-orange-300 mt-2">
+            {summary.debtFreeDate
+              ? new Date(summary.debtFreeDate).toLocaleDateString('en-IN')
+              : 'N/A'}
+          </p>
+        </div>
+      </div>
     </Card>
   );
 }

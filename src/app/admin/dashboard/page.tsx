@@ -20,6 +20,8 @@ type InterestRateUpdate = {
 
 export default function AdminDashboard() {
   const [message, setMessage] = useState('');
+  const [recalculateAccruedLoading, setRecalculateAccruedLoading] =
+    useState(false);
   const [userDialogOpen, setUserDialogOpen] = useState(false);
   const [schemeDialogOpen, setSchemeDialogOpen] = useState(false);
   const [fdWithdrawDialogOpen, setFdWithdrawDialogOpen] = useState(false);
@@ -196,6 +198,34 @@ export default function AdminDashboard() {
     return result;
   };
 
+  const handleRecalculateMonthAccrued = async () => {
+    if (
+      !confirm(
+        'Replace all users’ accrued saving, FD, and loan interest with month-to-date amounts? This uses today’s balances and rates: one day’s interest × the day-of-month (e.g. on the 2nd, ×2). Existing accrued values are overwritten.'
+      )
+    ) {
+      return;
+    }
+    setRecalculateAccruedLoading(true);
+    try {
+      const res = await fetch('/api/admin/recalculate-accrued-interest', {
+        method: 'POST',
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMessage(data.message ?? 'Accrued interest updated.');
+      } else {
+        setMessage(data.error ?? 'Recalculation failed.');
+      }
+      setTimeout(() => setMessage(''), 4000);
+    } catch {
+      setMessage('Recalculation failed.');
+      setTimeout(() => setMessage(''), 3000);
+    } finally {
+      setRecalculateAccruedLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-slate-950 via-blue-950 to-slate-950">
@@ -208,7 +238,11 @@ export default function AdminDashboard() {
     <main className="bg-gradient-to-b from-slate-950 via-blue-950 to-slate-950 text-white min-h-screen py-12 px-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <DashboardHeader message={message} />
+        <DashboardHeader
+          message={message}
+          onRecalculateMonthAccrued={handleRecalculateMonthAccrued}
+          recalculateMonthAccruedLoading={recalculateAccruedLoading}
+        />
 
         {/* Stats Cards */}
         <AdminStats totalUsers={users.length} totalSchemes={schemes.length} />

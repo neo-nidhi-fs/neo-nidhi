@@ -1,5 +1,6 @@
 import { dbConnect } from '@/lib/dbConnect';
 import { User } from '@/models/User';
+import { CashFlow } from '@/models/CashFlow';
 import { enforceFinanceFeatureEnabled } from '@/lib/featureFlags';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../auth/[...nextauth]/route';
@@ -23,9 +24,14 @@ export async function PUT(req: Request) {
       type,
       amount,
       interestRate,
+      startDate,
+      termMonths,
+      additionalCharges,
       dueDate,
       status,
       metadata,
+      paymentAmount,
+      close,
     } = body;
 
     if (!liabilityId) {
@@ -63,18 +69,67 @@ export async function PUT(req: Request) {
       );
     }
 
+    // Handle part payment and closure
+    if (paymentAmount !== undefined && paymentAmount > 0) {
+      const currentAmount = user.liabilities[liabilityIndex].amount;
+      const remaining = Math.max(0, currentAmount - paymentAmount);
+      user.liabilities[liabilityIndex].amount = remaining;
+      user.liabilities[liabilityIndex].status =
+        remaining === 0 ? 'paid_off' : 'active';
+      user.liabilities[liabilityIndex].metadata = {
+        ...user.liabilities[liabilityIndex].metadata,
+        lastPayment: paymentAmount,
+        lastPaymentDate: new Date(),
+      };
+
+      user.loanBalance = Math.max(0, user.loanBalance - paymentAmount);
+
+      await CashFlow.create({
+        user: user._id,
+        date: new Date(),
+        type: 'expense',
+        category: 'loan_repayment',
+        amount: paymentAmount,
+        source: 'liability',
+        note: `Part payment for ${user.liabilities[liabilityIndex].type}`,
+      });
+    }
+
+    if (close) {
+      user.liabilities[liabilityIndex].status = 'paid_off';
+      user.liabilities[liabilityIndex].amount = 0;
+    }
+
     // Update liability fields if provided
     if (type !== undefined) user.liabilities[liabilityIndex].type = type;
     if (amount !== undefined) user.liabilities[liabilityIndex].amount = amount;
     if (interestRate !== undefined)
       user.liabilities[liabilityIndex].interestRate = interestRate;
+    if (startDate !== undefined)
+      user.liabilities[liabilityIndex].metadata = {
+        ...user.liabilities[liabilityIndex].metadata,
+        startDate: startDate || null,
+      };
+    if (termMonths !== undefined)
+      user.liabilities[liabilityIndex].metadata = {
+        ...user.liabilities[liabilityIndex].metadata,
+        termMonths: termMonths || 0,
+      };
+    if (additionalCharges !== undefined)
+      user.liabilities[liabilityIndex].metadata = {
+        ...user.liabilities[liabilityIndex].metadata,
+        additionalCharges: additionalCharges || 0,
+      };
     if (dueDate !== undefined)
       user.liabilities[liabilityIndex].dueDate = dueDate
         ? new Date(dueDate)
         : undefined;
     if (status !== undefined) user.liabilities[liabilityIndex].status = status;
     if (metadata !== undefined)
-      user.liabilities[liabilityIndex].metadata = metadata;
+      user.liabilities[liabilityIndex].metadata = {
+        ...user.liabilities[liabilityIndex].metadata,
+        ...metadata,
+      };
 
     user.liabilities[liabilityIndex].updatedAt = new Date();
 

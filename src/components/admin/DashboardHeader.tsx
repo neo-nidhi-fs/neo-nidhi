@@ -7,13 +7,19 @@
 
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Trophy, BarChart3 } from 'lucide-react';
+import { Trophy, BarChart3, RefreshCw } from 'lucide-react';
 
 interface DashboardHeaderProps {
   message: string;
+  onRecalculateMonthAccrued?: () => void;
+  recalculateMonthAccruedLoading?: boolean;
 }
 
-export function DashboardHeader({ message }: DashboardHeaderProps) {
+export function DashboardHeader({
+  message,
+  onRecalculateMonthAccrued,
+  recalculateMonthAccruedLoading = false,
+}: DashboardHeaderProps) {
   return (
     <div className="mb-12">
       <h1 className="text-5xl font-black mb-2">
@@ -43,6 +49,24 @@ export function DashboardHeader({ message }: DashboardHeaderProps) {
             Run interest Manually
           </Button>
         </Link>
+        {onRecalculateMonthAccrued && (
+          <Button
+            type="button"
+            className="bg-teal-600 hover:bg-teal-700 text-white flex items-center gap-2 disabled:opacity-60"
+            disabled={recalculateMonthAccruedLoading}
+            onClick={onRecalculateMonthAccrued}
+          >
+            <RefreshCw
+              size={18}
+              className={
+                recalculateMonthAccruedLoading ? 'animate-spin' : undefined
+              }
+            />
+            {recalculateMonthAccruedLoading
+              ? 'Recalculating…'
+              : 'Reset MTD accrued interest'}
+          </Button>
+        )}
       </div>
       {message && <p className="mt-4 text-sm">{message}</p>}
     </div>

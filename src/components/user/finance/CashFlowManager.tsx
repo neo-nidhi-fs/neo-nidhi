@@ -20,6 +20,8 @@ export default function CashFlowManager({
   onDelete,
   onAddClick,
 }: CashFlowManagerProps) {
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
@@ -29,9 +31,48 @@ export default function CashFlowManager({
     }).format(value);
   };
 
-  const sortedCashflows = [...cashflows].sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-  );
+  const monthLabel = (date: Date) =>
+    date.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+
+  const getMonthKey = (date: Date) => `${date.getFullYear()}-${date.getMonth()}`;
+
+  const visibleCashflows = [...cashflows]
+    .filter((cashflow) => {
+      const cfDate = new Date(cashflow.date);
+      return (
+        cfDate.getFullYear() === currentMonth.getFullYear() &&
+        cfDate.getMonth() === currentMonth.getMonth()
+      );
+    })
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+  const totalIncome = visibleCashflows
+    .filter((cf) => cf.type === 'income')
+    .reduce((sum, cf) => sum + cf.amount, 0);
+
+  const totalExpense = visibleCashflows
+    .filter((cf) => cf.type === 'expense')
+    .reduce((sum, cf) => sum + cf.amount, 0);
+
+  const totalRemaining = totalIncome - totalExpense;
+
+  const handlePrevMonth = () => {
+    const prev = new Date(currentMonth);
+    prev.setMonth(prev.getMonth() - 1);
+    setCurrentMonth(prev);
+  };
+
+  const handleNextMonth = () => {
+    const next = new Date(currentMonth);
+    next.setMonth(next.getMonth() + 1);
+    setCurrentMonth(next);
+  };
+
+  const handleToday = () => {
+    setCurrentMonth(new Date());
+  };
+
+  const sortedCashflows = visibleCashflows;
 
   if (loading) {
     return (

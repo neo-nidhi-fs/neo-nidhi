@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { CashFlow } from '@/hooks/useUserFinance';
+import { CashFlow, Liability } from '@/hooks/useUserFinance';
 import { X } from 'lucide-react';
 
 interface CashFlowFormData {
@@ -10,11 +10,13 @@ interface CashFlowFormData {
   category: string;
   amount: number;
   source: string;
+  liabilityId?: string;
   note?: string;
 }
 
 interface CashFlowFormProps {
   cashflow?: CashFlow;
+  liabilities?: Liability[];
   onSubmit: (data: CashFlowFormData) => void;
   onCancel: () => void;
   loading?: boolean;
@@ -47,6 +49,7 @@ const EXPENSE_CATEGORIES = [
 
 export default function CashFlowForm({
   cashflow,
+  liabilities = [],
   onSubmit,
   onCancel,
   loading = false,
@@ -59,6 +62,7 @@ export default function CashFlowForm({
     category: cashflow?.category || '',
     amount: cashflow?.amount || 0,
     source: cashflow?.source || '',
+    liabilityId: cashflow?.liabilityId || '',
     note: cashflow?.note || '',
   });
 
@@ -207,6 +211,29 @@ export default function CashFlowForm({
               placeholder="e.g., Amazon, Client XYZ, Coffee Shop"
             />
           </div>
+
+          {/* Loan tie-in for loan payments */}
+          {formData.type === 'expense' && liabilities?.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1">
+                Apply to Loan (optional)
+              </label>
+              <select
+                value={formData.liabilityId || ''}
+                onChange={(e) =>
+                  setFormData({ ...formData, liabilityId: e.target.value })
+                }
+                className="w-full px-3 py-2 border border-slate-600 rounded-md bg-slate-700/50 text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+              >
+                <option value="">No linked liability</option>
+                {liabilities.map((liability) => (
+                  <option key={liability._id} value={liability._id}>
+                    {liability.type} - Outstanding: ₹{liability.amount}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* Note */}
           <div>

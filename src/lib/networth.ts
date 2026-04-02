@@ -1,6 +1,15 @@
 import { IUser, IAsset, ILiability } from '@/models/User';
 import { ICashFlow } from '@/models/CashFlow';
 
+export interface ILoanProjection {
+  outstanding: number;
+  monthlyEMI: number;
+  remainingMonths: number;
+  payoffDate: string | null;
+  totalPayment: number;
+  totalInterest: number;
+}
+
 export interface INetWorthSummary {
   totalAssets: number;
   totalLiabilities: number;
@@ -10,6 +19,20 @@ export interface INetWorthSummary {
   monthlySavings: number;
   totalInterestEarned: number;
   totalInterestAccrued: number;
+  totalOutstandingLoans: number;
+  debtFreeDate: string | null;
+  fireCorpus: number;
+  fireCorpusInflationAdjusted: number;
+  fireData: {
+    monthsTracked: number;
+    monthlyExpense: number;
+    annualExpense: number;
+    fireCorpus: number;
+    fireCorpusInflationAdjusted: number;
+    inflationRate: number;
+    safeWithdrawalRate: number;
+  };
+  loanProjections: { [key: string]: ILoanProjection };
 }
 
 export interface IAssetBreakdown {
@@ -39,12 +62,38 @@ export interface ICashFlowSummary {
 }
 
 /**
+ * Calculate total market value for one asset entry
+ */
+export function calculateAssetValue(asset: IAsset): number {
+  if (asset.quantity && asset.quantity > 0 && asset.marketValue >= 0) {
+    // marketValue is per unit price for quantity-based assets
+    return asset.marketValue * asset.quantity;
+  }
+
+  if (asset.marketValue && asset.marketValue > 0) {
+    return asset.marketValue;
+  }
+
+  if (
+    asset.quantity &&
+    asset.quantity > 0 &&
+    asset.amount &&
+    asset.amount > 0
+  ) {
+    const unitPrice = asset.amount / asset.quantity;
+    return unitPrice * asset.quantity;
+  }
+
+  return asset.amount || 0;
+}
+
+/**
  * Calculate total assets from user data
  */
 export function calculateTotalAssets(user: IUser): number {
-  const legacyAssets = user.savingsBalance + user.fd;
+  const legacyAssets = (user.savingsBalance || 0) + (user.fd || 0);
   const portfolioAssets = (user.assetPortfolio || []).reduce(
-    (sum: number, asset: IAsset) => sum + (asset.marketValue || 0),
+    (sum: number, asset: IAsset) => sum + calculateAssetValue(asset),
     0
   );
   return legacyAssets + portfolioAssets;
@@ -77,18 +126,19 @@ export function calculateNetWorth(
  */
 export function getAssetBreakdown(user: IUser): IAssetBreakdown {
   return {
-    savings: user.savingsBalance,
-    fd: user.fd,
+    savings: user.savingsBalance || 0,
+    fd: user.fd || 0,
     portfolio: (user.assetPortfolio || []).reduce(
-      (sum: number, asset: IAsset) => sum + (asset.marketValue || 0),
+      (sum: number, asset: IAsset) => sum + calculateAssetValue(asset),
       0
     ),
     byType: (user.assetPortfolio || []).reduce(
       (acc: Record<string, number>, asset: IAsset) => {
+        const value = calculateAssetValue(asset);
         if (!acc[asset.type]) {
           acc[asset.type] = 0;
         }
-        acc[asset.type] += asset.marketValue || 0;
+        acc[asset.type] += value;
         return acc;
       },
       {} as Record<string, number>
@@ -163,7 +213,9 @@ export function calculateCurrentCashFlows(cashFlows: ICashFlow[]): {
 /**
  * Calculate cashflow summary with monthly breakdown
  */
-export function calculateCashFlowSummary(cashFlows: ICashFlow[]): ICashFlowSummary {
+export function calculateCashFlowSummary(
+  cashFlows: ICashFlow[]
+): ICashFlowSummary {
   const monthlyData: {
     [month: string]: {
       income: number;
@@ -217,15 +269,252 @@ export function calculateCashFlowSummary(cashFlows: ICashFlow[]): ICashFlowSumma
   };
 }
 
+export interface ILoanProjection {
+  outstanding: number;
+  monthlyEMI: number;
+  remainingMonths: number;
+  payoffDate: string | null;
+  totalPayment: number;
+  totalInterest: number;
+}
+
+export function monthsBetween(start: Date, end: Date): number {
+  const years = end.getFullYear() - start.getFullYear();
+  const months = end.getMonth() - start.getMonth();
+  const days = end.getDate() - start.getDate();
+
+  let totalMonths = years * 12 + months;
+  if (days > 0) {
+    totalMonths += 1;
+  }
+
+  return Math.max(0, totalMonths);
+}
+
+export function calculateLoanProjection(
+  liability: ILiability
+): ILoanProjection {
+  if (!liability || liability.status !== 'active' || liability.amount <= 0) {
+    return {
+      outstanding: 0,
+      monthlyEMI: 0,
+      remainingMonths: 0,
+      payoffDate: null,
+      totalPayment: 0,
+      totalInterest: 0,
+    };
+  }
+
+  const principal = liability.amount;
+  const annualRate = liability.interestRate || 0;
+  const monthlyRate = annualRate / 12 / 100;
+  const now = new Date();
+
+  let remainingMonths = 0;
+  let payoffDate: string | null = null;
+
+  const startDate = liability.startDate
+    ? new Date(liability.startDate)
+    : liability.metadata?.startDate
+      ? new Date(liability.metadata.startDate)
+      : null;
+
+  const termMonths = liability.metadata?.termMonths || 0;
+
+  let due = liability.dueDate ? new Date(liability.dueDate) : null;
+
+  if (!due && startDate && termMonths > 0) {
+    due = new Date(startDate);
+    due.setMonth(due.getMonth() + termMonths);
+  }
+
+  let totalTermMonths = 0;
+  if (startDate && due) {
+    totalTermMonths = monthsBetween(startDate, due);
+  }
+  if (!totalTermMonths && termMonths > 0) {
+    totalTermMonths = termMonths;
+  }
+
+  let elapsedMonths = 0;
+  if (startDate) {
+    elapsedMonths = monthsBetween(startDate, now);
+    if (totalTermMonths > 0) {
+      elapsedMonths = Math.min(elapsedMonths, totalTermMonths);
+    }
+  }
+
+  if (due) {
+    remainingMonths = monthsBetween(now, due);
+    if (remainingMonths > 0) {
+      payoffDate = due.toISOString();
+    } else {
+      remainingMonths = 0;
+      payoffDate = now.toISOString();
+    }
+  } else if (totalTermMonths > 0) {
+    remainingMonths = Math.max(0, totalTermMonths - elapsedMonths);
+    if (remainingMonths > 0 && startDate) {
+      const future = new Date(now);
+      future.setMonth(future.getMonth() + remainingMonths);
+      payoffDate = future.toISOString();
+    }
+  }
+
+  let monthlyEMI = 0;
+  const outstanding = principal;
+
+  const emiBaseMonths = remainingMonths > 0 ? remainingMonths : totalTermMonths;
+
+  if (emiBaseMonths > 0) {
+    if (monthlyRate > 0) {
+      monthlyEMI =
+        (principal * monthlyRate) /
+        (1 - Math.pow(1 + monthlyRate, -emiBaseMonths));
+    } else {
+      monthlyEMI = principal / emiBaseMonths;
+    }
+  }
+
+  const totalPayment = monthlyEMI * remainingMonths;
+  const totalInterest = Math.max(0, totalPayment - principal);
+
+  return {
+    outstanding,
+    monthlyEMI,
+    remainingMonths,
+    payoffDate,
+    totalPayment,
+    totalInterest,
+  };
+}
+
+export function calculateDebtFreeDate(
+  liabilities: ILiability[],
+  monthlySavings: number
+): string | null {
+  const activeLiabilities = (liabilities || []).filter(
+    (l) => l.status === 'active' && l.amount > 0
+  );
+
+  if (activeLiabilities.length === 0) return null;
+
+  const mostLikelyDue = activeLiabilities
+    .map((l) => (l.dueDate ? new Date(l.dueDate) : null))
+    .filter((d): d is Date => !!d)
+    .reduce((max, date) => (date > max ? date : max), new Date(0));
+
+  const totalOutstanding = activeLiabilities.reduce(
+    (sum: number, l) => sum + calculateLoanProjection(l).outstanding,
+    0
+  );
+
+  if (totalOutstanding <= 0) return new Date().toISOString();
+
+  if (monthlySavings > 0) {
+    const monthsToPay = Math.ceil(totalOutstanding / monthlySavings);
+    const estimatedDebtFree = new Date();
+    estimatedDebtFree.setMonth(estimatedDebtFree.getMonth() + monthsToPay);
+
+    if (mostLikelyDue.getTime() === 0) {
+      return estimatedDebtFree.toISOString();
+    }
+
+    return estimatedDebtFree < mostLikelyDue
+      ? estimatedDebtFree.toISOString()
+      : mostLikelyDue.toISOString();
+  }
+
+  if (mostLikelyDue.getTime() !== 0) {
+    return mostLikelyDue.toISOString();
+  }
+
+  return null;
+}
+
+export function calculateFIRECorpus(
+  cashFlows: ICashFlow[],
+  monthsToUse = 6,
+  inflationRate = 0.07,
+  safeWithdrawalRate = 0.04
+) {
+  const now = new Date();
+
+  let totalExpense = 0;
+  let filledMonths = 0;
+
+  for (let m = 0; m < monthsToUse; m += 1) {
+    const date = new Date(now.getFullYear(), now.getMonth() - m, 1);
+    const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
+    const monthExpense = (cashFlows || [])
+      .filter((cf) => cf.type === 'expense')
+      .filter((cf) => {
+        const cfDate = new Date(cf.date);
+        const key = `${cfDate.getFullYear()}-${String(cfDate.getMonth() + 1).padStart(2, '0')}`;
+        return key === monthKey;
+      })
+      .reduce((sum, cf) => sum + cf.amount, 0);
+
+    if (monthExpense > 0) {
+      totalExpense += monthExpense;
+      filledMonths += 1;
+    }
+  }
+
+  const monthsForAvg = filledMonths > 0 ? filledMonths : monthsToUse;
+  const avgMonthlyExpense = totalExpense / monthsForAvg;
+  const annualExpense = avgMonthlyExpense * 12;
+  const fireCorpus = annualExpense / safeWithdrawalRate;
+  const fireCorpusInflationAdjusted =
+    fireCorpus * Math.pow(1 + inflationRate, 10);
+
+  return {
+    monthsTracked: monthsForAvg,
+    monthlyExpense: avgMonthlyExpense,
+    annualExpense,
+    fireCorpus,
+    fireCorpusInflationAdjusted,
+    inflationRate,
+    safeWithdrawalRate,
+  };
+}
+
 /**
  * Get complete net worth summary
  */
-export function getNetWorthSummary(user: IUser, cashFlows: ICashFlow[]): INetWorthSummary {
+export function getNetWorthSummary(
+  user: IUser,
+  cashFlows: ICashFlow[]
+): INetWorthSummary {
   const totalAssets = calculateTotalAssets(user);
   const totalLiabilities = calculateTotalLiabilities(user);
   const netWorth = calculateNetWorth(totalAssets, totalLiabilities);
 
   const cashFlowStats = calculateCurrentCashFlows(cashFlows);
+
+  const loanProjections = (user.liabilities || []).reduce(
+    (acc: Record<string, ILoanProjection>, liability: ILiability) => {
+      acc[
+        liability._id?.toString() ||
+          liability.type ||
+          `liability-${Math.random()}`
+      ] = calculateLoanProjection(liability);
+      return acc;
+    },
+    {}
+  );
+
+  const totalOutstandingLoans = Object.values(loanProjections).reduce(
+    (sum, projection) => sum + projection.outstanding,
+    0
+  );
+
+  const fireScore = calculateFIRECorpus(cashFlows, 6, 0.07, 0.04);
+  const debtFreeDate = calculateDebtFreeDate(
+    user.liabilities || [],
+    cashFlowStats.savings > 0 ? cashFlowStats.savings : 0
+  );
 
   return {
     totalAssets,
@@ -236,6 +525,12 @@ export function getNetWorthSummary(user: IUser, cashFlows: ICashFlow[]): INetWor
     monthlySavings: cashFlowStats.savings,
     totalInterestEarned: user.accruedSavingInterest + user.accruedFdInterest,
     totalInterestAccrued: user.accruedLoanInterest,
+    totalOutstandingLoans,
+    debtFreeDate,
+    fireCorpus: fireScore.fireCorpus,
+    fireCorpusInflationAdjusted: fireScore.fireCorpusInflationAdjusted,
+    fireData: fireScore,
+    loanProjections,
   };
 }
 
