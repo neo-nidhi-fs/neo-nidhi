@@ -125,14 +125,17 @@ export default function UserFinanceFeaturePage() {
     setShowLiabilityForm(false);
   };
 
-  const handleAddCashFlow = async (data: Omit<CashFlow, '_id'>) => {
+  const handleAddCashFlow = async (
+    data: Omit<CashFlow, '_id'>
+  ): Promise<boolean> => {
     if (editingCashFlow) {
-      await updateCashFlow(editingCashFlow._id, data);
+      const updated = await updateCashFlow(editingCashFlow._id, data);
       setEditingCashFlow(undefined);
-    } else {
-      await addCashFlow(data);
+      if (updated) setShowCashFlowForm(false);
+      return false;
     }
-    setShowCashFlowForm(false);
+    const created = await addCashFlow(data);
+    return !!created;
   };
 
   const handleEditAsset = (asset: Asset) => {
@@ -351,6 +354,7 @@ export default function UserFinanceFeaturePage() {
         )}
         {showCashFlowForm && (
           <CashFlowForm
+            key={editingCashFlow?._id ?? 'new-cashflow'}
             cashflow={editingCashFlow}
             liabilities={liabilities}
             onSubmit={handleAddCashFlow}

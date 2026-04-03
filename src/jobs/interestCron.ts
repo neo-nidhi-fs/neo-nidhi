@@ -94,6 +94,15 @@ export async function recalculateAccruedInterestMonthToDate(
 ) {
   await dbConnect();
 
+  const globalSettings = await Settings.findOne({}).sort({ _id: 1 });
+  if (!globalSettings) {
+    return {
+      usersUpdated: 0,
+      daysElapsed: 0,
+      error: 'No settings record found',
+    };
+  }
+
   const schemes = await Scheme.find({});
   if (!schemes.length) {
     return { usersUpdated: 0, daysElapsed: 0, error: 'No schemes found' };
@@ -115,6 +124,10 @@ export async function recalculateAccruedInterestMonthToDate(
       },
     });
   }
+
+  await Settings.findByIdAndUpdate(globalSettings._id, {
+    $set: { lastInterestCalculationDate: new Date() },
+  });
 
   return {
     usersUpdated: accounts.length,

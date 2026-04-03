@@ -14,10 +14,23 @@ interface CashFlowFormData {
   note?: string;
 }
 
+function emptyFormState() {
+  return {
+    date: new Date().toISOString().split('T')[0],
+    type: 'income' as const,
+    category: '',
+    amount: 0,
+    source: '',
+    liabilityId: '',
+    note: '',
+  };
+}
+
 interface CashFlowFormProps {
   cashflow?: CashFlow;
   liabilities?: Liability[];
-  onSubmit: (data: CashFlowFormData) => void;
+  /** Return true after a successful add so the form resets for another entry. */
+  onSubmit: (data: CashFlowFormData) => void | Promise<boolean>;
   onCancel: () => void;
   loading?: boolean;
 }
@@ -41,6 +54,9 @@ const EXPENSE_CATEGORIES = [
   'Healthcare',
   'Entertainment',
   'Dining',
+  'Credit Card Payments',
+  'Gifts/Donations',
+  'part payment of loan',
   'Shopping',
   'Insurance',
   'EMI/Loan',
@@ -54,22 +70,24 @@ export default function CashFlowForm({
   onCancel,
   loading = false,
 }: CashFlowFormProps) {
-  const [formData, setFormData] = useState({
-    date: cashflow?.date
-      ? cashflow.date.split('T')[0]
-      : new Date().toISOString().split('T')[0],
-    type: (cashflow?.type as 'income' | 'expense') || 'income',
-    category: cashflow?.category || '',
-    amount: cashflow?.amount || 0,
-    source: cashflow?.source || '',
-    liabilityId: cashflow?.liabilityId || '',
-    note: cashflow?.note || '',
-  });
+  const [formData, setFormData] = useState(() =>
+    cashflow
+      ? {
+          date: cashflow.date.split('T')[0],
+          type: (cashflow.type as 'income' | 'expense') || 'income',
+          category: cashflow.category || '',
+          amount: cashflow.amount || 0,
+          source: cashflow.source || '',
+          liabilityId: cashflow.liabilityId || '',
+          note: cashflow.note || '',
+        }
+      : emptyFormState()
+  );
 
   const categories =
     formData.type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent | React.MouseEvent) => {
     e.preventDefault();
     if (
       !formData.date ||
@@ -81,15 +99,28 @@ export default function CashFlowForm({
       alert('Please fill in all required fields');
       return;
     }
-    onSubmit(formData);
+    const result = await onSubmit(formData);
+    if (result === true && !cashflow) {
+      setFormData(emptyFormState());
+    }
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-lg shadow-xl max-w-md w-full border border-slate-700 backdrop-blur-sm">
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      onClick={onCancel}
+      role="presentation"
+    >
+      <div
+        className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-lg shadow-xl max-w-md w-full border border-slate-700 backdrop-blur-sm"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="cashflow-form-title"
+      >
         {/* Header */}
         <div className="flex justify-between items-center p-6 border-b border-slate-600">
-          <h2 className="text-xl font-bold text-white">
+          <h2 id="cashflow-form-title" className="text-xl font-bold text-white">
             {cashflow ? 'Edit Entry' : 'Add Income/Expense'}
           </h2>
           <button onClick={onCancel} className="text-gray-300 hover:text-white">

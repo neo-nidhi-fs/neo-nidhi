@@ -1,9 +1,17 @@
 'use client';
 
+import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CashFlow } from '@/hooks/useUserFinance';
-import { Trash2, Edit2, TrendingUp, TrendingDown } from 'lucide-react';
+import {
+  Trash2,
+  Edit2,
+  TrendingUp,
+  TrendingDown,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
 
 interface CashFlowManagerProps {
   cashflows: CashFlow[];
@@ -11,6 +19,49 @@ interface CashFlowManagerProps {
   onEdit?: (cashflow: CashFlow) => void;
   onDelete?: (cashflowId: string) => void;
   onAddClick?: () => void;
+}
+
+function CashFlowSummaryBar({
+  formatCurrency,
+  totalIncome,
+  totalExpense,
+  totalRemaining,
+}: {
+  formatCurrency: (value: number) => string;
+  totalIncome: number;
+  totalExpense: number;
+  totalRemaining: number;
+}) {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 rounded-lg bg-slate-900/60 border border-slate-600/80 p-4">
+      <div className="text-center sm:text-left">
+        <p className="text-xs uppercase tracking-wide text-slate-400">
+          Total income
+        </p>
+        <p className="text-lg font-semibold text-emerald-400">
+          {formatCurrency(totalIncome)}
+        </p>
+      </div>
+      <div className="text-center sm:text-left">
+        <p className="text-xs uppercase tracking-wide text-slate-400">
+          Total expense
+        </p>
+        <p className="text-lg font-semibold text-red-400">
+          {formatCurrency(totalExpense)}
+        </p>
+      </div>
+      <div className="text-center sm:text-left">
+        <p className="text-xs uppercase tracking-wide text-slate-400">
+          Remaining
+        </p>
+        <p
+          className={`text-lg font-semibold ${totalRemaining >= 0 ? 'text-emerald-400' : 'text-red-400'}`}
+        >
+          {formatCurrency(totalRemaining)}
+        </p>
+      </div>
+    </div>
+  );
 }
 
 export default function CashFlowManager({
@@ -33,8 +84,6 @@ export default function CashFlowManager({
 
   const monthLabel = (date: Date) =>
     date.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
-
-  const getMonthKey = (date: Date) => `${date.getFullYear()}-${date.getMonth()}`;
 
   const visibleCashflows = [...cashflows]
     .filter((cashflow) => {
@@ -74,6 +123,11 @@ export default function CashFlowManager({
 
   const sortedCashflows = visibleCashflows;
 
+  const now = new Date();
+  const isViewingCurrentMonth =
+    currentMonth.getFullYear() === now.getFullYear() &&
+    currentMonth.getMonth() === now.getMonth();
+
   if (loading) {
     return (
       <Card className="p-6">
@@ -91,19 +145,64 @@ export default function CashFlowManager({
 
   return (
     <Card className="p-6 bg-gradient-to-br from-slate-800/80 to-slate-900/80 border-slate-700 backdrop-blur-sm">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-start mb-4">
         <h3 className="text-xl font-bold text-white">Income & Expenses</h3>
         <Button
           onClick={onAddClick}
-          className="bg-primary hover:bg-primary/90 text-primary-foreground"
+          className="bg-primary hover:bg-primary/90 text-primary-foreground shrink-0"
         >
           + Add Entry
         </Button>
       </div>
 
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 pb-4 border-b border-slate-600">
+        <div className="flex items-center justify-center sm:justify-start gap-1">
+          <button
+            type="button"
+            onClick={handlePrevMonth}
+            className="p-2 rounded-lg text-white hover:bg-slate-700/80 transition-colors"
+            aria-label="Previous month"
+          >
+            <ChevronLeft className="size-5" />
+          </button>
+          <span className="min-w-[12rem] text-center text-lg font-semibold text-white tabular-nums">
+            {monthLabel(currentMonth)}
+          </span>
+          <button
+            type="button"
+            onClick={handleNextMonth}
+            className="p-2 rounded-lg text-white hover:bg-slate-700/80 transition-colors"
+            aria-label="Next month"
+          >
+            <ChevronRight className="size-5" />
+          </button>
+        </div>
+        {!isViewingCurrentMonth && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleToday}
+            className="border-slate-500 text-slate-200 hover:bg-slate-700 self-center sm:self-auto"
+          >
+            This month
+          </Button>
+        )}
+      </div>
+
+      <div className="mb-6">
+        <CashFlowSummaryBar
+          formatCurrency={formatCurrency}
+          totalIncome={totalIncome}
+          totalExpense={totalExpense}
+          totalRemaining={totalRemaining}
+        />
+      </div>
+
       {sortedCashflows.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-gray-300">No income or expense entries yet.</p>
+          <p className="text-gray-300">
+            No income or expense entries for {monthLabel(currentMonth)}.
+          </p>
         </div>
       ) : (
         <div className="overflow-x-auto">
