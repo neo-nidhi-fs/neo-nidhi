@@ -19,7 +19,18 @@ export async function PUT(req: Request) {
     }
 
     const body = await req.json();
-    const { cashflowId, date, type, category, amount, source, note } = body;
+    const {
+      cashflowId,
+      date,
+      type,
+      category,
+      amount,
+      source,
+      note,
+      paymentSource,
+    } = body;
+
+    const validPaymentSources = ['account', 'credit_card', 'cash'] as const;
 
     if (!cashflowId) {
       return NextResponse.json(
@@ -41,6 +52,20 @@ export async function PUT(req: Request) {
       return featureFlagError;
     }
 
+    const existing = await CashFlow.findOne({
+      _id: cashflowId,
+      user: user._id,
+    });
+    if (!existing) {
+      return NextResponse.json(
+        { success: false, error: 'Cashflow not found' },
+        { status: 404 }
+      );
+    }
+
+    const nextType =
+      type !== undefined ? type : (existing.type as 'income' | 'expense');
+
     const updates: Partial<Record<string, any>> = {};
     if (date !== undefined) updates.date = new Date(date);
     if (type !== undefined) updates.type = type;
@@ -48,20 +73,45 @@ export async function PUT(req: Request) {
     if (amount !== undefined) updates.amount = amount;
     if (source !== undefined) updates.source = source;
     if (note !== undefined) updates.note = note;
+
+    let unsetPaymentSource = false;
+
+    if (paymentSource !== undefined && nextType === 'expense') {
+      if (paymentSource === null || paymentSource === '') {
+        unsetPaymentSource = true;
+      } else if (!validPaymentSources.includes(paymentSource)) {
+        return NextResponse.json(
+          { success: false, error: 'Invalid payment source' },
+          { status: 400 }
+        );
+      } else {
+        updates.paymentSource = paymentSource;
+      }
+    }
+
     updates.updatedAt = new Date();
+
+    if (nextType === 'income') {
+      delete updates.paymentSource;
+    }
+
+    const updatePayload: Record<string, unknown> = { $set: updates };
+    const $unset: Record<string, string> = {};
+    if (nextType === 'income') {
+      $unset.paymentSource = '';
+    }
+    if (unsetPaymentSource) {
+      $unset.paymentSource = '';
+    }
+    if (Object.keys($unset).length > 0) {
+      updatePayload.$unset = $unset;
+    }
 
     const updatedCashFlow = await CashFlow.findOneAndUpdate(
       { _id: cashflowId, user: user._id },
-      { $set: updates },
+      updatePayload,
       { new: true }
     );
-
-    if (!updatedCashFlow) {
-      return NextResponse.json(
-        { success: false, error: 'Cashflow not found' },
-        { status: 404 }
-      );
-    }
 
     return NextResponse.json({
       success: true,

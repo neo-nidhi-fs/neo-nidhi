@@ -8,6 +8,7 @@ interface LiabilityFormData {
   type: string;
   amount: number;
   interestRate?: number;
+  note?: string;
   startDate?: string;
   termMonths?: number;
   additionalCharges?: number;
@@ -40,6 +41,7 @@ export default function LiabilityForm({
     type: liability?.type || '',
     amount: liability?.amount || 0,
     interestRate: liability?.interestRate || 0,
+    note: liability?.note || '',
     startDate:
       formatInputDate(liability?.startDate) ||
       formatInputDate(liability?.metadata?.startDate),
@@ -94,6 +96,21 @@ export default function LiabilityForm({
               }
               className="w-full px-3 py-2 border border-slate-600 rounded-md bg-slate-700/50 text-white focus:outline-none focus:ring-2 focus:ring-red-500"
               placeholder="e.g., Personal Loan, Credit Card Debt, Home Loan"
+            />
+          </div>
+          {/* note */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">
+              Note
+            </label>
+            <input
+              type="text"
+              value={formData.note}
+              onChange={(e) =>
+                setFormData({ ...formData, note: e.target.value })
+              }
+              className="w-full px-3 py-2 border border-slate-600 rounded-md bg-slate-700/50 text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+              placeholder="e.g., loan taken for home renovation"
             />
           </div>
 

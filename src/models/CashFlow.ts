@@ -9,6 +9,11 @@ export interface ICashFlow extends Document {
   amount: number;
   source: string;
   liabilityId?: mongoose.Types.ObjectId | null;
+  /**
+   * Optional: where an expense was paid from. Omitted on income and on legacy docs;
+   * UI treats missing values as account.
+   */
+  paymentSource?: 'account' | 'credit_card' | 'cash';
   note?: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -23,6 +28,11 @@ const CashFlowSchema: Schema<ICashFlow> = new Schema(
     amount: { type: Number, required: true },
     source: { type: String, required: true },
     liabilityId: { type: Schema.Types.ObjectId, ref: 'User', default: null },
+    paymentSource: {
+      type: String,
+      enum: ['account', 'credit_card', 'cash'],
+      required: false,
+    },
     note: { type: String, default: null },
   },
   {

@@ -30,6 +30,7 @@ export interface Liability {
   amount: number;
   interestRate?: number;
   startDate?: string;
+  note?: string;
   dueDate?: string;
   status: 'active' | 'paid_off' | 'closed';
   metadata?: Record<string, any>;
@@ -43,6 +44,8 @@ export interface Liability {
   };
 }
 
+export type ExpensePaymentSource = 'account' | 'credit_card' | 'cash';
+
 export interface CashFlow {
   _id: string;
   date: string;
@@ -50,6 +53,8 @@ export interface CashFlow {
   category: string;
   amount: number;
   source: string;
+  /** Optional (expense); omitted in DB until set; UI treats missing as account */
+  paymentSource?: ExpensePaymentSource;
   liabilityId?: string;
   note?: string;
 }

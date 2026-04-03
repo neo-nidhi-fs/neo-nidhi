@@ -85,6 +85,13 @@ export function computeDailyInterestDeltas(
   return { deltaSaving, deltaFd, deltaLoan };
 }
 
+/** Calendar start of day (local) for storing lastInterestCalculationDate. */
+function getStartOfToday(reference: Date = new Date()): Date {
+  const d = new Date(reference);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
 /**
  * Replaces accrued interest fields for every user: one day's interest (current balances &
  * rates) × calendar days elapsed in the month (e.g. on the 2nd, multiplier is 2).
@@ -125,9 +132,10 @@ export async function recalculateAccruedInterestMonthToDate(
     });
   }
 
-  await Settings.findByIdAndUpdate(globalSettings._id, {
-    $set: { lastInterestCalculationDate: new Date() },
-  });
+  await Settings.updateOne(
+    { _id: globalSettings._id },
+    { $set: { lastInterestCalculationDate: getStartOfToday(referenceDate) } }
+  );
 
   return {
     usersUpdated: accounts.length,
@@ -161,8 +169,7 @@ export async function processInterest(shouldAddToAccount = false) {
   await dbConnect();
 
   const now = new Date();
-  const startOfToday = new Date(now);
-  startOfToday.setHours(0, 0, 0, 0);
+  const startOfToday = getStartOfToday(now);
 
   // Ensure only a single Settings document is used as the global lock anchor.
   const globalSettings = await Settings.findOne({}).sort({ _id: 1 });
@@ -187,7 +194,7 @@ export async function processInterest(shouldAddToAccount = false) {
         { lastInterestCalculationDate: { $lt: startOfToday } },
       ],
     },
-    { $set: { lastInterestCalculationDate: now } },
+    { $set: { lastInterestCalculationDate: startOfToday } },
     { new: true }
   );
 

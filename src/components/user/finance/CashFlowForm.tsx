@@ -1,7 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { CashFlow, Liability } from '@/hooks/useUserFinance';
+import {
+  CashFlow,
+  ExpensePaymentSource,
+  Liability,
+} from '@/hooks/useUserFinance';
 import { X } from 'lucide-react';
 
 interface CashFlowFormData {
@@ -10,17 +14,20 @@ interface CashFlowFormData {
   category: string;
   amount: number;
   source: string;
+  /** Expense only; ignored for income */
+  paymentSource: ExpensePaymentSource;
   liabilityId?: string;
   note?: string;
 }
 
-function emptyFormState() {
+function emptyFormState(): CashFlowFormData {
   return {
     date: new Date().toISOString().split('T')[0],
-    type: 'income' as const,
+    type: 'income',
     category: '',
     amount: 0,
     source: '',
+    paymentSource: 'account',
     liabilityId: '',
     note: '',
   };
@@ -78,6 +85,9 @@ export default function CashFlowForm({
           category: cashflow.category || '',
           amount: cashflow.amount || 0,
           source: cashflow.source || '',
+          paymentSource:
+            cashflow.paymentSource ||
+            ('account' as ExpensePaymentSource),
           liabilityId: cashflow.liabilityId || '',
           note: cashflow.note || '',
         }
@@ -161,6 +171,7 @@ export default function CashFlowForm({
                       ...formData,
                       type: e.target.value as 'income' | 'expense',
                       category: '',
+                      paymentSource: 'account',
                     })
                   }
                   className="w-4 h-4"
@@ -177,6 +188,7 @@ export default function CashFlowForm({
                       ...formData,
                       type: e.target.value as 'income' | 'expense',
                       category: '',
+                      paymentSource: 'account',
                     })
                   }
                   className="w-4 h-4"
@@ -206,6 +218,29 @@ export default function CashFlowForm({
               ))}
             </select>
           </div>
+
+          {/* Expense payment method */}
+          {formData.type === 'expense' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1">
+                Paid from *
+              </label>
+              <select
+                value={formData.paymentSource}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    paymentSource: e.target.value as ExpensePaymentSource,
+                  })
+                }
+                className="w-full px-3 py-2 border border-slate-600 rounded-md bg-slate-700/50 text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+              >
+                <option value="account">Account</option>
+                <option value="credit_card">Credit card</option>
+                <option value="cash">Cash</option>
+              </select>
+            </div>
+          )}
 
           {/* Amount */}
           <div>

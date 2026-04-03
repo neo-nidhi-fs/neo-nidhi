@@ -73,16 +73,18 @@ export async function POST(req: Request) {
     }
 
     // Get settings for interest rates or use defaults
-    let settings = await Settings.findOne();
-    if (!settings) {
-      // Create default settings if they don't exist
-      settings = await Settings.create({
-        savingsInterestRate: 3.5,
-        loanInterestRate: 12,
-        fdInterestRate: 8,
-        fdPrematureInterestRate: 3.5,
-      });
-    }
+    const settings = await Settings.findOneAndUpdate(
+      {},
+      {
+        $setOnInsert: {
+          savingsInterestRate: 3.5,
+          loanInterestRate: 12,
+          fdInterestRate: 8,
+          fdPrematureInterestRate: 3.5,
+        },
+      },
+      { upsert: true, new: true, sort: { _id: 1 }, setDefaultsOnInsert: true }
+    );
 
     // Determine withdrawal type and calculate interest
     let interestEarned = 0;

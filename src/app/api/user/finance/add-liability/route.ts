@@ -23,6 +23,7 @@ export async function POST(req: Request) {
       amount,
       interestRate,
       startDate,
+      note,
       termMonths,
       additionalCharges,
       dueDate,
@@ -78,6 +79,7 @@ export async function POST(req: Request) {
       interestRate: interestRate || null,
       dueDate: computedDueDate,
       status: status || 'active',
+      note: note || null,
       metadata: {
         ...metadata,
         startDate: initialStartDate || null,

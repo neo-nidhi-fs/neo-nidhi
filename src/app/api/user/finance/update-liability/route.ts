@@ -22,6 +22,7 @@ export async function PUT(req: Request) {
     const {
       liabilityId,
       type,
+      note,
       amount,
       interestRate,
       startDate,
@@ -105,6 +106,7 @@ export async function PUT(req: Request) {
     if (amount !== undefined) user.liabilities[liabilityIndex].amount = amount;
     if (interestRate !== undefined)
       user.liabilities[liabilityIndex].interestRate = interestRate;
+    if (note !== undefined) user.liabilities[liabilityIndex].note = note;
     if (startDate !== undefined)
       user.liabilities[liabilityIndex].metadata = {
         ...user.liabilities[liabilityIndex].metadata,

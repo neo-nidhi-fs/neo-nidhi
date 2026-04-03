@@ -21,7 +21,10 @@ export default function AssetManager({
   onDelete,
   onAddClick,
 }: AssetManagerProps) {
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedType, setSelectedType] = useState<string | null>(null);
+
+  const formatTypeLabel = (typeKey: string) =>
+    typeKey.replace(/_/g, ' ').toUpperCase();
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -99,51 +102,51 @@ export default function AssetManager({
     return asset.amount || 0;
   };
 
-  const categoryGroups = assets?.reduce(
+  const typeGroups = assets?.reduce(
     (acc, asset) => {
-      const categoryKey = asset.category?.trim() || 'Uncategorized';
-      if (!acc[categoryKey]) {
-        acc[categoryKey] = { totalValue: 0, assets: [] as Asset[] };
+      const typeKey = asset.type?.trim() || 'other';
+      if (!acc[typeKey]) {
+        acc[typeKey] = { totalValue: 0, assets: [] as Asset[] };
       }
-      acc[categoryKey].totalValue += getAssetTotalValue(asset);
-      acc[categoryKey].assets.push(asset);
+      acc[typeKey].totalValue += getAssetTotalValue(asset);
+      acc[typeKey].assets.push(asset);
       return acc;
     },
     {} as Record<string, { totalValue: number; assets: Asset[] }>
   );
 
-  const selectedAssets = selectedCategory
-    ? categoryGroups?.[selectedCategory]?.assets || []
+  const selectedAssets = selectedType
+    ? typeGroups?.[selectedType]?.assets || []
     : [];
 
-  const isCategoryView = !selectedCategory;
+  const isTypeOverview = !selectedType;
 
   return (
     <Card className="p-6 bg-gradient-to-br from-emerald-900/50 via-slate-800/80 to-slate-900/80 border-emerald-500/30 backdrop-blur-sm">
       <div className="flex justify-between items-center mb-6">
         <div>
           <h3 className="text-xl font-bold text-white">
-            {isCategoryView
-              ? 'Asset Categories'
-              : `Assets in ${selectedCategory}`}
+            {isTypeOverview
+              ? 'Assets by type'
+              : `Assets — ${formatTypeLabel(selectedType || '')}`}
           </h3>
-          {!isCategoryView && (
+          {!isTypeOverview && (
             <p className="text-sm text-gray-400">
               {selectedAssets.length} asset(s), total value{' '}
               {formatCurrency(
-                categoryGroups?.[selectedCategory || '']?.totalValue || 0
+                typeGroups?.[selectedType || '']?.totalValue || 0
               )}
             </p>
           )}
         </div>
 
         <div className="flex gap-2">
-          {!isCategoryView && (
+          {!isTypeOverview && (
             <Button
-              onClick={() => setSelectedCategory(null)}
+              onClick={() => setSelectedType(null)}
               className="bg-slate-600 hover:bg-slate-500 text-white"
             >
-              ← Back to Categories
+              ← Back to types
             </Button>
           )}
           <Button
@@ -161,18 +164,22 @@ export default function AssetManager({
             No assets yet. Add your first asset to get started.
           </p>
         </div>
-      ) : isCategoryView ? (
+      ) : isTypeOverview ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {Object.entries(categoryGroups || {}).map(([categoryKey, group]) => (
+          {Object.entries(typeGroups || {})
+            .sort(([a], [b]) => formatTypeLabel(a).localeCompare(formatTypeLabel(b)))
+            .map(([typeKey, group]) => (
             <div
-              key={categoryKey}
+              key={typeKey}
               className="p-4 bg-slate-800/70 border border-slate-700 rounded-xl shadow-xl hover:-translate-y-1 transition-transform cursor-pointer"
-              onClick={() => setSelectedCategory(categoryKey)}
+              onClick={() => setSelectedType(typeKey)}
             >
-              <div className="flex items-center justify-between">
-                <h4 className="text-lg font-semibold text-white">
-                  {categoryKey}
-                </h4>
+              <div className="flex items-center justify-between gap-2">
+                <span
+                  className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getTypeColor(typeKey)}`}
+                >
+                  {formatTypeLabel(typeKey)}
+                </span>
                 <span className="text-xs text-gray-400">
                   {group.assets.length} item(s)
                 </span>

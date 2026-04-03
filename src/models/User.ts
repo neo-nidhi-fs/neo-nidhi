@@ -35,6 +35,7 @@ export interface ILiability extends Document {
   _id: mongoose.Types.ObjectId;
   type: string;
   amount: number;
+  note?: string;
   interestRate?: number;
   startDate?: Date;
   dueDate?: Date;
@@ -131,6 +132,7 @@ const UserSchema: Schema<IUser> = new Schema({
       interestRate: { type: Number, default: null },
       startDate: { type: Date, default: null },
       dueDate: { type: Date, default: null },
+      note: { type: String, default: '' },
       status: {
         type: String,
         enum: ['active', 'paid_off', 'closed'],

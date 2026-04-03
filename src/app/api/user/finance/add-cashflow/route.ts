@@ -19,7 +19,10 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { date, type, category, amount, source, liabilityId, note } = body;
+    const { date, type, category, amount, source, liabilityId, note, paymentSource } =
+      body;
+
+    const validPaymentSources = ['account', 'credit_card', 'cash'] as const;
 
     // Validation
     if (!date || !type || !category || amount === undefined || !source) {
@@ -49,6 +52,18 @@ export async function POST(req: Request) {
         { success: false, error: `Invalid cashflow type: ${type}` },
         { status: 400 }
       );
+    }
+
+    /** Optional: only persist when client sends a valid value (no server default). */
+    let resolvedPaymentSource: 'account' | 'credit_card' | 'cash' | undefined;
+    if (type === 'expense' && paymentSource != null && paymentSource !== '') {
+      if (!validPaymentSources.includes(paymentSource)) {
+        return NextResponse.json(
+          { success: false, error: 'Invalid payment source' },
+          { status: 400 }
+        );
+      }
+      resolvedPaymentSource = paymentSource;
     }
 
     const user = await User.findById(session.user.id);
@@ -101,6 +116,9 @@ export async function POST(req: Request) {
       amount,
       source,
       liabilityId: liabilityId || null,
+      ...(resolvedPaymentSource
+        ? { paymentSource: resolvedPaymentSource }
+        : {}),
       note: note || null,
     });
 

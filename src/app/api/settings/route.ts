@@ -20,15 +20,21 @@ export async function POST(req: Request) {
     await dbConnect();
     const body = await req.json();
 
-    let settings = await Settings.findOne({});
-    if (!settings) {
-      settings = new Settings(body);
-    } else {
-      settings.savingsInterestRate = body.savingsInterestRate;
-      settings.loanInterestRate = body.loanInterestRate;
-    }
-
-    await settings.save();
+    const settings = await Settings.findOneAndUpdate(
+      {},
+      {
+        $set: {
+          savingsInterestRate: body.savingsInterestRate,
+          loanInterestRate: body.loanInterestRate,
+        },
+      },
+      {
+        upsert: true,
+        new: true,
+        sort: { _id: 1 },
+        setDefaultsOnInsert: true,
+      }
+    );
 
     return NextResponse.json(
       { success: true, data: settings },
