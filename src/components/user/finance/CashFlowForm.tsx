@@ -86,8 +86,7 @@ export default function CashFlowForm({
           amount: cashflow.amount || 0,
           source: cashflow.source || '',
           paymentSource:
-            cashflow.paymentSource ||
-            ('account' as ExpensePaymentSource),
+            cashflow.paymentSource || ('account' as ExpensePaymentSource),
           liabilityId: cashflow.liabilityId || '',
           note: cashflow.note || '',
         }

@@ -4,8 +4,9 @@ import Link from 'next/link';
 import { useSession, signOut } from 'next-auth/react';
 import { Session } from 'next-auth';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Menu, X } from 'lucide-react';
+import { useUser } from '@/hooks/useServices';
 
 interface CustomSession extends Session {
   user?: Session['user'] & {
@@ -15,14 +16,26 @@ interface CustomSession extends Session {
 
 export default function Navbar() {
   const { data: session } = useSession() as { data: CustomSession | null };
-  const userRole = session?.user?.role;
+  const { role: userRole, id: userId } = session?.user || {};
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
+
+  const { user, fetchUser } = useUser(userId || '');
+  console.log('userId ==> ', userId);
+  console.log('user ==> ', user);
+
+  const financeFeatureEnabled = user?.financeFeaturesEnabled || false;
 
   async function handleLogout() {
     await signOut({ redirect: false });
     router.push('/');
   }
+
+  useEffect(() => {
+    if (userId) {
+      fetchUser();
+    }
+  }, [userId, fetchUser]);
 
   return (
     <nav className="bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 text-white px-6 py-4 shadow-lg sticky top-0 z-50 backdrop-blur-sm">
@@ -109,6 +122,14 @@ export default function Navbar() {
             >
               Passbook
             </Link>
+            {financeFeatureEnabled && (
+              <Link
+                href="/user/personal-finance"
+                className="text-gray-200 hover:text-blue-400 transition-colors duration-300 font-medium"
+              >
+                Personal Finance
+              </Link>
+            )}
             <Link
               href="/user/quiz"
               className="text-gray-200 hover:text-blue-400 transition-colors duration-300 font-medium"

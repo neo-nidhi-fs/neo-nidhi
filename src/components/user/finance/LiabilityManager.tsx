@@ -145,7 +145,9 @@ export default function LiabilityManager({
               >
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm text-gray-400">
-                    {liability.type}
+                    {liability.note
+                      ? `${liability.type} - ${liability.note}`
+                      : liability.type}
                   </span>
                   <span className="text-xs text-gray-300">
                     {liability.status.replace('_', ' ')}
