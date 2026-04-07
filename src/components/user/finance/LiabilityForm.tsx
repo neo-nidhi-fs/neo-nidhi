@@ -70,7 +70,7 @@ export default function LiabilityForm({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-lg shadow-xl max-w-md w-full border border-slate-700 backdrop-blur-sm">
+      <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-lg shadow-xl max-w-md w-full border border-slate-700 backdrop-blur-sm overflow-auto max-h-[90vh]">
         {/* Header */}
         <div className="flex justify-between items-center p-6 border-b border-slate-600">
           <h2 className="text-xl font-bold text-white">
@@ -120,7 +120,9 @@ export default function LiabilityForm({
               Amount (₹) *
             </label>
             <input
-              type="number"
+              type="text"
+              //regex to allow only numbers and decimal point
+              pattern="^\d*\.?\d*$"
               value={formData.amount}
               onChange={(e) =>
                 setFormData({
@@ -140,7 +142,9 @@ export default function LiabilityForm({
               Interest Rate (% p.a.)
             </label>
             <input
-              type="number"
+              type="text"
+              //regex to allow only numbers and decimal point
+              pattern="^\d*\.?\d*$"
               value={formData.interestRate}
               onChange={(e) =>
                 setFormData({
@@ -175,7 +179,9 @@ export default function LiabilityForm({
               Additional Charges (₹)
             </label>
             <input
-              type="number"
+              type="text"
+              //regex to allow only numbers and decimal point
+              pattern="^\d*\.?\d*$"
               value={formData.additionalCharges}
               onChange={(e) =>
                 setFormData({
@@ -195,7 +201,8 @@ export default function LiabilityForm({
               Loan Term (months)
             </label>
             <input
-              type="number"
+              type="text"
+              pattern="^\d*\.?\d*$"
               value={formData.termMonths}
               onChange={(e) =>
                 setFormData({

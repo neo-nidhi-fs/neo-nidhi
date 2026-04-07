@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { Asset } from '@/hooks/useUserFinance';
-import { useQuotes } from '@/hooks/useQuotes';
 import { X } from 'lucide-react';
 
 interface AssetFormData {
@@ -14,6 +13,9 @@ interface AssetFormData {
   marketValue: number;
   symbolOrCode?: string;
   startDate?: string;
+  maturityDate?: string;
+  rateOfInterest?: number;
+  investmentMode?: 'monthly' | 'quarterly' | 'yearly';
 }
 
 interface AssetFormProps {
@@ -30,7 +32,7 @@ export default function AssetForm({
   loading = false,
 }: AssetFormProps) {
   const [formData, setFormData] = useState({
-    type: asset?.type || 'equity',
+    type: asset?.type || 'fd',
     category: asset?.category || '',
     amount: asset?.amount || 0,
     quantity: asset?.quantity || 0,
@@ -38,66 +40,22 @@ export default function AssetForm({
     marketValue: asset?.marketValue || 0,
     symbolOrCode: asset?.symbolOrCode || '',
     startDate: asset?.startDate || '',
+    maturityDate: asset?.maturityDate || '',
+    rateOfInterest: asset?.rateOfInterest || 0,
+    investmentMode: asset?.investmentMode || 'monthly',
   });
-
-  const {
-    fetchStockQuotes,
-    fetchMutualFundQuotes,
-    fetchCommodityQuotes,
-    stockQuotes,
-    mutualFundQuotes,
-    commodityQuotes,
-  } = useQuotes();
-
-  const handleSymbolChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const symbol = e.target.value.toUpperCase();
-    setFormData({ ...formData, symbolOrCode: symbol });
-
-    if (symbol && symbol.length > 0) {
-      if (formData.type === 'equity') {
-        await fetchStockQuotes([symbol]);
-      } else if (formData.type === 'mutual_fund') {
-        await fetchMutualFundQuotes([symbol]);
-      } else if (['gold', 'silver', 'etf'].includes(formData.type)) {
-        await fetchCommodityQuotes([symbol]);
-      }
-    }
-  };
-
-  const getQuoteValue = () => {
-    if (formData.type === 'equity' && formData.symbolOrCode) {
-      return stockQuotes[formData.symbolOrCode]?.price || null;
-    } else if (formData.type === 'mutual_fund' && formData.symbolOrCode) {
-      return mutualFundQuotes[formData.symbolOrCode]?.nav || null;
-    } else if (
-      ['gold', 'silver', 'etf'].includes(formData.type) &&
-      formData.symbolOrCode
-    ) {
-      return commodityQuotes[formData.symbolOrCode]?.price || null;
-    }
-    return null;
-  };
-
-  const handleApplyQuote = () => {
-    const quoteValue = getQuoteValue();
-    if (quoteValue && formData.quantity) {
-      setFormData({
-        ...formData,
-        marketValue: quoteValue * formData.quantity,
-      });
-    }
-  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit(formData);
   };
 
-  const quoteValue = getQuoteValue();
+  const isRecurringDeposit = formData.type === 'rd';
+  const isFixedDeposit = formData.type === 'fd';
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-lg shadow-xl max-w-md w-full border border-slate-700 backdrop-blur-sm">
+      <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-lg shadow-xl max-w-md w-full border border-slate-700 backdrop-blur-sm overflow-auto min-h-[90vh] max-h-[95vh]">
         {/* Header */}
         <div className="flex justify-between items-center p-6 border-b border-slate-600">
           <h2 className="text-xl font-bold text-white">
@@ -109,10 +67,7 @@ export default function AssetForm({
         </div>
 
         {/* Form */}
-        <form
-          onSubmit={handleSubmit}
-          className="p-6 space-y-4 max-h-96 overflow-y-auto"
-        >
+        <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto">
           {/* Type */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">
@@ -131,14 +86,100 @@ export default function AssetForm({
               <option value="fd">Fixed Deposit</option>
               <option value="rd">Recurring Deposit</option>
               <option value="equity">Equity</option>
-              <option value="mutual_fund">Mutual Fund</option>{' '}
+              <option value="mutual_fund">Mutual Fund</option>
               <option value="etf">ETF</option>
               <option value="gold">Gold</option>
-              <option value="silver">Silver</option>{' '}
+              <option value="silver">Silver</option>
               <option value="epfo">EPFO</option>
               <option value="other">Other</option>
             </select>
           </div>
+
+          {/* RD/FD Specific Fields */}
+          {(isRecurringDeposit || isFixedDeposit) && (
+            <>
+              {/* Start Date */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Start Date *
+                </label>
+                <input
+                  type="date"
+                  value={formData.startDate}
+                  onChange={(e) =>
+                    setFormData({ ...formData, startDate: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-slate-600 rounded-md bg-slate-700/50 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+
+              {/* Maturity Date */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Maturity Date *
+                </label>
+                <input
+                  type="date"
+                  value={formData.maturityDate}
+                  onChange={(e) =>
+                    setFormData({ ...formData, maturityDate: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-slate-600 rounded-md bg-slate-700/50 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+
+              {/* Rate of Interest */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Rate of Interest (% per annum) *
+                </label>
+                <input
+                  type="text"
+                  pattern="^\d*\.?\d*$"
+                  value={formData.rateOfInterest}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      rateOfInterest: parseFloat(e.target.value) || 0,
+                    })
+                  }
+                  className="w-full px-3 py-2 border border-slate-600 rounded-md bg-slate-700/50 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g., 7.5"
+                  step="0.01"
+                  min="0"
+                  required
+                />
+              </div>
+            </>
+          )}
+
+          {/* RD Specific: Investment Mode */}
+          {isRecurringDeposit && (
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1">
+                Investment Mode *
+              </label>
+              <select
+                value={formData.investmentMode}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    investmentMode: e.target.value as
+                      | 'monthly'
+                      | 'quarterly'
+                      | 'yearly',
+                  })
+                }
+                className="w-full px-3 py-2 border border-slate-600 rounded-md bg-slate-700/50 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="monthly">Monthly</option>
+                <option value="quarterly">Quarterly</option>
+                <option value="yearly">Yearly</option>
+              </select>
+            </div>
+          )}
 
           {/* Category */}
           <div>
@@ -152,129 +193,20 @@ export default function AssetForm({
                 setFormData({ ...formData, category: e.target.value })
               }
               className="w-full px-3 py-2 border border-slate-600 rounded-md bg-slate-700/50 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="e.g., Stocks, Growth Funds"
+              placeholder="e.g., SBI RD, HDFC FD"
             />
-          </div>
-
-          {/* Symbol or Code */}
-          {['equity', 'mutual_fund', 'etf', 'gold', 'silver'].includes(
-            formData.type
-          ) && (
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
-                {formData.type === 'equity'
-                  ? 'Stock Symbol'
-                  : formData.type === 'mutual_fund'
-                    ? 'Fund Code'
-                    : formData.type === 'etf'
-                      ? 'ETF Code'
-                      : `${formData.type.charAt(0).toUpperCase()}${formData.type.slice(1)} Code`}
-              </label>
-              <input
-                type="text"
-                value={formData.symbolOrCode}
-                onChange={handleSymbolChange}
-                className="w-full px-3 py-2 border border-slate-600 rounded-md bg-slate-700/50 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
-                placeholder={
-                  formData.type === 'equity'
-                    ? 'e.g., TCS'
-                    : formData.type === 'mutual_fund'
-                      ? 'e.g., DSP-EQUITY'
-                      : formData.type === 'etf'
-                        ? 'e.g., NIFTYBEES'
-                        : formData.type === 'gold'
-                          ? 'e.g., GOLD'
-                          : 'e.g., SILVER'
-                }
-              />
-              {quoteValue && (
-                <div className="mt-2 p-2 bg-blue-900/30 rounded border border-blue-400/30">
-                  <p className="text-sm text-blue-300">
-                    Current Price: ₹{quoteValue}
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Quantity */}
-          {(formData.type === 'equity' || formData.type === 'mutual_fund') && (
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
-                Quantity/Units
-              </label>
-              <input
-                type="number"
-                value={formData.quantity}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    quantity: parseFloat(e.target.value) || 0,
-                  })
-                }
-                className="w-full px-3 py-2 border border-slate-600 rounded-md bg-slate-700/50 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="0"
-                step="0.01"
-              />
-            </div>
-          )}
-
-          {/* Purchase Value */}
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
-              Purchase Value (₹)
-            </label>
-            <input
-              type="number"
-              value={formData.purchaseValue}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  purchaseValue: parseFloat(e.target.value) || 0,
-                })
-              }
-              className="w-full px-3 py-2 border border-slate-600 rounded-md bg-slate-700/50 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="0"
-              step="0.01"
-            />
-          </div>
-
-          {/* Market Value */}
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
-              Current Market Value (₹)
-            </label>
-            <input
-              type="number"
-              value={formData.marketValue}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  marketValue: parseFloat(e.target.value) || 0,
-                })
-              }
-              className="w-full px-3 py-2 border border-slate-600 rounded-md bg-slate-700/50 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="0"
-              step="0.01"
-            />
-            {quoteValue && formData.quantity && (
-              <button
-                type="button"
-                onClick={handleApplyQuote}
-                className="mt-2 text-sm text-blue-400 hover:text-blue-300 font-medium"
-              >
-                Apply Quote (₹{(quoteValue * formData.quantity).toFixed(2)})
-              </button>
-            )}
           </div>
 
           {/* Amount */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">
-              Amount Invested (₹)
+              {isRecurringDeposit
+                ? 'Monthly Installment Amount (₹) *'
+                : 'Amount Invested (₹)'}
             </label>
             <input
-              type="number"
+              type="text"
+              pattern="^\d*\.?\d*$"
               value={formData.amount}
               onChange={(e) =>
                 setFormData({
@@ -285,21 +217,28 @@ export default function AssetForm({
               className="w-full px-3 py-2 border border-slate-600 rounded-md bg-slate-700/50 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="0"
               step="0.01"
+              required
             />
           </div>
 
-          {/* Start Date */}
+          {/* Market Value */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">
-              Start Date
+              Current Market Value (₹)
             </label>
             <input
-              type="date"
-              value={formData.startDate}
+              type="text"
+              pattern="^\d*\.?\d*$"
+              value={formData.marketValue}
               onChange={(e) =>
-                setFormData({ ...formData, startDate: e.target.value })
+                setFormData({
+                  ...formData,
+                  marketValue: parseFloat(e.target.value) || 0,
+                })
               }
               className="w-full px-3 py-2 border border-slate-600 rounded-md bg-slate-700/50 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="0"
+              step="0.01"
             />
           </div>
         </form>

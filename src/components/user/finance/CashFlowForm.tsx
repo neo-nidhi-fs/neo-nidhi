@@ -121,7 +121,7 @@ export default function CashFlowForm({
       role="presentation"
     >
       <div
-        className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-lg shadow-xl max-w-md w-full border border-slate-700 backdrop-blur-sm"
+        className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-lg shadow-xl max-w-md w-full border border-slate-700 backdrop-blur-sm overflow-auto max-h-[95vh]"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
@@ -247,7 +247,8 @@ export default function CashFlowForm({
               Amount (₹) *
             </label>
             <input
-              type="number"
+              type="text"
+              pattern="^\d*\.?\d*$"
               value={formData.amount}
               onChange={(e) =>
                 setFormData({

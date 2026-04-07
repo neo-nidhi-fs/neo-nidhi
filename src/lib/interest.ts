@@ -37,3 +37,53 @@ export function calculateInterestFromTransactions(
 
   return parseFloat(totalInterest.toFixed(2));
 }
+
+/**
+ * Calculate maturity value for Recurring Deposit (RD)
+ * Using the formula: FV = P × [((1 + r)^n - 1) / r] × (1 + r)
+ * Where:
+ * - P = Monthly installment
+ * - r = Monthly interest rate (annual rate / 12 / 100)
+ * - n = Number of installments (months)
+ */
+export function calculateRecurringDepositMaturity(
+  monthlyInstallment: number,
+  annualRate: number,
+  months: number
+): number {
+  if (monthlyInstallment <= 0 || annualRate <= 0 || months <= 0) {
+    return 0;
+  }
+
+  const monthlyRate = annualRate / 12 / 100;
+
+  // FV = P × [((1 + r)^n - 1) / r] × (1 + r)
+  const compoundFactor = Math.pow(1 + monthlyRate, months) - 1;
+  const maturityValue =
+    monthlyInstallment * (compoundFactor / monthlyRate) * (1 + monthlyRate);
+
+  return parseFloat(maturityValue.toFixed(2));
+}
+
+/**
+ * Calculate Fixed Deposit (FD) maturity value
+ * Using simple interest formula: A = P × (1 + r × t)
+ * Where:
+ * - P = Principal amount
+ * - r = Annual interest rate
+ * - t = Time in years
+ */
+export function calculateFixedDepositMaturity(
+  principal: number,
+  annualRate: number,
+  months: number
+): number {
+  if (principal <= 0 || annualRate <= 0 || months <= 0) {
+    return 0;
+  }
+
+  const years = months / 12;
+  const maturityValue = principal * (1 + (annualRate / 100) * years);
+
+  return parseFloat(maturityValue.toFixed(2));
+}

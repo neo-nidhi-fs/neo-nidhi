@@ -21,6 +21,9 @@ export interface Asset {
   marketValue: number;
   symbolOrCode?: string;
   startDate?: string;
+  maturityDate?: string;
+  rateOfInterest?: number;
+  investmentMode?: 'monthly' | 'quarterly' | 'yearly';
   metadata?: Record<string, any>;
 }
 
@@ -59,6 +62,9 @@ export interface CashFlow {
   note?: string;
 }
 
+type AssetBreakdown = Record<string, number>;
+type LiabilityBreakdown = Record<string, number>;
+
 export interface NetWorthSummary {
   summary: {
     totalAssets: number;
@@ -82,10 +88,13 @@ export interface NetWorthSummary {
       inflationRate: number;
       safeWithdrawalRate: number;
     };
-    loanProjections: Record<string, any>;
+    loanProjections: Record<
+      string,
+      { outstanding: number; monthlyEMI: number }
+    >; // instead of using any type use proper type for loanProjections
   };
-  assetBreakdown: any;
-  liabilityBreakdown: any;
+  assetBreakdown: AssetBreakdown;
+  liabilityBreakdown: LiabilityBreakdown;
   assets: Asset[];
   liabilities: Liability[];
   recentCashFlows: CashFlow[];

@@ -21,8 +21,6 @@ export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
 
   const { user, fetchUser } = useUser(userId || '');
-  console.log('userId ==> ', userId);
-  console.log('user ==> ', user);
 
   const financeFeatureEnabled = user?.financeFeaturesEnabled || false;
 

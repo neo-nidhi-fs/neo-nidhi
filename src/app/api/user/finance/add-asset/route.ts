@@ -27,6 +27,9 @@ export async function POST(req: Request) {
       marketValue,
       symbolOrCode,
       startDate,
+      maturityDate,
+      rateOfInterest,
+      investmentMode,
       metadata,
     } = body;
 
@@ -85,6 +88,9 @@ export async function POST(req: Request) {
       marketValue,
       symbolOrCode: symbolOrCode || null,
       startDate: startDate ? new Date(startDate) : null,
+      maturityDate: maturityDate ? new Date(maturityDate) : null,
+      rateOfInterest: rateOfInterest || null,
+      investmentMode: investmentMode || null,
       metadata: metadata || {},
       createdAt: new Date(),
       updatedAt: new Date(),

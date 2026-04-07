@@ -1,0 +1,16 @@
+{
+  "name": "neo-nidhi",
+  "short_name": "NeoNidhi",
+  "description": "A modern financial management app for Nidhi companies, built with Next.js and Tailwind CSS.",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#1e293b",
+  "theme_color": "#1e293b",
+  "icons": [
+    {
+      "src": "money.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}
