@@ -3,7 +3,7 @@ import { User } from '@/models/User';
 import { enforceFinanceFeatureEnabled } from '@/lib/featureFlags';
 import { calculateLoanProjection } from '@/lib/networth';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../../../auth/[...nextauth]/route';
+import { authOptions } from '@/lib/authOptions';
 import { NextResponse } from 'next/server';
 
 export async function GET() {

@@ -1,0 +1,16 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/user/layout,_N_T_/user/quiz/layout,_N_T_/user/quiz/page,_N_T_/user/quiz"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/user/quiz/__PAGE__",
+    "/user/quiz",
+    "/user",
+    "/_index",
+    "/_head"
+  ]
+}

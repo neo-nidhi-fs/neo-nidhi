@@ -4,7 +4,7 @@ import { CashFlow } from '@/models/CashFlow';
 import { enforceFinanceFeatureEnabled } from '@/lib/featureFlags';
 import { calculateEmiPaymentSplit } from '@/lib/emi';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../../../auth/[...nextauth]/route';
+import { authOptions } from '@/lib/authOptions';
 import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {

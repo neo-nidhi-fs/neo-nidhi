@@ -1,0 +1,8 @@
+1:"$Sreact.fragment"
+2:I[9480,["7911","static/chunks/7911-29dcd307b87f6017.js","5709","static/chunks/5709-584305c5b9011a0c.js","4498","static/chunks/4498-08f7b3992650232f.js","7177","static/chunks/app/layout-aa9e826f6e11bb8b.js"],"default"]
+3:I[3311,["7911","static/chunks/7911-29dcd307b87f6017.js","5709","static/chunks/5709-584305c5b9011a0c.js","4498","static/chunks/4498-08f7b3992650232f.js","7177","static/chunks/app/layout-aa9e826f6e11bb8b.js"],"default"]
+4:I[9852,[],""]
+5:I[7354,[],""]
+6:I[6819,["7911","static/chunks/7911-29dcd307b87f6017.js","5709","static/chunks/5709-584305c5b9011a0c.js","4498","static/chunks/4498-08f7b3992650232f.js","7177","static/chunks/app/layout-aa9e826f6e11bb8b.js"],"default"]
+:HL["/_next/static/css/613bf93f0bf41d96.css","style"]
+0:{"buildId":"s-v4YiyulorZo6ZfX2bJI","rsc":["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/_next/static/css/613bf93f0bf41d96.css","precedence":"next"}]],["$","html",null,{"lang":"en","children":["$","body",null,{"className":"flex flex-col min-h-screen","children":["$","$L2",null,{"children":[["$","$L3",null,{}],["$","$L4",null,{"parallelRouterKey":"children","template":["$","$L5",null,{}]}],["$","footer",null,{"className":"bg-gray-800 text-white py-4","children":["$","div",null,{"className":"max-w-4xl mx-auto text-center","children":[["$","p",null,{"className":"text-sm","children":"🌱 “A penny saved is a penny earned.” — Start small, grow big with savings!"}],["$","p",null,{"className":"text-xs text-gray-400 mt-2","children":["© ",2026," neoNidhi. Learn banking the fun way."]}]]}]}],["$","$L6",null,{}]]}]}]}]]}],"loading":null,"isPartial":false}

@@ -3,7 +3,7 @@ import { User } from '@/models/User';
 import { CashFlow } from '@/models/CashFlow';
 import { enforceFinanceFeatureEnabled } from '@/lib/featureFlags';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../../../auth/[...nextauth]/route';
+import { authOptions } from '@/lib/authOptions';
 import { NextResponse } from 'next/server';
 import { getNetWorthSummary, getAssetBreakdown } from '@/lib/networth';
 

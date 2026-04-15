@@ -1,0 +1,16 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/user/layout,_N_T_/user/online-transfer/layout,_N_T_/user/online-transfer/page,_N_T_/user/online-transfer"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/user/online-transfer/__PAGE__",
+    "/user/online-transfer",
+    "/user",
+    "/_index",
+    "/_head"
+  ]
+}

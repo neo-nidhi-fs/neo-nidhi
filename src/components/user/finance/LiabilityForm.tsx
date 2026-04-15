@@ -40,14 +40,22 @@ export default function LiabilityForm({
   };
 
   const startDate = liability?.startDate || liability?.metadata?.startDate;
+  const parseNumber = (value: unknown): number => {
+    if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+    if (typeof value === 'string') {
+      const parsed = Number.parseFloat(value);
+      return Number.isFinite(parsed) ? parsed : 0;
+    }
+    return 0;
+  };
   const [formData, setFormData] = useState({
     type: liability?.type || '',
     amount: liability?.amount || 0,
     interestRate: liability?.interestRate || 0,
     note: liability?.note || '',
     startDate: formatInputDate(startDate),
-    termMonths: liability?.metadata?.termMonths || 0,
-    additionalCharges: liability?.metadata?.additionalCharges || 0,
+    termMonths: parseNumber(liability?.metadata?.termMonths),
+    additionalCharges: parseNumber(liability?.metadata?.additionalCharges),
     dueDate:
       formatInputDate(liability?.dueDate) ||
       formatInputDate(liability?.metadata?.dueDate),
@@ -66,7 +74,11 @@ export default function LiabilityForm({
       return;
     }
 
-    onSubmit(formData);
+    onSubmit({
+      ...formData,
+      termMonths: parseNumber(formData.termMonths),
+      additionalCharges: parseNumber(formData.additionalCharges),
+    });
   };
 
   return (

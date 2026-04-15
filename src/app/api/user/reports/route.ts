@@ -2,7 +2,7 @@ import { dbConnect } from '@/lib/dbConnect';
 import { User } from '@/models/User';
 import { Transaction } from '@/models/Transaction';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../../auth/[...nextauth]/route';
+import { authOptions } from '@/lib/authOptions';
 
 export async function GET() {
   try {

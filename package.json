@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
     "android:twa:init": "npx @bubblewrap/cli init --manifest=https://YOUR-VERCEL-DOMAIN/manifest.json --directory=android/twa",
     "android:twa:build": "npx @bubblewrap/cli build --config=android/twa/twa-manifest.json",

@@ -14,7 +14,6 @@ export const metadata: Metadata = {
     'A modern financial management app for Nidhi companies, built with Next.js and Tailwind CSS.',
   applicationName: 'neo-nidhi',
   manifest: '/manifest.json',
-  themeColor: '#1e293b',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
