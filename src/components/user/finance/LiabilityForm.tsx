@@ -11,10 +11,10 @@ interface LiabilityFormData {
   note?: string;
   startDate?: string;
   termMonths?: number;
-  additionalCharges?: number;
+  additionalCharges?: number | undefined;
   dueDate?: string;
   status: Liability['status'];
-  metadata?: Record<string, string | number | boolean>;
+  metadata?: Record<string, string | number | Date | undefined>;
 }
 
 interface LiabilityFormProps {
@@ -30,21 +30,22 @@ export default function LiabilityForm({
   onCancel,
   loading = false,
 }: LiabilityFormProps) {
-  const formatInputDate = (date?: string | Date | null): string => {
+  const formatInputDate = (
+    date?: string | Date | null | undefined | number
+  ): string => {
     if (!date) return '';
     const d = date instanceof Date ? date : new Date(date);
     if (Number.isNaN(d.getTime())) return '';
     return d.toISOString().split('T')[0];
   };
 
+  const startDate = liability?.startDate || liability?.metadata?.startDate;
   const [formData, setFormData] = useState({
     type: liability?.type || '',
     amount: liability?.amount || 0,
     interestRate: liability?.interestRate || 0,
     note: liability?.note || '',
-    startDate:
-      formatInputDate(liability?.startDate) ||
-      formatInputDate(liability?.metadata?.startDate),
+    startDate: formatInputDate(startDate),
     termMonths: liability?.metadata?.termMonths || 0,
     additionalCharges: liability?.metadata?.additionalCharges || 0,
     dueDate:

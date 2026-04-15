@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Asset } from '@/hooks/useUserFinance';
+import { useQuotes } from '@/hooks/useQuotes';
 import { Trash2, Edit2 } from 'lucide-react';
 
 interface AssetManagerProps {
@@ -22,6 +23,7 @@ export default function AssetManager({
   onAddClick,
 }: AssetManagerProps) {
   const [selectedType, setSelectedType] = useState<string | null>(null);
+  const { mutualFundQuotes, fetchMutualFundQuotes } = useQuotes();
 
   const formatTypeLabel = (typeKey: string) =>
     typeKey.replace(/_/g, ' ').toUpperCase();
@@ -55,6 +57,37 @@ export default function AssetManager({
       colors[type] ||
       'bg-slate-100 text-slate-900 dark:bg-slate-700 dark:text-slate-200'
     );
+  };
+
+  const mutualFundCodes = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          (assets || [])
+            .filter((asset) => asset.type === 'mutual_fund')
+            .map((asset) => asset.symbolOrCode?.trim())
+            .filter((code): code is string => !!code)
+        )
+      ),
+    [assets]
+  );
+
+  useEffect(() => {
+    if (mutualFundCodes.length > 0) {
+      fetchMutualFundQuotes(mutualFundCodes);
+    }
+  }, [mutualFundCodes, fetchMutualFundQuotes]);
+
+  const getMutualFundDisplayName = (asset: Asset) => {
+    const code = asset.symbolOrCode?.trim();
+    if (!code) return asset.category || 'Mutual Fund';
+
+    const onlineName =
+      mutualFundQuotes[code]?.fundName ||
+      mutualFundQuotes[code.toUpperCase()]?.fundName ||
+      mutualFundQuotes[code.toLowerCase()]?.fundName;
+
+    return (onlineName || asset.category || code).trim();
   };
 
   if (loading) {
@@ -224,6 +257,8 @@ export default function AssetManager({
               <h4 className="text-lg font-semibold text-white">
                 {asset.type === 'equity' && asset.symbolOrCode
                   ? `${asset.symbolOrCode.toUpperCase()} - ${asset.category || 'Equity'}`
+                  : asset.type === 'mutual_fund'
+                    ? getMutualFundDisplayName(asset)
                   : asset.category || 'Unnamed'}
               </h4>
               {asset.type === 'equity' &&

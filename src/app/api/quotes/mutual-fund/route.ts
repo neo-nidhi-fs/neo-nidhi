@@ -17,6 +17,7 @@ const mockMutualFundNAV: { [key: string]: number } = {
 interface MutualFundQuoteSuccess {
   fundCode: string;
   nav: number;
+  fundName: string;
   currency: string;
   lastUpdated: string;
   source: string;
@@ -25,10 +26,87 @@ interface MutualFundQuoteSuccess {
 interface MutualFundQuoteError {
   fundCode: string;
   nav: null;
+  fundName: null;
   error: string;
 }
 
 type MutualFundQuote = MutualFundQuoteSuccess | MutualFundQuoteError;
+
+interface MfApiResponse {
+  meta?: {
+    scheme_name?: string;
+  };
+  data?: Array<{
+    nav?: string;
+  }>;
+}
+
+interface MfSearchResultItem {
+  schemeCode?: number;
+  schemeName?: string;
+}
+
+const parseNav = (navValue?: string): number | null => {
+  if (!navValue) return null;
+  const parsed = Number(navValue);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const fallbackNameFromCode = (code: string) =>
+  code
+    .replace(/[-_]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toUpperCase();
+
+const fetchMutualFundFromOnline = async (code: string) => {
+  try {
+    let schemeCode = code;
+
+    // If code is not numeric, use search endpoint and resolve best match.
+    if (!/^\d+$/.test(code)) {
+      const searchResponse = await fetch(
+        `https://api.mfapi.in/mf/search?q=${encodeURIComponent(code)}`,
+        { next: { revalidate: 60 * 60 * 24 } }
+      );
+      if (!searchResponse.ok) return null;
+
+      const searchData = (await searchResponse.json()) as MfSearchResultItem[];
+      if (!Array.isArray(searchData) || searchData.length === 0) return null;
+
+      const exactMatch = searchData.find(
+        (item) =>
+          String(item.schemeCode || '').trim().toUpperCase() ===
+            code.trim().toUpperCase() ||
+          (item.schemeName || '').trim().toUpperCase() ===
+            code.trim().toUpperCase()
+      );
+
+      const candidate = exactMatch || searchData[0];
+      if (!candidate?.schemeCode) return null;
+      schemeCode = String(candidate.schemeCode);
+    }
+
+    const response = await fetch(`https://api.mfapi.in/mf/${schemeCode}/latest`, {
+      next: { revalidate: 60 * 60 * 24 },
+    });
+    if (!response.ok) return null;
+
+    const data = (await response.json()) as MfApiResponse;
+    const fundName = data.meta?.scheme_name?.trim();
+    const nav = parseNav(data.data?.[0]?.nav);
+
+    if (!fundName && nav === null) return null;
+
+    return {
+      fundName: fundName || fallbackNameFromCode(code),
+      nav,
+      source: 'mfapi.in/latest',
+    };
+  } catch {
+    return null;
+  }
+};
 
 export async function GET(req: Request) {
   try {
@@ -46,12 +124,25 @@ export async function GET(req: Request) {
     const quotes: { [key: string]: MutualFundQuote } = {};
 
     for (const code of codes) {
-      const upperCode = code.toUpperCase().trim();
+      const cleanCode = code.trim();
+      const upperCode = cleanCode.toUpperCase();
+      const onlineQuote = await fetchMutualFundFromOnline(cleanCode);
+      const mockNav = mockMutualFundNAV[upperCode];
 
-      if (mockMutualFundNAV[upperCode]) {
+      if (onlineQuote) {
         quotes[code] = {
           fundCode: upperCode,
-          nav: mockMutualFundNAV[upperCode],
+          nav: onlineQuote.nav ?? mockNav ?? null,
+          fundName: onlineQuote.fundName,
+          currency: 'INR',
+          lastUpdated: new Date().toISOString(),
+          source: onlineQuote.source,
+        };
+      } else if (mockNav) {
+        quotes[code] = {
+          fundCode: upperCode,
+          nav: mockNav,
+          fundName: fallbackNameFromCode(upperCode),
           currency: 'INR',
           lastUpdated: new Date().toISOString(),
           source: 'mock', // Replace with actual provider
@@ -60,6 +151,7 @@ export async function GET(req: Request) {
         quotes[code] = {
           fundCode: upperCode,
           nav: null,
+          fundName: null,
           error: `Fund code not found`,
         };
       }

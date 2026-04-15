@@ -24,7 +24,7 @@ export interface Asset {
   maturityDate?: string;
   rateOfInterest?: number;
   investmentMode?: 'monthly' | 'quarterly' | 'yearly';
-  metadata?: Record<string, any>;
+  metadata?: Record<string, number | string | Date | undefined>;
 }
 
 export interface Liability {
@@ -36,7 +36,7 @@ export interface Liability {
   note?: string;
   dueDate?: string;
   status: 'active' | 'paid_off' | 'closed';
-  metadata?: Record<string, any>;
+  metadata?: Record<string, number | string | Date | undefined>;
   projection?: {
     outstanding: number;
     monthlyEMI: number;

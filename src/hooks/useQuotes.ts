@@ -14,6 +14,7 @@ export interface StockQuote {
 export interface MutualFundQuote {
   fundCode: string;
   nav: number | null;
+  fundName?: string | null;
   currency: string;
   lastUpdated: string;
   source: string;

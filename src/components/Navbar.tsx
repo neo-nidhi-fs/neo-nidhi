@@ -73,6 +73,12 @@ export default function Navbar() {
         >
           About
         </Link>
+        <Link
+          href="/android"
+          className="text-gray-200 hover:text-blue-400 transition-colors duration-300 font-medium"
+        >
+          Android App
+        </Link>
 
         {!session && (
           <Link

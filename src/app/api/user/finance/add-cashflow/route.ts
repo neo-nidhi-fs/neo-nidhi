@@ -2,6 +2,7 @@ import { dbConnect } from '@/lib/dbConnect';
 import { User } from '@/models/User';
 import { CashFlow } from '@/models/CashFlow';
 import { enforceFinanceFeatureEnabled } from '@/lib/featureFlags';
+import { calculateEmiPaymentSplit } from '@/lib/emi';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../auth/[...nextauth]/route';
 import { NextResponse } from 'next/server';
@@ -92,19 +93,24 @@ export async function POST(req: Request) {
       }
 
       const existingLiability = user.liabilities[liabilityIndex];
-      const paymentAmount = Math.min(amount, existingLiability.amount || 0);
-      const remaining = Math.max(0, (existingLiability.amount || 0) - amount);
+      const outstandingAmount = existingLiability.amount || 0;
+      const { principalPaid } = calculateEmiPaymentSplit(
+        outstandingAmount,
+        existingLiability.interestRate,
+        amount
+      );
+      const remaining = Math.max(0, outstandingAmount - principalPaid);
 
       user.liabilities[liabilityIndex].amount = remaining;
       user.liabilities[liabilityIndex].status =
         remaining === 0 ? 'paid_off' : 'active';
       user.liabilities[liabilityIndex].metadata = {
         ...user.liabilities[liabilityIndex].metadata,
-        lastPayment: paymentAmount,
+        lastPayment: principalPaid,
         lastPaymentDate: new Date(),
       };
 
-      user.loanBalance = Math.max(0, (user.loanBalance || 0) - paymentAmount);
+      user.loanBalance = Math.max(0, (user.loanBalance || 0) - principalPaid);
       await user.save();
     }
 
