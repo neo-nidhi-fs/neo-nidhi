@@ -16,6 +16,7 @@ import {
   Liability,
   CashFlow,
 } from '@/hooks/useUserFinance';
+import { getUserFeatures } from '@/lib/userFeatures';
 
 export default function UserFinanceFeaturePage() {
   const [userId, setUserId] = useState<string>('');
@@ -77,9 +78,7 @@ export default function UserFinanceFeaturePage() {
   }, []);
 
   useEffect(() => {
-    if (user?.financeFeaturesEnabled !== undefined) {
-      setFinanceFeatureEnabled(user.financeFeaturesEnabled);
-    }
+    setFinanceFeatureEnabled(getUserFeatures(user).financeFeaturesEnabled);
   }, [user]);
 
   useEffect(() => {

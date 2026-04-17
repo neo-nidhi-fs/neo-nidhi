@@ -1,3 +1,5 @@
+import { UserFeatures } from '@/lib/userFeatures';
+
 export interface Challenge {
   _id: string;
   title: string;
@@ -68,6 +70,8 @@ export interface User {
   loanBalance?: number;
   phoneNumber?: string;
   mpin?: string;
+  features?: Partial<UserFeatures>;
+  // Legacy field for backward compatibility
   financeFeaturesEnabled?: boolean;
 }
 

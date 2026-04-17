@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { dbConnect } from '@/lib/dbConnect';
 import { User } from '@/models/User';
 import { calculateAge } from '@/lib/helpers';
+import { FEATURE_KEYS, FeatureKey } from '@/lib/userFeatures';
 
 // Notice: params must be awaited
 export async function GET(
@@ -40,28 +41,56 @@ export async function PUT(
     const { id } = await context.params;
     const body = await req.json();
 
-    const updateData: Record<string, unknown> = {};
+    const setData: Record<string, unknown> = {};
+    const unsetData: Record<string, unknown> = {};
 
     if (body.dob !== undefined) {
       const dob = body.dob ? new Date(body.dob) : null;
-      updateData.dob = dob;
+      setData.dob = dob;
       const calculatedAge = calculateAge(dob);
       if (calculatedAge !== null) {
-        updateData.age = calculatedAge;
+        setData.age = calculatedAge;
       }
     }
 
     if (body.age !== undefined) {
-      updateData.age = body.age;
+      setData.age = body.age;
     }
 
+    if (
+      body.features &&
+      typeof body.features === 'object' &&
+      !Array.isArray(body.features)
+    ) {
+      for (const key of FEATURE_KEYS) {
+        const value = (body.features as Partial<Record<FeatureKey, unknown>>)[key];
+        if (value !== undefined) {
+          setData[`features.${key}`] = Boolean(value);
+        }
+      }
+      unsetData.financeFeaturesEnabled = 1;
+    }
+
+    // Backward compatibility for old payload shape
     if (body.financeFeaturesEnabled !== undefined) {
-      updateData.financeFeaturesEnabled = body.financeFeaturesEnabled;
+      setData['features.financeFeaturesEnabled'] = Boolean(
+        body.financeFeaturesEnabled
+      );
+      unsetData.financeFeaturesEnabled = 1;
     }
 
-    const updatedUser = await User.findByIdAndUpdate(id, updateData, {
-      new: true,
-    });
+    const updateQuery: Record<string, unknown> = {};
+    if (Object.keys(setData).length > 0) {
+      updateQuery.$set = setData;
+    }
+    if (Object.keys(unsetData).length > 0) {
+      updateQuery.$unset = unsetData;
+    }
+
+    const updatedUser =
+      Object.keys(updateQuery).length === 0
+        ? await User.findById(id)
+        : await User.findByIdAndUpdate(id, updateQuery, { new: true });
 
     if (!updatedUser) {
       return NextResponse.json(

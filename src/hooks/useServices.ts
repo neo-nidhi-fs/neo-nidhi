@@ -6,6 +6,7 @@
 import { useState, useCallback } from 'react';
 import { ServiceLocator } from '@/lib/services';
 import { ITransferRequest, IChallenge } from '@/types';
+import { UserFeatures } from '@/lib/userFeatures';
 
 // Hook for handling MPIN operations
 export function useMPIN(userId: string) {
@@ -237,6 +238,8 @@ export function useUser(userId: string) {
     fd: number;
     loanBalance: number;
     mpin?: string | null;
+    features?: Partial<UserFeatures>;
+    // Legacy field for backward compatibility
     financeFeaturesEnabled?: boolean;
   } | null>(null);
   const [loading, setLoading] = useState(false);
@@ -276,7 +279,10 @@ export function useUser(userId: string) {
   }, [userId, userService]);
 
   const updateUser = useCallback(
-    async (updateData: { financeFeaturesEnabled?: boolean }) => {
+    async (updateData: {
+      features?: Partial<UserFeatures>;
+      financeFeaturesEnabled?: boolean;
+    }) => {
       setLoading(true);
       setError('');
 

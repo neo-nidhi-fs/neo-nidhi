@@ -7,6 +7,14 @@ export interface ICustomInterestRate {
   loan?: number;
 }
 
+export interface IUserFeatures {
+  financeFeaturesEnabled: boolean;
+  androidAppEnabled: boolean;
+  onlineTransferEnabled: boolean;
+  quizzesEnabled: boolean;
+  challengesEnabled: boolean;
+}
+
 export interface IAsset extends Document {
   _id: mongoose.Types.ObjectId;
   type:
@@ -63,7 +71,9 @@ export interface IUser extends Document {
   customInterestRates: ICustomInterestRate;
   mpin?: string;
   qrCode?: string;
-  financeFeaturesEnabled: boolean;
+  features: IUserFeatures;
+  // Legacy field for backward compatibility with existing data
+  financeFeaturesEnabled?: boolean;
   assetPortfolio: IAsset[];
   liabilities: ILiability[];
   comparePassword(candidatePassword: string): Promise<boolean>;
@@ -95,7 +105,18 @@ const UserSchema: Schema<IUser> = new Schema({
   createdAt: { type: Date, default: Date.now },
   mpin: { type: String, default: null },
   qrCode: { type: String, default: null },
-  financeFeaturesEnabled: { type: Boolean, default: false },
+  features: {
+    type: {
+      financeFeaturesEnabled: { type: Boolean, default: false },
+      androidAppEnabled: { type: Boolean, default: false },
+      onlineTransferEnabled: { type: Boolean, default: false },
+      quizzesEnabled: { type: Boolean, default: false },
+      challengesEnabled: { type: Boolean, default: false },
+    },
+    default: {},
+  },
+  // Legacy root-level flag kept for backward compatibility and migration only.
+  financeFeaturesEnabled: { type: Boolean, default: undefined },
   assetPortfolio: [
     {
       type: {

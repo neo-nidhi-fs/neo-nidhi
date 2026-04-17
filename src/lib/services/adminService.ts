@@ -4,6 +4,8 @@
  * Following Dependency Inversion Principle
  */
 
+import { UserFeatures } from '@/lib/userFeatures';
+
 export interface User {
   _id: string;
   name: string;
@@ -12,6 +14,8 @@ export interface User {
   savingsBalance: number;
   loanBalance: number;
   fd?: number;
+  features?: Partial<UserFeatures>;
+  // Legacy field for backward compatibility
   financeFeaturesEnabled?: boolean;
   customInterestRates?: {
     saving?: number | null;
@@ -69,6 +73,7 @@ class AdminService {
     updates: {
       dob?: string | null;
       age?: number;
+      features?: Partial<UserFeatures>;
       financeFeaturesEnabled?: boolean;
     }
   ): Promise<User> {

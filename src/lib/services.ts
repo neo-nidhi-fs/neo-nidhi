@@ -3,6 +3,7 @@
 
 import { httpClient, IHttpClient } from '@/lib/httpClient';
 import { validators } from '@/lib/validators';
+import { UserFeatures } from '@/lib/userFeatures';
 import {
   IMPINCredentials,
   ITransferRequest,
@@ -198,6 +199,8 @@ export class UserService {
       fd: number;
       loanBalance: number;
       mpin?: string | null;
+      features?: Partial<UserFeatures>;
+      // Legacy field for backward compatibility
       financeFeaturesEnabled?: boolean;
     }>
   > {
@@ -221,6 +224,7 @@ export class UserService {
   async updateUser(
     userId: string,
     data: {
+      features?: Partial<UserFeatures>;
       financeFeaturesEnabled?: boolean;
       dob?: string | null;
       age?: number;

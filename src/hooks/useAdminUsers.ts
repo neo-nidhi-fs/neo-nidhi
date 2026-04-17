@@ -8,6 +8,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { adminService, User } from '@/lib/services/adminService';
+import { FeatureKey } from '@/lib/userFeatures';
 
 export function useAdminUsers() {
   const [users, setUsers] = useState<User[]>([]);
@@ -46,11 +47,11 @@ export function useAdminUsers() {
         setAddUserLoading(true);
         const newUser = await adminService.createUser(name, dob, password);
         setUsers((prev) => [...prev, newUser]);
-        return { success: true, message: '✅ User registered successfully' };
+        return { success: true, message: 'User registered successfully' };
       } catch (err) {
         return {
           success: false,
-          message: `❌ Error: ${(err as Error).message}`,
+          message: `Error: ${(err as Error).message}`,
         };
       } finally {
         setAddUserLoading(false);
@@ -66,12 +67,12 @@ export function useAdminUsers() {
         await adminService.resetPassword(userId);
         return {
           success: true,
-          message: `✅ Password reset to default for ${userName}`,
+          message: `Password reset to default for ${userName}`,
         };
       } catch (err) {
         return {
           success: false,
-          message: `❌ Error: ${(err as Error).message}`,
+          message: `Error: ${(err as Error).message}`,
         };
       } finally {
         setResetPasswordLoading(null);
@@ -86,12 +87,12 @@ export function useAdminUsers() {
       await adminService.resetMPIN(userId);
       return {
         success: true,
-        message: `✅ MPIN reset to default for ${userName}`,
+        message: `MPIN reset to default for ${userName}`,
       };
     } catch (err) {
       return {
         success: false,
-        message: `❌ Error: ${(err as Error).message}`,
+        message: `Error: ${(err as Error).message}`,
       };
     } finally {
       setResetMPINLoading(null);
@@ -106,11 +107,11 @@ export function useAdminUsers() {
         setUsers((prev) =>
           prev.map((u) => (u._id === userId ? updatedUser : u))
         );
-        return { success: true, message: '✅ User updated successfully' };
+        return { success: true, message: 'User updated successfully' };
       } catch (err) {
         return {
           success: false,
-          message: `❌ Error: ${(err as Error).message}`,
+          message: `Error: ${(err as Error).message}`,
         };
       } finally {
         setUpdateUserLoading(null);
@@ -119,21 +120,23 @@ export function useAdminUsers() {
     []
   );
 
-  const updateUserFinanceFeatures = useCallback(
-    async (userId: string, enabled: boolean) => {
+  const updateUserFeatureToggle = useCallback(
+    async (userId: string, featureKey: FeatureKey, enabled: boolean) => {
       try {
         setUpdateFeatureToggleLoading(userId);
         const updatedUser = await adminService.updateUser(userId, {
-          financeFeaturesEnabled: enabled,
+          features: {
+            [featureKey]: enabled,
+          },
         });
         setUsers((prev) =>
           prev.map((u) => (u._id === userId ? updatedUser : u))
         );
-        return { success: true, message: '✅ User finance flag updated' };
+        return { success: true, message: 'User feature toggle updated' };
       } catch (err) {
         return {
           success: false,
-          message: `❌ Error: ${(err as Error).message}`,
+          message: `Error: ${(err as Error).message}`,
         };
       } finally {
         setUpdateFeatureToggleLoading(null);
@@ -154,7 +157,7 @@ export function useAdminUsers() {
     resetPassword,
     resetMPIN,
     updateUserDob,
-    updateUserFinanceFeatures,
+    updateUserFeatureToggle,
     refetchUsers: fetchUsers,
   };
 }

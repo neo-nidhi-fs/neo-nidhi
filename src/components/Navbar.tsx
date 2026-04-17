@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Menu, X } from 'lucide-react';
 import { useUser } from '@/hooks/useServices';
+import { getUserFeatures } from '@/lib/userFeatures';
 
 interface CustomSession extends Session {
   user?: Session['user'] & {
@@ -22,7 +23,7 @@ export default function Navbar() {
 
   const { user, fetchUser } = useUser(userId || '');
 
-  const financeFeatureEnabled = user?.financeFeaturesEnabled || false;
+  const features = getUserFeatures(user);
 
   async function handleLogout() {
     await signOut({ redirect: false });
@@ -73,12 +74,6 @@ export default function Navbar() {
         >
           About
         </Link>
-        <Link
-          href="/android"
-          className="text-gray-200 hover:text-blue-400 transition-colors duration-300 font-medium"
-        >
-          Android App
-        </Link>
 
         {!session && (
           <Link
@@ -126,7 +121,7 @@ export default function Navbar() {
             >
               Passbook
             </Link>
-            {financeFeatureEnabled && (
+            {features.financeFeaturesEnabled && (
               <Link
                 href="/user/personal-finance"
                 className="text-gray-200 hover:text-blue-400 transition-colors duration-300 font-medium"
@@ -134,24 +129,38 @@ export default function Navbar() {
                 Personal Finance
               </Link>
             )}
-            <Link
-              href="/user/quiz"
-              className="text-gray-200 hover:text-blue-400 transition-colors duration-300 font-medium"
-            >
-              Quizzes
-            </Link>
-            <Link
-              href="/user/challenges"
-              className="text-gray-200 hover:text-blue-400 transition-colors duration-300 font-medium"
-            >
-              Challenges
-            </Link>
-            <Link
-              href="/user/online-transfer"
-              className="text-gray-200 hover:text-purple-400 transition-colors duration-300 font-medium"
-            >
-              Online Transfer
-            </Link>
+            {features.androidAppEnabled && (
+              <Link
+                href="/android"
+                className="text-gray-200 hover:text-blue-400 transition-colors duration-300 font-medium"
+              >
+                Android App
+              </Link>
+            )}
+            {features.quizzesEnabled && (
+              <Link
+                href="/user/quiz"
+                className="text-gray-200 hover:text-blue-400 transition-colors duration-300 font-medium"
+              >
+                Quizzes
+              </Link>
+            )}
+            {features.challengesEnabled && (
+              <Link
+                href="/user/challenges"
+                className="text-gray-200 hover:text-blue-400 transition-colors duration-300 font-medium"
+              >
+                Challenges
+              </Link>
+            )}
+            {features.onlineTransferEnabled && (
+              <Link
+                href="/user/online-transfer"
+                className="text-gray-200 hover:text-purple-400 transition-colors duration-300 font-medium"
+              >
+                Online Transfer
+              </Link>
+            )}
           </>
         )}
 

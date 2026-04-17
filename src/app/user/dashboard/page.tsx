@@ -9,6 +9,7 @@ import SetMPINDialog from '@/components/SetMPINDialog';
 import QRCodeDisplay from '@/components/QRCodeDisplay';
 import { useUser, useChallenges } from '@/hooks/useServices';
 import { useUserFinance } from '@/hooks/useUserFinance';
+import { getUserFeatures } from '@/lib/userFeatures';
 
 export default function UserDashboard() {
   const [userId, setUserId] = useState<string>('');
@@ -16,8 +17,6 @@ export default function UserDashboard() {
   const [pageLoading, setPageLoading] = useState(true);
 
   const { user, fetchUser } = useUser(userId);
-  const [financeFeatureEnabled, setFinanceFeatureEnabled] =
-    useState<boolean>(false);
 
   const {
     activeChallenges,
@@ -48,8 +47,7 @@ export default function UserDashboard() {
       const currentUser = await fetchUser();
       await fetchActiveChallenges();
 
-      const financeEnabled =
-        currentUser?.financeFeaturesEnabled ?? financeFeatureEnabled;
+      const financeEnabled = getUserFeatures(currentUser).financeFeaturesEnabled;
 
       if (financeEnabled) {
         await fetchNetWorth();
@@ -69,7 +67,6 @@ export default function UserDashboard() {
     fetchAssets,
     fetchLiabilities,
     fetchCashFlows,
-    financeFeatureEnabled,
   ]);
 
   // Initialize session on mount
@@ -83,12 +80,6 @@ export default function UserDashboard() {
       fetchUserDataMemo();
     }
   }, [userId, fetchUserDataMemo]);
-
-  useEffect(() => {
-    if (user?.financeFeaturesEnabled !== undefined) {
-      setFinanceFeatureEnabled(user.financeFeaturesEnabled);
-    }
-  }, [user]);
 
   if (pageLoading) {
     return (
