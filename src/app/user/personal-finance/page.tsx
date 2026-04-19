@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useUser } from '@/hooks/useServices';
-import { Loader } from 'lucide-react';
+import { BarChart3, Loader } from 'lucide-react';
 import NetWorthSummaryCard from '@/components/user/finance/NetWorthSummaryCard';
 import AssetManager from '@/components/user/finance/AssetManager';
 import LiabilityManager from '@/components/user/finance/LiabilityManager';
@@ -35,8 +36,6 @@ export default function UserFinanceFeaturePage() {
     CashFlow | undefined
   >();
   const { user, fetchUser } = useUser(userId);
-  console.log('userId ==> ', userId);
-  console.log('user ==> ', user);
   const [financeFeatureEnabled, setFinanceFeatureEnabled] =
     useState<boolean>(false);
   const {
@@ -245,12 +244,25 @@ export default function UserFinanceFeaturePage() {
       <div className="max-w-6xl mx-auto">
         {/* Finance Feature Toggle */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">
-            Personal Finance
-          </h1>
-          <p className="text-gray-200">
-            Manage your net worth, assets, liabilities, and cashflow.
-          </p>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-white mb-2">
+                Personal Finance
+              </h1>
+              <p className="text-gray-200">
+                Manage your net worth, assets, liabilities, and cashflow.
+              </p>
+            </div>
+            {financeFeatureEnabled && (
+              <Link
+                href="/user/personal-finance/income-expense-report"
+                className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium transition-colors duration-200"
+              >
+                <BarChart3 className="w-4 h-4" />
+                Income/Expense Report
+              </Link>
+            )}
+          </div>
         </div>
         {financeFeatureEnabled ? (
           <>
