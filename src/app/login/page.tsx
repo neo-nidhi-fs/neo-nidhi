@@ -37,7 +37,7 @@ export default function LoginPage() {
 
       if (session?.user?.id) {
         const userRole = session.user.role;
-        if (userRole === 'admin') {
+        if (userRole === 'admin' || userRole === 'privileged') {
           router.push('/admin/dashboard');
         } else {
           router.push('/user/dashboard');
@@ -52,7 +52,7 @@ export default function LoginPage() {
       const session = await getSession();
       if (session?.user?.id) {
         const userRole = session.user.role;
-        if (userRole === 'admin') {
+        if (userRole === 'admin' || userRole === 'privileged') {
           router.push('/admin/dashboard');
         } else {
           router.push('/user/dashboard');

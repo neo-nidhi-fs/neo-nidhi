@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useSession } from 'next-auth/react';
 import { useAdminUsers } from '@/hooks/useAdminUsers';
 import { useAdminSchemes } from '@/hooks/useAdminSchemes';
 import { useAdminInterestRates } from '@/hooks/useAdminInterestRates';
@@ -19,6 +20,7 @@ type InterestRateUpdate = {
 };
 
 export default function AdminDashboard() {
+  const { data: session, status } = useSession();
   const [message, setMessage] = useState('');
   const [recalculateAccruedLoading, setRecalculateAccruedLoading] =
     useState(false);
@@ -39,10 +41,12 @@ export default function AdminDashboard() {
     resetPasswordLoading,
     resetMPINLoading,
     updateUserLoading,
+    updateManagedUsersLoading,
     addUser,
     resetPassword,
     resetMPIN,
     updateUserDob,
+    updateManagedUsers,
     refetchUsers,
   } = useAdminUsers();
 
@@ -65,14 +69,33 @@ export default function AdminDashboard() {
   const handleAddUserSubmit = async (
     name: string,
     dob: string,
-    password: string
+    password: string,
+    role: 'admin' | 'privileged' | 'user',
+    managedUserIds: string[]
   ) => {
-    const result = await addUser(name, dob, password);
+    const result = await addUser(name, dob, password, role, managedUserIds);
     setMessage(result.message);
     setTimeout(() => {
       if (result.success) setUserDialogOpen(false);
       setMessage('');
     }, 2000);
+    return result;
+  };
+
+  const handleUpdateManagedUsers = async (
+    privilegedUserId: string,
+    managedUserIds: string[]
+  ) => {
+    const result = await updateManagedUsers(privilegedUserId, managedUserIds);
+    setMessage(result.message);
+    if (result.success) {
+      setTimeout(() => {
+        refetchUsers();
+        setMessage('');
+      }, 1200);
+    } else {
+      setTimeout(() => setMessage(''), 2000);
+    }
     return result;
   };
 
@@ -226,10 +249,21 @@ export default function AdminDashboard() {
     }
   };
 
-  if (loading) {
+  if (status === 'loading' || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-slate-950 via-blue-950 to-slate-950">
         <p className="text-gray-100">Loading dashboard...</p>
+      </div>
+    );
+  }
+
+  if (
+    !session?.user?.role ||
+    (session.user.role !== 'admin' && session.user.role !== 'privileged')
+  ) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-slate-950 via-blue-950 to-slate-950">
+        <p className="text-red-400">Access denied.</p>
       </div>
     );
   }
@@ -249,6 +283,7 @@ export default function AdminDashboard() {
 
         {/* Users Section */}
         <UsersSection
+          currentUserRole={session.user.role}
           users={users}
           userDialogOpen={userDialogOpen}
           onUserDialogOpenChange={setUserDialogOpen}
@@ -272,6 +307,8 @@ export default function AdminDashboard() {
           onInterestRateDialogOpen={handleInterestRateDialogOpen}
           onUpdateInterestRates={handleUpdateInterestRates}
           interestRateLoading={interestRateLoading}
+          onUpdateManagedUsers={handleUpdateManagedUsers}
+          updateManagedUsersLoading={updateManagedUsersLoading}
           onUserAdded={refetchUsers}
         />
 

@@ -24,6 +24,9 @@ export function useAdminUsers() {
   const [updateFeatureToggleLoading, setUpdateFeatureToggleLoading] = useState<
     string | null
   >(null);
+  const [updateManagedUsersLoading, setUpdateManagedUsersLoading] = useState<
+    string | null
+  >(null);
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -42,10 +45,22 @@ export function useAdminUsers() {
   }, [fetchUsers]);
 
   const addUser = useCallback(
-    async (name: string, dob: string, password: string) => {
+    async (
+      name: string,
+      dob: string,
+      password: string,
+      role: 'admin' | 'privileged' | 'user' = 'user',
+      managedUserIds: string[] = []
+    ) => {
       try {
         setAddUserLoading(true);
-        const newUser = await adminService.createUser(name, dob, password);
+        const newUser = await adminService.createUser(
+          name,
+          dob,
+          password,
+          role,
+          managedUserIds
+        );
         setUsers((prev) => [...prev, newUser]);
         return { success: true, message: 'User registered successfully' };
       } catch (err) {
@@ -145,6 +160,34 @@ export function useAdminUsers() {
     []
   );
 
+  const updateManagedUsers = useCallback(
+    async (privilegedUserId: string, managedUserIds: string[]) => {
+      try {
+        setUpdateManagedUsersLoading(privilegedUserId);
+        const updatedManagedUsers = await adminService.updateManagedUsers(
+          privilegedUserId,
+          managedUserIds
+        );
+        setUsers((prev) =>
+          prev.map((user) =>
+            user._id === privilegedUserId
+              ? { ...user, managedUserIds: updatedManagedUsers }
+              : user
+          )
+        );
+        return { success: true, message: 'Managed users updated' };
+      } catch (err) {
+        return {
+          success: false,
+          message: `Error: ${(err as Error).message}`,
+        };
+      } finally {
+        setUpdateManagedUsersLoading(null);
+      }
+    },
+    []
+  );
+
   return {
     users,
     loading,
@@ -153,11 +196,13 @@ export function useAdminUsers() {
     resetMPINLoading,
     updateUserLoading,
     updateFeatureToggleLoading,
+    updateManagedUsersLoading,
     addUser,
     resetPassword,
     resetMPIN,
     updateUserDob,
     updateUserFeatureToggle,
+    updateManagedUsers,
     refetchUsers: fetchUsers,
   };
 }

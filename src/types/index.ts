@@ -37,7 +37,7 @@ export interface IUserProfile {
   name: string;
   age: number;
   dob?: Date;
-  role: 'admin' | 'user';
+  role: 'admin' | 'privileged' | 'user';
   createdAt: Date;
   mpin?: string | null;
   qrCode?: string | null;

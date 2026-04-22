@@ -24,6 +24,7 @@ import { InterestRateDialog } from '../dialogs/InterestRateDialog';
 import { FdWithdrawInfo } from '@/lib/services/adminService';
 import { formatDate, getDisplayAge } from '@/lib/helpers';
 import { EditUserDobDialog } from '../dialogs/EditUserDobDialog';
+import { ManagePrivilegedAccessDialog } from '../dialogs/ManagePrivilegedAccessDialog';
 
 type InterestRateUpdate = {
   saving?: number | null;
@@ -38,13 +39,16 @@ interface UsersTableColumn {
 }
 
 interface UsersSectionProps {
+  currentUserRole?: string;
   users: User[];
   userDialogOpen: boolean;
   onUserDialogOpenChange: (open: boolean) => void;
   onAddUser: (
     name: string,
     dob: string,
-    password: string
+    password: string,
+    role: 'admin' | 'privileged' | 'user',
+    managedUserIds: string[]
   ) => Promise<{ success: boolean; message: string }>;
   addUserLoading: boolean;
   onResetPassword: (
@@ -83,6 +87,11 @@ interface UsersSectionProps {
     data?: User['customInterestRates'];
   }>;
   interestRateLoading: boolean;
+  onUpdateManagedUsers: (
+    privilegedUserId: string,
+    managedUserIds: string[]
+  ) => Promise<{ success: boolean; message: string }>;
+  updateManagedUsersLoading: string | null;
   onUserAdded?: () => void;
 }
 
@@ -102,6 +111,7 @@ const userTableColumns: UsersTableColumn[] = [
 ];
 
 export function UsersSection({
+  currentUserRole = 'admin',
   users,
   userDialogOpen,
   onUserDialogOpenChange,
@@ -125,6 +135,8 @@ export function UsersSection({
   onInterestRateDialogOpen,
   onUpdateInterestRates,
   interestRateLoading,
+  onUpdateManagedUsers,
+  updateManagedUsersLoading,
   onUserAdded,
 }: UsersSectionProps) {
   const [userPage, setUserPage] = useState(1);
@@ -136,6 +148,9 @@ export function UsersSection({
   const [openActionMenuFor, setOpenActionMenuFor] = useState<string | null>(
     null
   );
+  const [manageAccessDialogOpen, setManageAccessDialogOpen] = useState(false);
+  const [selectedPrivilegedUser, setSelectedPrivilegedUser] =
+    useState<User | null>(null);
   const actionMenuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -153,8 +168,14 @@ export function UsersSection({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [openActionMenuFor]);
 
-  const handleAddUser = async (name: string, dob: string, password: string) => {
-    const result = await onAddUser(name, dob, password);
+  const handleAddUser = async (
+    name: string,
+    dob: string,
+    password: string,
+    role: 'admin' | 'privileged' | 'user',
+    managedUserIds: string[]
+  ) => {
+    const result = await onAddUser(name, dob, password, role, managedUserIds);
     if (result.success) {
       onUserDialogOpenChange(false);
       onUserAdded?.();
@@ -191,6 +212,8 @@ export function UsersSection({
           <AddUserDialog
             open={userDialogOpen}
             onOpenChange={onUserDialogOpenChange}
+            users={users}
+            currentUserRole={currentUserRole}
             onSubmit={handleAddUser}
             loading={addUserLoading}
           />
@@ -323,6 +346,30 @@ export function UsersSection({
                                   <span className="inline-block h-3 w-3 rounded-full bg-emerald-500" />
                                   Update interest rates
                                 </button>
+                                {currentUserRole === 'admin' &&
+                                  u.role === 'privileged' && (
+                                    <button
+                                      onClick={() => {
+                                        setSelectedPrivilegedUser(u);
+                                        setManageAccessDialogOpen(true);
+                                        setOpenActionMenuFor(null);
+                                      }}
+                                      disabled={
+                                        updateManagedUsersLoading === u._id
+                                      }
+                                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-white hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                      {updateManagedUsersLoading === u._id ? (
+                                        <Loader
+                                          size={14}
+                                          className="animate-spin"
+                                        />
+                                      ) : (
+                                        <span className="inline-block h-3 w-3 rounded-full bg-amber-500" />
+                                      )}
+                                      Manage access
+                                    </button>
+                                  )}
                               </div>
                             )}
 
@@ -381,6 +428,18 @@ export function UsersSection({
                 ))}
             </TableBody>
           </Table>
+          <ManagePrivilegedAccessDialog
+            key={selectedPrivilegedUser?._id ?? 'manage-access'}
+            open={manageAccessDialogOpen}
+            onOpenChange={setManageAccessDialogOpen}
+            privilegedUser={selectedPrivilegedUser}
+            users={users}
+            loading={
+              selectedPrivilegedUser != null &&
+              updateManagedUsersLoading === selectedPrivilegedUser._id
+            }
+            onSubmit={onUpdateManagedUsers}
+          />
           {users.length > ITEMS_PER_PAGE && (
             <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm text-gray-400">

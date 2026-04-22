@@ -9,6 +9,8 @@ import { UserFeatures } from '@/lib/userFeatures';
 export interface User {
   _id: string;
   name: string;
+  role: 'admin' | 'privileged' | 'user';
+  managedUserIds?: string[];
   age: number;
   dob?: string | Date | null;
   savingsBalance: number;
@@ -57,11 +59,17 @@ class AdminService {
     return data.data;
   }
 
-  async createUser(name: string, dob: string, password: string): Promise<User> {
+  async createUser(
+    name: string,
+    dob: string,
+    password: string,
+    role: 'admin' | 'privileged' | 'user' = 'user',
+    managedUserIds: string[] = []
+  ): Promise<User> {
     const res = await fetch(`${this.baseUrl}/api/users`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, dob, password, role: 'user' }),
+      body: JSON.stringify({ name, dob, password, role, managedUserIds }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed to create user');
@@ -73,6 +81,8 @@ class AdminService {
     updates: {
       dob?: string | null;
       age?: number;
+      role?: 'admin' | 'privileged' | 'user';
+      managedUserIds?: string[];
       features?: Partial<UserFeatures>;
       financeFeaturesEnabled?: boolean;
     }
@@ -84,6 +94,23 @@ class AdminService {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed to update user');
+    return data.data;
+  }
+
+  async updateManagedUsers(
+    privilegedUserId: string,
+    managedUserIds: string[]
+  ): Promise<string[]> {
+    const res = await fetch(
+      `${this.baseUrl}/api/users/${privilegedUserId}/managed-users`,
+      {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ managedUserIds }),
+      }
+    );
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to update managed users');
     return data.data;
   }
 

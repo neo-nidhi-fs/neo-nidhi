@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { dbConnect } from '@/lib/dbConnect';
 import { User } from '@/models/User';
+import { canManageUser, requireAdminLikeAccess } from '@/lib/adminAccess';
 
 // GET user's custom interest rates
 export async function GET(
@@ -9,8 +10,18 @@ export async function GET(
 ) {
   try {
     await dbConnect();
+    const accessResult = await requireAdminLikeAccess();
+    if (!accessResult.ok) {
+      return accessResult.response;
+    }
 
     const { id } = await context.params;
+    if (!canManageUser(accessResult.context, id)) {
+      return NextResponse.json(
+        { success: false, error: 'Forbidden' },
+        { status: 403 }
+      );
+    }
 
     const user = await User.findById(id).select('customInterestRates');
     if (!user) {
@@ -37,8 +48,18 @@ export async function PUT(
 ) {
   try {
     await dbConnect();
+    const accessResult = await requireAdminLikeAccess();
+    if (!accessResult.ok) {
+      return accessResult.response;
+    }
 
     const { id } = await context.params;
+    if (!canManageUser(accessResult.context, id)) {
+      return NextResponse.json(
+        { success: false, error: 'Forbidden' },
+        { status: 403 }
+      );
+    }
     const body = await req.json();
 
     // Validate input
@@ -118,8 +139,18 @@ export async function DELETE(
 ) {
   try {
     await dbConnect();
+    const accessResult = await requireAdminLikeAccess();
+    if (!accessResult.ok) {
+      return accessResult.response;
+    }
 
     const { id } = await context.params;
+    if (!canManageUser(accessResult.context, id)) {
+      return NextResponse.json(
+        { success: false, error: 'Forbidden' },
+        { status: 403 }
+      );
+    }
 
     const user = await User.findById(id);
     if (!user) {

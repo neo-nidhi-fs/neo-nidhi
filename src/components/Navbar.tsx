@@ -84,7 +84,7 @@ export default function Navbar() {
           </Link>
         )}
 
-        {session && userRole === 'admin' && (
+        {session && (userRole === 'admin' || userRole === 'privileged') && (
           <>
             <Link
               href="/admin/dashboard"
@@ -98,12 +98,14 @@ export default function Navbar() {
             >
               Transactions
             </Link>
-            <Link
-              href="/admin/feature-toggles"
-              className="text-gray-200 hover:text-blue-400 transition-colors duration-300 font-medium"
-            >
-              Feature Toggles
-            </Link>
+            {userRole === 'admin' && (
+              <Link
+                href="/admin/feature-toggles"
+                className="text-gray-200 hover:text-blue-400 transition-colors duration-300 font-medium"
+              >
+                Feature Toggles
+              </Link>
+            )}
           </>
         )}
 

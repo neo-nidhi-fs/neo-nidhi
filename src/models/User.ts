@@ -34,7 +34,7 @@ export interface IAsset extends Document {
   marketValue: number;
   symbolOrCode?: string;
   startDate?: Date;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -48,7 +48,7 @@ export interface ILiability extends Document {
   startDate?: Date;
   dueDate?: Date;
   status: 'active' | 'paid_off' | 'closed';
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -57,7 +57,8 @@ export interface IUser extends Document {
   name: string;
   age: number;
   dob?: Date;
-  role: 'admin' | 'user';
+  role: 'admin' | 'privileged' | 'user';
+  managedUserIds: mongoose.Types.ObjectId[];
   savingsBalance: number;
   fd: number;
   loanBalance: number;
@@ -84,7 +85,12 @@ const UserSchema: Schema<IUser> = new Schema({
   name: { type: String, required: true, unique: true },
   age: { type: Number, required: true },
   dob: { type: Date, default: null },
-  role: { type: String, enum: ['admin', 'user'], default: 'user' },
+  role: {
+    type: String,
+    enum: ['admin', 'privileged', 'user'],
+    default: 'user',
+  },
+  managedUserIds: [{ type: Schema.Types.ObjectId, ref: 'User' }],
   savingsBalance: { type: Number, default: 0 },
   fd: { type: Number, default: 0 },
   loanBalance: { type: Number, default: 0 },
@@ -195,5 +201,21 @@ UserSchema.methods.compareMPin = async function (candidateMPin: string) {
   return bcrypt.compare(candidateMPin, this.mpin);
 };
 
+const existingUserModel = mongoose.models.User as Model<IUser> | undefined;
+
+if (existingUserModel && process.env.NODE_ENV !== 'production') {
+  const rolePath = existingUserModel.schema.path('role') as
+    | { enumValues?: string[] }
+    | undefined;
+  const existingEnumValues = rolePath?.enumValues ?? [];
+  const schemaIsOutdated = !existingEnumValues.includes('privileged');
+
+  // In dev with HMR, refresh a stale model so role enum updates are picked up.
+  if (schemaIsOutdated) {
+    delete mongoose.models.User;
+  }
+}
+
 export const User: Model<IUser> =
-  mongoose.models.User || mongoose.model<IUser>('User', UserSchema);
+  (mongoose.models.User as Model<IUser>) ||
+  mongoose.model<IUser>('User', UserSchema);

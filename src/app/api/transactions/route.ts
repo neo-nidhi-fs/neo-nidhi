@@ -3,10 +3,20 @@ import { dbConnect } from '@/lib/dbConnect';
 import { Transaction } from '@/models/Transaction';
 import { User } from '@/models/User';
 import { recalculateBalances } from '@/utils/recalculateBalance';
+import {
+  canManageUser,
+  getManagedUsersFilter,
+  requireAdminLikeAccess,
+} from '@/lib/adminAccess';
 
 export async function POST(req: Request) {
   try {
     await dbConnect();
+    const accessResult = await requireAdminLikeAccess();
+    if (!accessResult.ok) {
+      return accessResult.response;
+    }
+
     const body = await req.json();
 
     const { userId, type, amount } = body;
@@ -31,6 +41,12 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { success: false, error: `Invalid transaction type: ${type}` },
         { status: 400 }
+      );
+    }
+    if (!canManageUser(accessResult.context, userId)) {
+      return NextResponse.json(
+        { success: false, error: 'Forbidden' },
+        { status: 403 }
       );
     }
 
@@ -112,7 +128,18 @@ export async function POST(req: Request) {
 export async function GET() {
   try {
     await dbConnect();
-    const transactions = await Transaction.find({}).sort({ date: -1 }); // latest first
+    const accessResult = await requireAdminLikeAccess();
+    if (!accessResult.ok) {
+      return accessResult.response;
+    }
+
+    const userFilter = getManagedUsersFilter(accessResult.context);
+    const users = await User.find(userFilter).select('_id');
+    const userIds = users.map((user) => user._id);
+
+    const transactions = accessResult.context.isAdmin
+      ? await Transaction.find({}).sort({ date: -1 })
+      : await Transaction.find({ userId: { $in: userIds } }).sort({ date: -1 });
     return NextResponse.json({ success: true, data: transactions });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error);

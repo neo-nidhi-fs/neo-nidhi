@@ -16,29 +16,47 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Plus, Loader } from 'lucide-react';
-import { FormEvent } from 'react';
+import { FormEvent, useState } from 'react';
+import { User } from '@/lib/services/adminService';
 
 interface AddUserDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (name: string, dob: string, password: string) => void;
+  users: User[];
+  currentUserRole?: string;
+  onSubmit: (
+    name: string,
+    dob: string,
+    password: string,
+    role: 'admin' | 'privileged' | 'user',
+    managedUserIds: string[]
+  ) => void;
   loading: boolean;
 }
 
 export function AddUserDialog({
   open,
   onOpenChange,
+  users,
+  currentUserRole = 'admin',
   onSubmit,
   loading,
 }: AddUserDialogProps) {
+  const [selectedRole, setSelectedRole] = useState<
+    'admin' | 'privileged' | 'user'
+  >('user');
+
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const name = formData.get('name') as string;
     const dob = formData.get('dob') as string;
     const password = formData.get('password') as string;
-    onSubmit(name, dob, password);
+    const role = (formData.get('role') as 'admin' | 'privileged' | 'user') || 'user';
+    const managedUserIds = formData.getAll('managedUserIds') as string[];
+    onSubmit(name, dob, password, role, managedUserIds);
     e.currentTarget.reset();
+    setSelectedRole('user');
   };
 
   return (
@@ -91,6 +109,54 @@ export function AddUserDialog({
               disabled={loading}
               className="bg-slate-700 border-slate-600 text-white disabled:opacity-50"
             />
+          </div>
+          <div>
+            <Label htmlFor="role" className="text-gray-100">
+              Role
+            </Label>
+            <select
+              id="role"
+              name="role"
+              value={selectedRole}
+              onChange={(e) =>
+                setSelectedRole(
+                  e.target.value as 'admin' | 'privileged' | 'user'
+                )
+              }
+              disabled={loading}
+              className="w-full mt-1 rounded-md bg-slate-700 border border-slate-600 px-3 py-2 text-white disabled:opacity-50"
+            >
+              <option value="user">User</option>
+              <option value="privileged">Privileged user</option>
+              {currentUserRole === 'admin' && <option value="admin">Admin</option>}
+            </select>
+          </div>
+          <div>
+            <Label className="text-gray-100">Managed Users (for privileged)</Label>
+            <div className="mt-2 max-h-40 overflow-y-auto rounded-md border border-slate-600 bg-slate-900/40 p-2 space-y-1">
+              {selectedRole !== 'privileged' && (
+                <p className="text-xs text-slate-400 px-1 py-2">
+                  Select role as privileged to assign users.
+                </p>
+              )}
+              {selectedRole === 'privileged' &&
+                users
+                  .filter((user) => user.role === 'user')
+                  .map((user) => (
+                    <label
+                      key={user._id}
+                      className="flex items-center gap-2 text-sm text-gray-200"
+                    >
+                      <input
+                        type="checkbox"
+                        name="managedUserIds"
+                        value={user._id}
+                        disabled={loading}
+                      />
+                      {user.name}
+                    </label>
+                  ))}
+            </div>
           </div>
           <Button
             type="submit"

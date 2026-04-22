@@ -3,12 +3,25 @@ import { dbConnect } from '@/lib/dbConnect';
 import { User } from '@/models/User';
 import { Transaction } from '@/models/Transaction';
 import { Settings } from '@/models/Settings';
+import { canManageUser, requireAdminLikeAccess } from '@/lib/adminAccess';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/authOptions';
 
 const FD_LOCK_IN_PERIOD = 3 * 365 * 24 * 60 * 60 * 1000; // 3 years in milliseconds
 
 export async function POST(req: Request) {
   try {
     await dbConnect();
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const accessResult = await requireAdminLikeAccess();
+
     const body = await req.json();
     const { userId, amount } = body;
 
@@ -16,6 +29,15 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { success: false, error: 'Invalid input parameters' },
         { status: 400 }
+      );
+    }
+    const hasManagedAccess =
+      accessResult.ok && canManageUser(accessResult.context, userId);
+    const isSelf = session.user.id === userId;
+    if (!hasManagedAccess && !isSelf) {
+      return NextResponse.json(
+        { success: false, error: 'Forbidden' },
+        { status: 403 }
       );
     }
 
@@ -163,6 +185,16 @@ export async function POST(req: Request) {
 export async function GET(req: Request) {
   try {
     await dbConnect();
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const accessResult = await requireAdminLikeAccess();
+
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get('userId');
 
@@ -170,6 +202,15 @@ export async function GET(req: Request) {
       return NextResponse.json(
         { success: false, error: 'User ID required' },
         { status: 400 }
+      );
+    }
+    const hasManagedAccess =
+      accessResult.ok && canManageUser(accessResult.context, userId);
+    const isSelf = session.user.id === userId;
+    if (!hasManagedAccess && !isSelf) {
+      return NextResponse.json(
+        { success: false, error: 'Forbidden' },
+        { status: 403 }
       );
     }
 
