@@ -47,7 +47,15 @@ export interface Liability {
   };
 }
 
-export type ExpensePaymentSource = 'account' | 'credit_card' | 'cash';
+/**
+ * `credit_card` is kept as a legacy value for older entries.
+ * New entries should use `card`.
+ */
+export type ExpensePaymentSource =
+  | 'account'
+  | 'cash'
+  | 'card'
+  | 'credit_card';
 
 export interface CashFlow {
   _id: string;

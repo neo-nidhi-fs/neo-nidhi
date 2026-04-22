@@ -7,6 +7,20 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/authOptions';
 import { NextResponse } from 'next/server';
 
+function isCreditCardLiability(liability: {
+  type?: string;
+  note?: string | null;
+}): boolean {
+  const searchable = `${liability.type || ''} ${liability.note || ''}`
+    .toLowerCase()
+    .trim();
+  return (
+    searchable.includes('credit card') ||
+    searchable.includes('creditcard') ||
+    searchable === 'card'
+  );
+}
+
 export async function POST(req: Request) {
   try {
     await dbConnect();
@@ -23,7 +37,7 @@ export async function POST(req: Request) {
     const { date, type, category, amount, source, liabilityId, note, paymentSource } =
       body;
 
-    const validPaymentSources = ['account', 'credit_card', 'cash'] as const;
+    const validPaymentSources = ['account', 'cash', 'card', 'credit_card'] as const;
 
     // Validation
     if (!date || !type || !category || amount === undefined || !source) {
@@ -55,17 +69,21 @@ export async function POST(req: Request) {
       );
     }
 
-    /** Optional: only persist when client sends a valid value (no server default). */
-    let resolvedPaymentSource: 'account' | 'credit_card' | 'cash' | undefined;
-    if (type === 'expense' && paymentSource != null && paymentSource !== '') {
-      if (!validPaymentSources.includes(paymentSource)) {
-        return NextResponse.json(
-          { success: false, error: 'Invalid payment source' },
-          { status: 400 }
-        );
-      }
-      resolvedPaymentSource = paymentSource;
+    // Required for both income and expense so totals can be tracked by mode.
+    if (paymentSource == null || paymentSource === '') {
+      return NextResponse.json(
+        { success: false, error: 'Payment type is required' },
+        { status: 400 }
+      );
     }
+
+    if (!validPaymentSources.includes(paymentSource)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid payment source' },
+        { status: 400 }
+      );
+    }
+    const resolvedPaymentSource = paymentSource === 'credit_card' ? 'card' : paymentSource;
 
     const user = await User.findById(session.user.id);
     if (!user) {
@@ -80,10 +98,52 @@ export async function POST(req: Request) {
       return featureFlagError;
     }
 
-    // Apply cashflow to liability if provided
-    if (liabilityId) {
+    const isCreditCardPaymentCategory =
+      String(category).trim().toLowerCase() === 'credit card payments';
+
+    let resolvedLiabilityId = liabilityId || '';
+
+    // Auto-resolve credit card liability when user records a credit-card payment.
+    if (
+      type === 'expense' &&
+      isCreditCardPaymentCategory &&
+      !resolvedLiabilityId
+    ) {
+      const matchingCreditCardLiabilities = (user.liabilities || []).filter(
+        (liability) =>
+          liability.status === 'active' &&
+          (liability.amount || 0) > 0 &&
+          isCreditCardLiability(liability)
+      );
+
+      if (matchingCreditCardLiabilities.length === 1) {
+        resolvedLiabilityId =
+          matchingCreditCardLiabilities[0]._id.toString();
+      } else if (matchingCreditCardLiabilities.length > 1) {
+        return NextResponse.json(
+          {
+            success: false,
+            error:
+              'Multiple active credit card liabilities found. Please select one in "Apply to Loan".',
+          },
+          { status: 400 }
+        );
+      } else {
+        return NextResponse.json(
+          {
+            success: false,
+            error:
+              'No active credit card liability found to deduct this payment.',
+          },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Apply cashflow to liability if provided/resolved
+    if (resolvedLiabilityId) {
       const liabilityIndex = user.liabilities.findIndex(
-        (l) => l._id.toString() === liabilityId
+        (l) => l._id.toString() === resolvedLiabilityId
       );
       if (liabilityIndex === -1) {
         return NextResponse.json(
@@ -121,10 +181,8 @@ export async function POST(req: Request) {
       category,
       amount,
       source,
-      liabilityId: liabilityId || null,
-      ...(resolvedPaymentSource
-        ? { paymentSource: resolvedPaymentSource }
-        : {}),
+      liabilityId: resolvedLiabilityId || null,
+      paymentSource: resolvedPaymentSource,
       note: note || null,
     });
 

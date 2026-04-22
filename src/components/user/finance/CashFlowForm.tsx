@@ -14,7 +14,7 @@ interface CashFlowFormData {
   category: string;
   amount: number;
   source: string;
-  /** Expense only; ignored for income */
+  /** Required for both income and expense */
   paymentSource: ExpensePaymentSource;
   liabilityId?: string;
   note?: string;
@@ -86,7 +86,9 @@ export default function CashFlowForm({
           amount: cashflow.amount || 0,
           source: cashflow.source || '',
           paymentSource:
-            cashflow.paymentSource || ('account' as ExpensePaymentSource),
+            (cashflow.paymentSource === 'credit_card'
+              ? 'card'
+              : cashflow.paymentSource) || ('account' as ExpensePaymentSource),
           liabilityId: cashflow.liabilityId || '',
           note: cashflow.note || '',
         }
@@ -103,7 +105,8 @@ export default function CashFlowForm({
       !formData.type ||
       !formData.category ||
       formData.amount <= 0 ||
-      !formData.source
+      !formData.source ||
+      !formData.paymentSource
     ) {
       alert('Please fill in all required fields');
       return;
@@ -218,28 +221,25 @@ export default function CashFlowForm({
             </select>
           </div>
 
-          {/* Expense payment method */}
-          {formData.type === 'expense' && (
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
-                Paid from *
-              </label>
-              <select
-                value={formData.paymentSource}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    paymentSource: e.target.value as ExpensePaymentSource,
-                  })
-                }
-                className="w-full px-3 py-2 border border-slate-600 rounded-md bg-slate-700/50 text-white focus:outline-none focus:ring-2 focus:ring-green-500"
-              >
-                <option value="account">Account</option>
-                <option value="credit_card">Credit card</option>
-                <option value="cash">Cash</option>
-              </select>
-            </div>
-          )}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">
+              {formData.type === 'income' ? 'Received in *' : 'Paid from *'}
+            </label>
+            <select
+              value={formData.paymentSource}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  paymentSource: e.target.value as ExpensePaymentSource,
+                })
+              }
+              className="w-full px-3 py-2 border border-slate-600 rounded-md bg-slate-700/50 text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+            >
+              <option value="account">Account</option>
+              <option value="cash">Cash</option>
+              <option value="card">Card</option>
+            </select>
+          </div>
 
           {/* Amount */}
           <div>

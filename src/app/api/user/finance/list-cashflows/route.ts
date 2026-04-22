@@ -35,10 +35,22 @@ export async function GET() {
       date: -1,
     });
 
+    const normalizedCashFlows = cashFlows.map((cashFlow) => {
+      const doc = cashFlow.toObject();
+      const source = doc.paymentSource;
+      return {
+        ...doc,
+        paymentSource:
+          source === 'credit_card'
+            ? 'card'
+            : source || 'account',
+      };
+    });
+
     return NextResponse.json(
       {
         success: true,
-        data: cashFlows,
+        data: normalizedCashFlows,
       },
       { status: 200 }
     );

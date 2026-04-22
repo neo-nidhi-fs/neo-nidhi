@@ -30,7 +30,7 @@ export async function PUT(req: Request) {
       paymentSource,
     } = body;
 
-    const validPaymentSources = ['account', 'credit_card', 'cash'] as const;
+    const validPaymentSources = ['account', 'cash', 'card', 'credit_card'] as const;
 
     if (!cashflowId) {
       return NextResponse.json(
@@ -63,10 +63,7 @@ export async function PUT(req: Request) {
       );
     }
 
-    const nextType =
-      type !== undefined ? type : (existing.type as 'income' | 'expense');
-
-    const updates: Partial<Record<string, any>> = {};
+    const updates: Partial<Record<string, unknown>> = {};
     if (date !== undefined) updates.date = new Date(date);
     if (type !== undefined) updates.type = type;
     if (category !== undefined) updates.category = category;
@@ -74,38 +71,31 @@ export async function PUT(req: Request) {
     if (source !== undefined) updates.source = source;
     if (note !== undefined) updates.note = note;
 
-    let unsetPaymentSource = false;
+    const existingPaymentSource = existing.paymentSource || 'account';
+    const resolvedPaymentSourceInput =
+      paymentSource === undefined ? existingPaymentSource : paymentSource;
 
-    if (paymentSource !== undefined && nextType === 'expense') {
-      if (paymentSource === null || paymentSource === '') {
-        unsetPaymentSource = true;
-      } else if (!validPaymentSources.includes(paymentSource)) {
-        return NextResponse.json(
-          { success: false, error: 'Invalid payment source' },
-          { status: 400 }
-        );
-      } else {
-        updates.paymentSource = paymentSource;
-      }
+    if (resolvedPaymentSourceInput == null || resolvedPaymentSourceInput === '') {
+      return NextResponse.json(
+        { success: false, error: 'Payment type is required' },
+        { status: 400 }
+      );
     }
+
+    if (!validPaymentSources.includes(resolvedPaymentSourceInput)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid payment source' },
+        { status: 400 }
+      );
+    }
+    updates.paymentSource =
+      resolvedPaymentSourceInput === 'credit_card'
+        ? 'card'
+        : resolvedPaymentSourceInput;
 
     updates.updatedAt = new Date();
 
-    if (nextType === 'income') {
-      delete updates.paymentSource;
-    }
-
     const updatePayload: Record<string, unknown> = { $set: updates };
-    const $unset: Record<string, string> = {};
-    if (nextType === 'income') {
-      $unset.paymentSource = '';
-    }
-    if (unsetPaymentSource) {
-      $unset.paymentSource = '';
-    }
-    if (Object.keys($unset).length > 0) {
-      updatePayload.$unset = $unset;
-    }
 
     const updatedCashFlow = await CashFlow.findOneAndUpdate(
       { _id: cashflowId, user: user._id },

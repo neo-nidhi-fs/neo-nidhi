@@ -13,16 +13,27 @@ import {
   ChevronRight,
 } from 'lucide-react';
 
-function labelPaymentSource(
-  type: CashFlow['type'],
+const PAYMENT_MODES: Array<'account' | 'cash' | 'card'> = [
+  'account',
+  'cash',
+  'card',
+];
+
+function normalizePaymentSource(
   paymentSource?: ExpensePaymentSource
-): string {
-  if (type !== 'expense') return '—';
-  const p = paymentSource || 'account';
+): 'account' | 'cash' | 'card' {
+  if (paymentSource === 'credit_card') return 'card';
+  if (paymentSource === 'cash' || paymentSource === 'card') return paymentSource;
+  return 'account';
+}
+
+function labelPaymentSource(paymentSource?: ExpensePaymentSource): string {
+  const p = normalizePaymentSource(paymentSource);
   const labels: Record<ExpensePaymentSource, string> = {
     account: 'Account',
-    credit_card: 'Credit card',
     cash: 'Cash',
+    card: 'Card',
+    credit_card: 'Card',
   };
   return labels[p];
 }
@@ -40,39 +51,83 @@ function CashFlowSummaryBar({
   totalIncome,
   totalExpense,
   totalRemaining,
+  modeTotals,
 }: {
   formatCurrency: (value: number) => string;
   totalIncome: number;
   totalExpense: number;
   totalRemaining: number;
+  modeTotals: Record<
+    'account' | 'cash' | 'card',
+    { income: number; expense: number }
+  >;
 }) {
+  const modeLabels: Record<'account' | 'cash' | 'card', string> = {
+    account: 'Account',
+    cash: 'Cash',
+    card: 'Card',
+  };
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 rounded-lg bg-slate-900/60 border border-slate-600/80 p-4">
-      <div className="text-center sm:text-left">
-        <p className="text-xs uppercase tracking-wide text-slate-400">
-          Total income
-        </p>
-        <p className="text-lg font-semibold text-emerald-400">
-          {formatCurrency(totalIncome)}
-        </p>
+    <div className="space-y-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 rounded-lg bg-slate-900/60 border border-slate-600/80 p-4">
+        <div className="text-center sm:text-left">
+          <p className="text-xs uppercase tracking-wide text-slate-400">
+            Total income
+          </p>
+          <p className="text-lg font-semibold text-emerald-400">
+            {formatCurrency(totalIncome)}
+          </p>
+        </div>
+        <div className="text-center sm:text-left">
+          <p className="text-xs uppercase tracking-wide text-slate-400">
+            Total expense
+          </p>
+          <p className="text-lg font-semibold text-red-400">
+            {formatCurrency(totalExpense)}
+          </p>
+        </div>
+        <div className="text-center sm:text-left">
+          <p className="text-xs uppercase tracking-wide text-slate-400">
+            Remaining
+          </p>
+          <p
+            className={`text-lg font-semibold ${totalRemaining >= 0 ? 'text-emerald-400' : 'text-red-400'}`}
+          >
+            {formatCurrency(totalRemaining)}
+          </p>
+        </div>
       </div>
-      <div className="text-center sm:text-left">
-        <p className="text-xs uppercase tracking-wide text-slate-400">
-          Total expense
-        </p>
-        <p className="text-lg font-semibold text-red-400">
-          {formatCurrency(totalExpense)}
-        </p>
-      </div>
-      <div className="text-center sm:text-left">
-        <p className="text-xs uppercase tracking-wide text-slate-400">
-          Remaining
-        </p>
-        <p
-          className={`text-lg font-semibold ${totalRemaining >= 0 ? 'text-emerald-400' : 'text-red-400'}`}
-        >
-          {formatCurrency(totalRemaining)}
-        </p>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+        {PAYMENT_MODES.map((mode) => {
+          const income = modeTotals[mode].income;
+          const expense = modeTotals[mode].expense;
+          const remaining = income - expense;
+          return (
+            <div
+              key={mode}
+              className="rounded-lg bg-slate-900/60 border border-slate-600/80 p-4"
+            >
+              <p className="text-sm font-semibold uppercase tracking-wide text-cyan-300 mb-2">
+                {modeLabels[mode]}
+              </p>
+              <p className="text-xs uppercase tracking-wide text-slate-400">
+                Income:{' '}
+                <span className="text-emerald-400">{formatCurrency(income)}</span>
+              </p>
+              <p className="text-xs uppercase tracking-wide text-slate-400 mt-1">
+                Expense:{' '}
+                <span className="text-red-400">{formatCurrency(expense)}</span>
+              </p>
+              <p
+                className={`text-xs uppercase tracking-wide mt-1 ${remaining >= 0 ? 'text-emerald-400' : 'text-red-400'}`}
+              >
+                Remaining: {formatCurrency(remaining)}
+              </p>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -144,9 +199,9 @@ function CashflowMobileCard({
           </dd>
         </div>
         <div className="flex gap-3 sm:gap-4">
-          <dt className="w-[5.5rem] shrink-0 text-slate-400">Paid from</dt>
+          <dt className="w-[5.5rem] shrink-0 text-slate-400">Mode</dt>
           <dd className="min-w-0 flex-1 text-gray-200 text-right">
-            {labelPaymentSource(cashflow.type, cashflow.paymentSource)}
+            {labelPaymentSource(cashflow.paymentSource)}
           </dd>
         </div>
         <div className="flex gap-3 sm:gap-4">
@@ -228,6 +283,25 @@ export default function CashFlowManager({
   const totalExpense = visibleCashflows
     .filter((cf) => cf.type === 'expense')
     .reduce((sum, cf) => sum + cf.amount, 0);
+
+  const modeTotals = visibleCashflows.reduce<
+    Record<'account' | 'cash' | 'card', { income: number; expense: number }>
+  >(
+    (acc, cf) => {
+      const paymentSource = normalizePaymentSource(cf.paymentSource);
+      if (cf.type === 'income') {
+        acc[paymentSource].income += cf.amount;
+      } else {
+        acc[paymentSource].expense += cf.amount;
+      }
+      return acc;
+    },
+    {
+      account: { income: 0, expense: 0 },
+      cash: { income: 0, expense: 0 },
+      card: { income: 0, expense: 0 },
+    }
+  );
 
   const totalRemaining = totalIncome - totalExpense;
 
@@ -321,6 +395,7 @@ export default function CashFlowManager({
           totalIncome={totalIncome}
           totalExpense={totalExpense}
           totalRemaining={totalRemaining}
+          modeTotals={modeTotals}
         />
       </div>
 
@@ -332,7 +407,6 @@ export default function CashFlowManager({
         </div>
       ) : (
         <>
-          {/* Portrait / narrow: stacked cards, no horizontal scroll */}
           <div className="flex flex-col gap-3 md:hidden">
             {sortedCashflows.map((cashflow) => (
               <CashflowMobileCard
@@ -345,7 +419,6 @@ export default function CashFlowManager({
             ))}
           </div>
 
-          {/* Tablet+ : table */}
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full min-w-[640px]">
               <thead>
@@ -360,7 +433,7 @@ export default function CashFlowManager({
                     Category
                   </th>
                   <th className="text-left py-3 px-3 lg:px-4 font-semibold text-white">
-                    Paid from
+                    Mode
                   </th>
                   <th className="text-left py-3 px-3 lg:px-4 font-semibold text-white">
                     Source
@@ -389,10 +462,7 @@ export default function CashFlowManager({
                       {cashflow.category}
                     </td>
                     <td className="py-4 px-3 lg:px-4 text-gray-200 whitespace-nowrap">
-                      {labelPaymentSource(
-                        cashflow.type,
-                        cashflow.paymentSource
-                      )}
+                      {labelPaymentSource(cashflow.paymentSource)}
                     </td>
                     <td className="py-4 px-3 lg:px-4 text-gray-200 max-w-[8rem] lg:max-w-[12rem] truncate lg:whitespace-normal lg:break-words">
                       {cashflow.source}
