@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 import { Menu, X } from 'lucide-react';
 import { useUser } from '@/hooks/useServices';
 import { getUserFeatures } from '@/lib/userFeatures';
+import content from '@/content/content.json';
 
 interface CustomSession extends Session {
   user?: Session['user'] & {
@@ -43,7 +44,7 @@ export default function Navbar() {
           href="/"
           className="text-3xl font-black bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent hover:from-blue-300 hover:to-cyan-300 transition-all duration-300"
         >
-          neoNidhi
+          {content.app.name}
         </Link>
 
         <button
@@ -64,7 +65,7 @@ export default function Navbar() {
             href="/"
             className="text-gray-200 hover:text-blue-400 transition-colors duration-300 font-medium"
           >
-            Home
+            {content.navigation.home}
           </Link>
         )}
 
@@ -72,7 +73,7 @@ export default function Navbar() {
           href="/about"
           className="text-gray-200 hover:text-blue-400 transition-colors duration-300 font-medium"
         >
-          About
+          {content.navigation.about}
         </Link>
 
         {!session && (
@@ -80,7 +81,7 @@ export default function Navbar() {
             href="/login"
             className="text-gray-200 hover:text-blue-400 transition-colors duration-300 font-medium"
           >
-            Login
+            {content.navigation.login}
           </Link>
         )}
 
@@ -90,20 +91,20 @@ export default function Navbar() {
               href="/admin/dashboard"
               className="text-gray-200 hover:text-blue-400 transition-colors duration-300 font-medium"
             >
-              Dashboard
+              {content.navigation.dashboard}
             </Link>
             <Link
               href="/admin/transactions"
               className="text-gray-200 hover:text-blue-400 transition-colors duration-300 font-medium"
             >
-              Transactions
+              {content.navigation.transactions}
             </Link>
             {userRole === 'admin' && (
               <Link
                 href="/admin/feature-toggles"
                 className="text-gray-200 hover:text-blue-400 transition-colors duration-300 font-medium"
               >
-                Feature Toggles
+                {content.navigation.featureToggles}
               </Link>
             )}
           </>
@@ -115,20 +116,20 @@ export default function Navbar() {
               href="/user/dashboard"
               className="text-gray-200 hover:text-blue-400 transition-colors duration-300 font-medium"
             >
-              Dashboard
+              {content.navigation.dashboard}
             </Link>
             <Link
               href="/user/passbook"
               className="text-gray-200 hover:text-blue-400 transition-colors duration-300 font-medium"
             >
-              Passbook
+              {content.navigation.passbook}
             </Link>
             {features.financeFeaturesEnabled && (
               <Link
                 href="/user/personal-finance"
                 className="text-gray-200 hover:text-blue-400 transition-colors duration-300 font-medium"
               >
-                Personal Finance
+                {content.navigation.personalFinance}
               </Link>
             )}
             {features.androidAppEnabled && (
@@ -136,7 +137,7 @@ export default function Navbar() {
                 href="/android"
                 className="text-gray-200 hover:text-blue-400 transition-colors duration-300 font-medium"
               >
-                Android App
+                {content.navigation.androidApp}
               </Link>
             )}
             {features.quizzesEnabled && (
@@ -144,7 +145,7 @@ export default function Navbar() {
                 href="/user/quiz"
                 className="text-gray-200 hover:text-blue-400 transition-colors duration-300 font-medium"
               >
-                Quizzes
+                {content.navigation.quizzes}
               </Link>
             )}
             {features.challengesEnabled && (
@@ -152,7 +153,7 @@ export default function Navbar() {
                 href="/user/challenges"
                 className="text-gray-200 hover:text-blue-400 transition-colors duration-300 font-medium"
               >
-                Challenges
+                {content.navigation.challenges}
               </Link>
             )}
             {features.onlineTransferEnabled && (
@@ -160,7 +161,7 @@ export default function Navbar() {
                 href="/user/online-transfer"
                 className="text-gray-200 hover:text-purple-400 transition-colors duration-300 font-medium"
               >
-                Online Transfer
+                {content.navigation.onlineTransfer}
               </Link>
             )}
           </>
@@ -171,7 +172,7 @@ export default function Navbar() {
             onClick={handleLogout}
             className="text-gray-200 hover:text-red-400 transition-colors duration-300 font-medium px-4 py-2 rounded-lg hover:bg-red-900/20"
           >
-            Logout
+            {content.navigation.logout}
           </button>
         )}
       </div>

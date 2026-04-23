@@ -4,20 +4,20 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import AppProviders from '@/components/AppProviders';
 import ServiceWorkerRegistration from '@/components/ServiceWorkerRegistration';
+import content from '@/content/content.json';
 
 export const metadata: Metadata = {
   title: {
-    default: 'neo-nidhi',
-    template: '%s | neo-nidhi',
+    default: content.app.slug,
+    template: `%s | ${content.app.slug}`,
   },
-  description:
-    'A modern financial management app for Nidhi companies, built with Next.js and Tailwind CSS.',
-  applicationName: 'neo-nidhi',
+  description: content.app.description,
+  applicationName: content.app.slug,
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'neo-nidhi',
+    title: content.app.slug,
   },
   formatDetection: {
     telephone: false,

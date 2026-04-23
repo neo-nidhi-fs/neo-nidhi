@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowRight, Loader } from 'lucide-react';
+import content from '@/content/content.json';
 
 export default function RegisterUserPage() {
   const [name, setName] = useState('');
@@ -34,7 +35,7 @@ export default function RegisterUserPage() {
 
       const data = await res.json();
       if (res.ok) {
-        setMessage('User registered successfully ✅');
+        setMessage(content.adminRegister.successMessage);
         setName('');
         setDob('');
         setPassword('');
@@ -46,21 +47,19 @@ export default function RegisterUserPage() {
         setIsLoading(false);
       }
     } catch {
-      setMessage('Something went wrong. Please try again.');
+      setMessage(content.adminRegister.fallbackError);
       setIsLoading(false);
     }
   };
 
   return (
     <div className="bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 min-h-screen flex items-center justify-center px-6 relative overflow-hidden">
-      {/* Background decorations */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-green-500/20 rounded-full blur-3xl"></div>
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-emerald-500/20 rounded-full blur-3xl"></div>
       </div>
 
       <div className="relative z-10 w-full max-w-md">
-        {/* Logo */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-black bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent mb-2">
             Register User
@@ -165,11 +164,12 @@ export default function RegisterUserPage() {
           </CardContent>
         </Card>
 
-        {/* Footer text */}
         <p className="text-center text-gray-300 text-sm mt-6">
-          © 2024 neoNidhi. All rights reserved.
+          (c) {new Date().getFullYear()} {content.app.name}.{' '}
+          {content.footer.copyrightRights}
         </p>
       </div>
     </div>
   );
 }
+

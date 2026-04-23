@@ -1,0 +1,111 @@
+{
+  "app": {
+    "name": "neoNidhi",
+    "slug": "neo-nidhi",
+    "description": "A modern financial management app for Nidhi companies, built with Next.js and Tailwind CSS.",
+    "tagline": "Learn Banking the Fun Way"
+  },
+  "navigation": {
+    "home": "Home",
+    "about": "About",
+    "login": "Login",
+    "dashboard": "Dashboard",
+    "transactions": "Transactions",
+    "featureToggles": "Feature Toggles",
+    "passbook": "Passbook",
+    "personalFinance": "Personal Finance",
+    "androidApp": "Android App",
+    "quizzes": "Quizzes",
+    "challenges": "Challenges",
+    "onlineTransfer": "Online Transfer",
+    "logout": "Logout"
+  },
+  "footer": {
+    "quote": "A penny saved is a penny earned. Start small, grow big with savings!",
+    "copyrightLearn": "Learn banking the fun way.",
+    "copyrightRights": "All rights reserved."
+  },
+  "home": {
+    "badge": "Welcome to the Future of Finance Education",
+    "heroSubtitle": "Discover the power of financial literacy. Master savings, understand loans, and build wealth with our interactive learning platform designed for everyone.",
+    "ctaPrimary": "Get Started",
+    "ctaSecondary": "Learn More",
+    "stats": [
+      { "value": "100%", "label": "Free to Learn" },
+      { "value": "Interactive", "label": "Real Scenarios" },
+      { "value": "Safe", "label": "& Secure" }
+    ],
+    "schemes": {
+      "interestRateLabel": "Interest Rate:"
+    },
+    "featuresHeading": "Why Choose {appName}?",
+    "featuresSubtitle": "Build your financial foundation with our comprehensive learning ecosystem",
+    "features": [
+      {
+        "title": "Smart Savings",
+        "description": "Watch your money grow with compound interest. Learn how consistent savings can create wealth over time and secure your financial future."
+      },
+      {
+        "title": "Loan Management",
+        "description": "Understand the true cost of borrowing. Learn when loans are necessary and how to minimize debt while maintaining financial stability."
+      },
+      {
+        "title": "Financial Goals",
+        "description": "Set and track meaningful financial goals. Create actionable plans and monitor your progress toward a financially independent future."
+      }
+    ],
+    "ctaHeading": "Ready to Master Your Finances?",
+    "ctaDescription": "Join thousands of learners building financial literacy with {appName}. Start your journey today.",
+    "ctaButton": "Begin Your Journey",
+    "copyright": "Making financial literacy accessible to everyone."
+  },
+  "about": {
+    "heroTitle": "About {appName}",
+    "heroSubtitle": "Empowering the next generation with financial literacy through interactive learning and real-world banking education.",
+    "introTitle": "What is {appName}?",
+    "introDescription": "{appName} is an innovative banking education platform designed to help learners of all ages understand how money works. Through interactive simulations and real-world scenarios, we demonstrate why saving is powerful and why loans should be used strategically to build lasting financial strength.",
+    "featuresHeading": "Why Choose {appName}?",
+    "features": [
+      {
+        "title": "Smart Savings",
+        "description": "Understand the power of compound interest. Watch your money grow over time through consistent saving habits and disciplined financial planning."
+      },
+      {
+        "title": "Financial Growth",
+        "description": "Learn how to strategically build wealth. Master the fundamentals of investing, budgeting, and long-term financial planning for sustainable growth."
+      },
+      {
+        "title": "Smart Borrowing",
+        "description": "Understand when and how to borrow responsibly. Learn the true cost of loans and how to minimize debt while maintaining financial stability."
+      }
+    ],
+    "missionHeading": "Our Mission",
+    "missionDescription": "To make financial literacy accessible, engaging, and practical for everyone. We believe that understanding money is a superpower, and we are committed to helping you master it through interactive learning and real-world scenarios.",
+    "stats": [
+      { "value": "100%", "label": "Free to Learn" },
+      { "value": "Interactive", "label": "Real Scenarios" },
+      { "value": "Safe", "label": "& Secure" }
+    ],
+    "copyright": "Making financial literacy accessible to everyone."
+  },
+  "login": {
+    "heading": "Welcome Back",
+    "subtitle": "Login to your account and continue learning",
+    "heroSubtitle": "Master Your Finances",
+    "usernameLabel": "Username",
+    "usernamePlaceholder": "Enter your username",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "Enter your password",
+    "invalidCredentials": "Invalid credentials. Please try again.",
+    "loginButton": "Login",
+    "loggingInButton": "Logging in..."
+  },
+  "adminRegister": {
+    "successMessage": "User registered successfully.",
+    "fallbackError": "Something went wrong. Please try again."
+  },
+  "android": {
+    "title": "Install {appSlug} on Android",
+    "step3": "3. Finish installation and open {appSlug} from your app drawer."
+  }
+}
