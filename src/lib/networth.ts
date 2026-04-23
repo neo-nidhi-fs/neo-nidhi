@@ -309,17 +309,31 @@ export function calculateLoanProjection(
   const annualRate = liability.interestRate || 0;
   const monthlyRate = annualRate / 12 / 100;
   const now = new Date();
+  const metadata = (liability.metadata || {}) as Record<string, unknown>;
 
   let remainingMonths = 0;
   let payoffDate: string | null = null;
 
-  const startDate = liability.startDate
-    ? new Date(liability.startDate)
-    : liability.metadata?.startDate
-      ? new Date(liability.metadata.startDate)
+  const metadataStartDateRaw = metadata.startDate;
+  const metadataStartDate =
+    typeof metadataStartDateRaw === 'string' ||
+    typeof metadataStartDateRaw === 'number' ||
+    metadataStartDateRaw instanceof Date
+      ? new Date(metadataStartDateRaw)
       : null;
 
-  const termMonths = liability.metadata?.termMonths || 0;
+  const startDate = liability.startDate
+    ? new Date(liability.startDate)
+    : metadataStartDate
+      ? new Date(metadataStartDate)
+      : null;
+
+  const metadataTermMonthsRaw = metadata.termMonths;
+  const termMonths =
+    typeof metadataTermMonthsRaw === 'number' &&
+    Number.isFinite(metadataTermMonthsRaw)
+      ? metadataTermMonthsRaw
+      : 0;
 
   let due = liability.dueDate ? new Date(liability.dueDate) : null;
 

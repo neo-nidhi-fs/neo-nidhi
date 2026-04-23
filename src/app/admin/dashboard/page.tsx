@@ -45,7 +45,7 @@ export default function AdminDashboard() {
     addUser,
     resetPassword,
     resetMPIN,
-    updateUserDob,
+    updateUserDetails,
     updateManagedUsers,
     refetchUsers,
   } = useAdminUsers();
@@ -99,9 +99,22 @@ export default function AdminDashboard() {
     return result;
   };
 
-  // Handle updating user DOB
-  const handleUpdateDob = async (userId: string, dob: string | null) => {
-    const result = await updateUserDob(userId, dob);
+  const handleUpdateUser = async (
+    userId: string,
+    updates: {
+      name: string;
+      dob: string | null;
+      role: 'admin' | 'privileged' | 'user';
+      managedUserIds: string[];
+      savingsBalance: number;
+      fd: number;
+      loanBalance: number;
+      accruedSavingInterest: number;
+      accruedFdInterest: number;
+      accruedLoanInterest: number;
+    }
+  ) => {
+    const result = await updateUserDetails(userId, updates);
     setMessage(result.message);
     if (result.success) {
       setTimeout(() => {
@@ -274,6 +287,7 @@ export default function AdminDashboard() {
         {/* Header */}
         <DashboardHeader
           message={message}
+          currentUserRole={session.user.role}
           onRecalculateMonthAccrued={handleRecalculateMonthAccrued}
           recalculateMonthAccruedLoading={recalculateAccruedLoading}
         />
@@ -293,8 +307,8 @@ export default function AdminDashboard() {
           resetPasswordLoading={resetPasswordLoading}
           onResetMPIN={handleResetMPIN}
           resetMPINLoading={resetMPINLoading}
-          onUpdateDob={handleUpdateDob}
-          updateDobLoading={updateUserLoading}
+          onUpdateUser={handleUpdateUser}
+          updateUserLoading={updateUserLoading}
           fdWithdrawInfo={fdWithdrawInfo}
           selectedUserForFd={selectedUserForFd}
           onFdWithdrawDialogOpen={handleFdWithdrawDialogOpen}

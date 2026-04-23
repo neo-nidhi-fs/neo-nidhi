@@ -23,7 +23,7 @@ import { FdWithdrawDialog } from '../dialogs/FdWithdrawDialog';
 import { InterestRateDialog } from '../dialogs/InterestRateDialog';
 import { FdWithdrawInfo } from '@/lib/services/adminService';
 import { formatDate, getDisplayAge } from '@/lib/helpers';
-import { EditUserDobDialog } from '../dialogs/EditUserDobDialog';
+import { EditUserDialog } from '../dialogs/EditUserDialog';
 import { ManagePrivilegedAccessDialog } from '../dialogs/ManagePrivilegedAccessDialog';
 
 type InterestRateUpdate = {
@@ -61,14 +61,25 @@ interface UsersSectionProps {
     userName: string
   ) => Promise<{ success: boolean; message: string }>;
   resetMPINLoading: string | null;
-  onUpdateDob: (
+  onUpdateUser: (
     userId: string,
-    dob: string | null
+    updates: {
+      name: string;
+      dob: string | null;
+      role: 'admin' | 'privileged' | 'user';
+      managedUserIds: string[];
+      savingsBalance: number;
+      fd: number;
+      loanBalance: number;
+      accruedSavingInterest: number;
+      accruedFdInterest: number;
+      accruedLoanInterest: number;
+    }
   ) => Promise<{
     success: boolean;
     message: string;
   }>;
-  updateDobLoading: string | null;
+  updateUserLoading: string | null;
   fdWithdrawInfo: FdWithdrawInfo;
   selectedUserForFd: User | null;
   onFdWithdrawDialogOpen: (open: boolean, user?: User) => void;
@@ -121,8 +132,8 @@ export function UsersSection({
   resetPasswordLoading,
   onResetMPIN,
   resetMPINLoading,
-  onUpdateDob,
-  updateDobLoading,
+  onUpdateUser,
+  updateUserLoading,
   fdWithdrawInfo,
   selectedUserForFd,
   onFdWithdrawDialogOpen,
@@ -140,11 +151,10 @@ export function UsersSection({
   onUserAdded,
 }: UsersSectionProps) {
   const [userPage, setUserPage] = useState(1);
-  const [dobDialogOpen, setDobDialogOpen] = useState(false);
-  const [selectedUserForDob, setSelectedUserForDob] = useState<User | null>(
+  const [editUserDialogOpen, setEditUserDialogOpen] = useState(false);
+  const [selectedUserForEdit, setSelectedUserForEdit] = useState<User | null>(
     null
   );
-  const [dobDraft, setDobDraft] = useState('');
   const [openActionMenuFor, setOpenActionMenuFor] = useState<string | null>(
     null
   );
@@ -182,23 +192,33 @@ export function UsersSection({
     }
   };
 
-  const handleDobDialogOpen = (open: boolean, user?: User) => {
-    setDobDialogOpen(open);
+  const handleEditUserDialogOpen = (open: boolean, user?: User) => {
+    setEditUserDialogOpen(open);
     if (open && user) {
-      setSelectedUserForDob(user);
-      setDobDraft(
-        user.dob ? new Date(user.dob).toISOString().slice(0, 10) : ''
-      );
+      setSelectedUserForEdit(user);
     } else {
-      setSelectedUserForDob(null);
-      setDobDraft('');
+      setSelectedUserForEdit(null);
     }
   };
 
-  const handleUpdateDob = async (userId: string, dob: string | null) => {
-    const result = await onUpdateDob(userId, dob);
+  const handleUpdateUser = async (
+    userId: string,
+    updates: {
+      name: string;
+      dob: string | null;
+      role: 'admin' | 'privileged' | 'user';
+      managedUserIds: string[];
+      savingsBalance: number;
+      fd: number;
+      loanBalance: number;
+      accruedSavingInterest: number;
+      accruedFdInterest: number;
+      accruedLoanInterest: number;
+    }
+  ) => {
+    const result = await onUpdateUser(userId, updates);
     if (result.success) {
-      setDobDialogOpen(false);
+      setEditUserDialogOpen(false);
       onUserAdded?.();
     }
     return result;
@@ -217,17 +237,17 @@ export function UsersSection({
             onSubmit={handleAddUser}
             loading={addUserLoading}
           />
-          <EditUserDobDialog
-            key={selectedUserForDob?._id ?? 'dob-dialog'}
-            user={selectedUserForDob}
-            open={dobDialogOpen}
-            dob={dobDraft}
-            onDobChange={setDobDraft}
+          <EditUserDialog
+            key={`${selectedUserForEdit?._id ?? 'edit-user-dialog'}-${editUserDialogOpen ? 'open' : 'closed'}`}
+            user={selectedUserForEdit}
+            users={users}
+            open={editUserDialogOpen}
+            currentUserRole={currentUserRole}
             onOpenChange={(open) =>
-              handleDobDialogOpen(open, selectedUserForDob ?? undefined)
+              handleEditUserDialogOpen(open, selectedUserForEdit ?? undefined)
             }
-            onSubmit={handleUpdateDob}
-            loading={updateDobLoading === selectedUserForDob?._id}
+            onSubmit={handleUpdateUser}
+            loading={updateUserLoading === selectedUserForEdit?._id}
           />
         </div>
       </div>
@@ -310,13 +330,13 @@ export function UsersSection({
                                 </button>
                                 <button
                                   onClick={() => {
-                                    handleDobDialogOpen(true, u);
+                                    handleEditUserDialogOpen(true, u);
                                     setOpenActionMenuFor(null);
                                   }}
-                                  disabled={updateDobLoading === u._id}
+                                  disabled={updateUserLoading === u._id}
                                   className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-white hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                  {updateDobLoading === u._id ? (
+                                  {updateUserLoading === u._id ? (
                                     <Loader
                                       size={14}
                                       className="animate-spin"
@@ -324,7 +344,7 @@ export function UsersSection({
                                   ) : (
                                     <Pencil size={14} />
                                   )}
-                                  Edit DOB
+                                  Edit User
                                 </button>
                                 <button
                                   onClick={() => {

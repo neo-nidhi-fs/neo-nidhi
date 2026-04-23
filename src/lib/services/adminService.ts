@@ -14,8 +14,11 @@ export interface User {
   age: number;
   dob?: string | Date | null;
   savingsBalance: number;
+  accruedSavingInterest?: number;
   loanBalance: number;
+  accruedLoanInterest?: number;
   fd?: number;
+  accruedFdInterest?: number;
   features?: Partial<UserFeatures>;
   // Legacy field for backward compatibility
   financeFeaturesEnabled?: boolean;
@@ -79,10 +82,17 @@ class AdminService {
   async updateUser(
     userId: string,
     updates: {
+      name?: string;
       dob?: string | null;
       age?: number;
       role?: 'admin' | 'privileged' | 'user';
       managedUserIds?: string[];
+      savingsBalance?: number;
+      fd?: number;
+      loanBalance?: number;
+      accruedSavingInterest?: number;
+      accruedFdInterest?: number;
+      accruedLoanInterest?: number;
       features?: Partial<UserFeatures>;
       financeFeaturesEnabled?: boolean;
     }

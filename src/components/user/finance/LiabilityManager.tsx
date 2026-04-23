@@ -1,10 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Liability } from '@/hooks/useUserFinance';
-import { Trash2, Edit2 } from 'lucide-react';
+import { Lightbulb } from 'lucide-react';
 
 interface LiabilityManagerProps {
   liabilities: Liability[];
@@ -90,14 +91,22 @@ export default function LiabilityManager({
 
   return (
     <Card className="p-6 bg-gradient-to-br from-slate-800/80 to-slate-900/80 border-slate-700 backdrop-blur-sm">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-wrap justify-between items-center gap-3 mb-6">
         <h3 className="text-xl font-bold text-white">Liabilities</h3>
-        <Button
-          onClick={onAddClick}
-          className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
-        >
-          + Add Liability
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button asChild variant="outline" className="border-cyan-500/40 bg-cyan-500/10 text-cyan-100 hover:bg-cyan-500/20">
+            <Link href="/user/personal-finance/liability-strategies">
+              <Lightbulb className="h-4 w-4" />
+              Strategies to Reduce Liabilities Faster
+            </Link>
+          </Button>
+          <Button
+            onClick={onAddClick}
+            className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+          >
+            + Add Liability
+          </Button>
+        </div>
       </div>
 
       {liabilities.length === 0 ? (
@@ -149,7 +158,11 @@ export default function LiabilityManager({
                       ? `${liability.type} - ${liability.note}`
                       : liability.type}
                   </span>
-                  <span className="text-xs text-gray-300">
+                  <span
+                    className={`text-xs px-2 py-0.5 rounded-full ${getStatusColor(
+                      liability.status
+                    )}`}
+                  >
                     {liability.status.replace('_', ' ')}
                   </span>
                 </div>
@@ -177,6 +190,21 @@ export default function LiabilityManager({
                 </p>
 
                 <div className="mt-3 flex gap-2">
+                  <button
+                    onClick={() => onRepay && onRepay(liability._id)}
+                    className="flex-1 px-2 py-1 text-emerald-300 bg-emerald-900/20 rounded"
+                  >
+                    Repay
+                  </button>
+                  <button
+                    onClick={() => onClose && onClose(liability._id)}
+                    className="flex-1 px-2 py-1 text-amber-300 bg-amber-900/20 rounded"
+                  >
+                    Close
+                  </button>
+                </div>
+
+                <div className="mt-2 flex gap-2">
                   <button
                     onClick={() => onEdit && onEdit(liability)}
                     className="flex-1 px-2 py-1 text-blue-400 bg-blue-900/20 rounded"

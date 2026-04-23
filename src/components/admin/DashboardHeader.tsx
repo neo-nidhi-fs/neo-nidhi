@@ -11,15 +11,19 @@ import { Trophy, BarChart3, RefreshCw } from 'lucide-react';
 
 interface DashboardHeaderProps {
   message: string;
+  currentUserRole?: string;
   onRecalculateMonthAccrued?: () => void;
   recalculateMonthAccruedLoading?: boolean;
 }
 
 export function DashboardHeader({
   message,
+  currentUserRole,
   onRecalculateMonthAccrued,
   recalculateMonthAccruedLoading = false,
 }: DashboardHeaderProps) {
+  const isAdmin = currentUserRole === 'admin';
+
   return (
     <div className="mb-12">
       <h1 className="text-5xl font-black mb-2">
@@ -43,13 +47,15 @@ export function DashboardHeader({
             View Reports
           </Button>
         </Link>
-        <Link href="/api/run-manual-interest">
-          <Button className="bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-2">
-            <BarChart3 size={18} />
-            Run interest Manually
-          </Button>
-        </Link>
-        {onRecalculateMonthAccrued && (
+        {isAdmin && (
+          <Link href="/api/run-manual-interest">
+            <Button className="bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-2">
+              <BarChart3 size={18} />
+              Run interest Manually
+            </Button>
+          </Link>
+        )}
+        {isAdmin && onRecalculateMonthAccrued && (
           <Button
             type="button"
             className="bg-teal-600 hover:bg-teal-700 text-white flex items-center gap-2 disabled:opacity-60"

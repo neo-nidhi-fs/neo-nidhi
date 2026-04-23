@@ -135,6 +135,39 @@ export function useAdminUsers() {
     []
   );
 
+  const updateUserDetails = useCallback(
+    async (
+      userId: string,
+      updates: {
+        name: string;
+        dob: string | null;
+        role: 'admin' | 'privileged' | 'user';
+        managedUserIds: string[];
+        savingsBalance: number;
+        fd: number;
+        loanBalance: number;
+        accruedSavingInterest: number;
+        accruedFdInterest: number;
+        accruedLoanInterest: number;
+      }
+    ) => {
+      try {
+        setUpdateUserLoading(userId);
+        const updatedUser = await adminService.updateUser(userId, updates);
+        setUsers((prev) => prev.map((u) => (u._id === userId ? updatedUser : u)));
+        return { success: true, message: 'User updated successfully' };
+      } catch (err) {
+        return {
+          success: false,
+          message: `Error: ${(err as Error).message}`,
+        };
+      } finally {
+        setUpdateUserLoading(null);
+      }
+    },
+    []
+  );
+
   const updateUserFeatureToggle = useCallback(
     async (userId: string, featureKey: FeatureKey, enabled: boolean) => {
       try {
@@ -201,6 +234,7 @@ export function useAdminUsers() {
     resetPassword,
     resetMPIN,
     updateUserDob,
+    updateUserDetails,
     updateUserFeatureToggle,
     updateManagedUsers,
     refetchUsers: fetchUsers,

@@ -101,8 +101,67 @@ export async function PUT(
       }
     }
 
+    const isFullAdmin = accessResult.ok && accessResult.context.isAdmin;
+
+    const requireFullAdminForField = (fieldName: string) => {
+      if (!isFullAdmin) {
+        return NextResponse.json(
+          { success: false, error: `Only admins can update ${fieldName}` },
+          { status: 403 }
+        );
+      }
+      return null;
+    };
+
+    if (body.name !== undefined) {
+      const forbiddenResponse = requireFullAdminForField('name');
+      if (forbiddenResponse) return forbiddenResponse;
+
+      if (typeof body.name !== 'string' || body.name.trim().length === 0) {
+        return NextResponse.json(
+          { success: false, error: 'Invalid name' },
+          { status: 400 }
+        );
+      }
+      setData.name = body.name.trim();
+    }
+
     if (body.age !== undefined) {
       setData.age = body.age;
+    }
+
+    const numericFields: Array<{
+      key:
+        | 'savingsBalance'
+        | 'fd'
+        | 'loanBalance'
+        | 'accruedSavingInterest'
+        | 'accruedFdInterest'
+        | 'accruedLoanInterest';
+      label: string;
+    }> = [
+      { key: 'savingsBalance', label: 'savings balance' },
+      { key: 'fd', label: 'FD balance' },
+      { key: 'loanBalance', label: 'loan balance' },
+      { key: 'accruedSavingInterest', label: 'accrued saving interest' },
+      { key: 'accruedFdInterest', label: 'accrued FD interest' },
+      { key: 'accruedLoanInterest', label: 'accrued loan interest' },
+    ];
+
+    for (const field of numericFields) {
+      if (body[field.key] === undefined) continue;
+
+      const forbiddenResponse = requireFullAdminForField(field.label);
+      if (forbiddenResponse) return forbiddenResponse;
+
+      if (typeof body[field.key] !== 'number' || Number.isNaN(body[field.key])) {
+        return NextResponse.json(
+          { success: false, error: `Invalid ${field.label}` },
+          { status: 400 }
+        );
+      }
+
+      setData[field.key] = body[field.key];
     }
 
     if (
@@ -127,8 +186,6 @@ export async function PUT(
       );
       unsetData.financeFeaturesEnabled = 1;
     }
-
-    const isFullAdmin = accessResult.ok && accessResult.context.isAdmin;
 
     if (body.role !== undefined) {
       if (!isFullAdmin) {
@@ -169,45 +226,63 @@ export async function PUT(
           { status: 404 }
         );
       }
-      if (targetUser.role !== 'privileged') {
-        return NextResponse.json(
-          {
-            success: false,
-            error: 'Managed users can only be set for privileged users',
-          },
-          { status: 400 }
-        );
-      }
+
+      const nextRole =
+        typeof body.role === 'string' ? body.role : targetUser.role;
 
       const managedUserIds = body.managedUserIds.filter(
         (item: unknown) => typeof item === 'string'
       );
 
-      const managedUsers = await User.find({
-        _id: { $in: managedUserIds },
-      }).select('_id role');
+      if (nextRole !== 'privileged') {
+        if (managedUserIds.length > 0) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: 'Managed users can only be set for privileged users',
+            },
+            { status: 400 }
+          );
+        }
+        // Keep non-privileged users with no managed users.
+        setData.managedUserIds = [];
+      } else {
+        const managedUsers = await User.find({
+          _id: { $in: managedUserIds },
+        }).select('_id role');
 
-      if (managedUsers.length !== managedUserIds.length) {
+        if (managedUsers.length !== managedUserIds.length) {
+          return NextResponse.json(
+            { success: false, error: 'One or more managed users do not exist' },
+            { status: 400 }
+          );
+        }
+
+        const hasAdminLikeTarget = managedUsers.some(
+          (user) => user.role === 'admin' || user.role === 'privileged'
+        );
+        if (hasAdminLikeTarget) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: 'Managed users must be normal users only',
+            },
+            { status: 400 }
+          );
+        }
+
+        setData.managedUserIds = managedUserIds;
+      }
+    } else if (body.role !== undefined && body.role !== 'privileged') {
+      // If role is changed away from privileged and managedUserIds is omitted,
+      // clear stale managed users automatically.
+      if (!isFullAdmin) {
         return NextResponse.json(
-          { success: false, error: 'One or more managed users do not exist' },
-          { status: 400 }
+          { success: false, error: 'Only admins can update managed users' },
+          { status: 403 }
         );
       }
-
-      const hasAdminLikeTarget = managedUsers.some(
-        (user) => user.role === 'admin' || user.role === 'privileged'
-      );
-      if (hasAdminLikeTarget) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: 'Managed users must be normal users only',
-          },
-          { status: 400 }
-        );
-      }
-
-      setData.managedUserIds = managedUserIds;
+      setData.managedUserIds = [];
     }
 
     const updateQuery: Record<string, unknown> = {};
