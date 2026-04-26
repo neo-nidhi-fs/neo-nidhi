@@ -38,6 +38,7 @@ function aggregateCashflows(cashFlows: CashFlow[]) {
   const yearlyMap: Record<string, Aggregation> = {};
   const quarterlyMap: Record<string, Aggregation> = {};
   const expenseByCategory: Record<string, number> = {};
+  const monthlyExpenseByCategory: Record<string, Record<string, number>> = {};
   const paymentSourceMap: Record<string, number> = {};
 
   cashFlows.forEach((entry) => {
@@ -61,6 +62,9 @@ function aggregateCashflows(cashFlows: CashFlow[]) {
     if (!quarterlyMap[quarterKey]) {
       quarterlyMap[quarterKey] = { income: 0, expense: 0 };
     }
+    if (!monthlyExpenseByCategory[monthKey]) {
+      monthlyExpenseByCategory[monthKey] = {};
+    }
 
     if (entry.type === 'income') {
       monthlyMap[monthKey].income += entry.amount;
@@ -75,6 +79,8 @@ function aggregateCashflows(cashFlows: CashFlow[]) {
 
     const category = entry.category || 'Other Expense';
     expenseByCategory[category] = (expenseByCategory[category] || 0) + entry.amount;
+    monthlyExpenseByCategory[monthKey][category] =
+      (monthlyExpenseByCategory[monthKey][category] || 0) + entry.amount;
     const source = entry.paymentSource || 'account';
     paymentSourceMap[source] = (paymentSourceMap[source] || 0) + entry.amount;
   });
@@ -125,6 +131,7 @@ function aggregateCashflows(cashFlows: CashFlow[]) {
     yearlyEntries,
     quarterlyEntries,
     expenseCategories,
+    monthlyExpenseByCategory,
     paymentSourceEntries,
   };
 }
@@ -189,11 +196,24 @@ export default function IncomeExpenseReportPage() {
     yearlyEntries,
     quarterlyEntries,
     expenseCategories,
+    monthlyExpenseByCategory,
     paymentSourceEntries,
   } = useMemo(
     () => aggregateCashflows(cashFlows),
     [cashFlows]
   );
+
+  const currentMonthKey = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
+  const defaultMonthKey =
+    monthlyExpenseByCategory[currentMonthKey]
+      ? currentMonthKey
+      : monthlyEntries.length > 0
+        ? monthlyEntries[monthlyEntries.length - 1].key
+        : '';
+  const monthlyExpenseCategoryEntries = defaultMonthKey
+    ? Object.entries(monthlyExpenseByCategory[defaultMonthKey] || {})
+        .sort((a, b) => b[1] - a[1])
+    : [];
 
   const overview = useMemo(() => {
     const totalIncome = cashFlows
@@ -453,6 +473,32 @@ export default function IncomeExpenseReportPage() {
     credits: { enabled: false },
   };
 
+  const monthlyExpenseCategoryBarOptions: Highcharts.Options = {
+    chart: { type: 'bar', backgroundColor: 'transparent' },
+    title: {
+      text: `Expense by Category (${defaultMonthKey ? monthLabelFromKey(defaultMonthKey) : 'Current Month'})`,
+      style: { color: '#e5e7eb' },
+    },
+    xAxis: {
+      categories: monthlyExpenseCategoryEntries.map(([category]) => category),
+      labels: { style: { color: '#9ca3af' } },
+    },
+    yAxis: {
+      title: { text: 'Amount (INR)', style: { color: '#9ca3af' } },
+      labels: { style: { color: '#9ca3af' } },
+    },
+    legend: { enabled: false },
+    series: [
+      {
+        type: 'bar',
+        name: 'Expense',
+        data: monthlyExpenseCategoryEntries.map(([, amount]) => amount),
+        color: '#f97316',
+      },
+    ],
+    credits: { enabled: false },
+  };
+
   if (pageLoading || !userId || !userInitialized) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-slate-950 via-blue-950 to-slate-950">
@@ -583,6 +629,14 @@ export default function IncomeExpenseReportPage() {
             <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-4">
               <HighchartsReact highcharts={Highcharts} options={monthlySavingsRateOptions} />
             </div>
+            {monthlyExpenseCategoryEntries.length > 0 && (
+              <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-4">
+                <HighchartsReact
+                  highcharts={Highcharts}
+                  options={monthlyExpenseCategoryBarOptions}
+                />
+              </div>
+            )}
             {paymentSourceEntries.length > 0 && (
               <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-4">
                 <HighchartsReact highcharts={Highcharts} options={paymentSourceOptions} />

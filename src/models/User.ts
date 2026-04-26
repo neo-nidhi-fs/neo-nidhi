@@ -203,14 +203,14 @@ UserSchema.methods.compareMPin = async function (candidateMPin: string) {
 
 const existingUserModel = mongoose.models.User as Model<IUser> | undefined;
 
-if (existingUserModel && process.env.NODE_ENV !== 'production') {
+if (existingUserModel) {
   const rolePath = existingUserModel.schema.path('role') as
     | { enumValues?: string[] }
     | undefined;
   const existingEnumValues = rolePath?.enumValues ?? [];
   const schemaIsOutdated = !existingEnumValues.includes('privileged');
 
-  // In dev with HMR, refresh a stale model so role enum updates are picked up.
+  // Refresh a stale model so new enum values (e.g. privileged) are always picked up.
   if (schemaIsOutdated) {
     delete mongoose.models.User;
   }

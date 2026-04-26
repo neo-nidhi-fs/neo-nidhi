@@ -1,11 +1,13 @@
 import { dbConnect } from '@/lib/dbConnect';
 import { User } from '@/models/User';
 import { CashFlow } from '@/models/CashFlow';
+import { Budget } from '@/models/Budget';
 import { enforceFinanceFeatureEnabled } from '@/lib/featureFlags';
 import { calculateEmiPaymentSplit } from '@/lib/emi';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/authOptions';
 import { NextResponse } from 'next/server';
+import mongoose from 'mongoose';
 
 function isCreditCardLiability(liability: {
   type?: string;
@@ -186,10 +188,66 @@ export async function POST(req: Request) {
       note: note || null,
     });
 
+    let budgetStatus: {
+      hasBudget: boolean;
+      month: string;
+      category: string;
+      budgetAmount: number;
+      spent: number;
+      remaining: number;
+      usagePercent: number;
+      isOverflow: boolean;
+    } | null = null;
+
+    if (type === 'expense') {
+      const month = new Date(date).toISOString().slice(0, 7);
+      const normalizedCategory = String(category).trim();
+      const budget = await Budget.findOne({
+        user: user._id,
+        month,
+        category: normalizedCategory,
+      });
+
+      if (budget) {
+        const monthStart = new Date(`${month}-01T00:00:00.000Z`);
+        const monthEnd = new Date(monthStart);
+        monthEnd.setMonth(monthEnd.getMonth() + 1);
+
+        const [spentResult] = await CashFlow.aggregate<{ spent: number }>([
+          {
+            $match: {
+              user: new mongoose.Types.ObjectId(String(user._id)),
+              type: 'expense',
+              category: normalizedCategory,
+              date: {
+                $gte: monthStart,
+                $lt: monthEnd,
+              },
+            },
+          },
+          { $group: { _id: null, spent: { $sum: '$amount' } } },
+        ]);
+
+        const spent = spentResult?.spent || 0;
+        const remaining = budget.amount - spent;
+        budgetStatus = {
+          hasBudget: true,
+          month,
+          category: normalizedCategory,
+          budgetAmount: budget.amount,
+          spent,
+          remaining,
+          usagePercent: budget.amount > 0 ? (spent / budget.amount) * 100 : 0,
+          isOverflow: remaining < 0,
+        };
+      }
+    }
+
     return NextResponse.json(
       {
         success: true,
         data: createdCashFlow,
+        budgetStatus,
       },
       { status: 201 }
     );

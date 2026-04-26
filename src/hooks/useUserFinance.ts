@@ -70,6 +70,31 @@ export interface CashFlow {
   note?: string;
 }
 
+export interface Budget {
+  _id: string;
+  month: string; // YYYY-MM
+  category: string;
+  amount: number;
+  note?: string | null;
+  spent: number;
+  remaining: number;
+  usagePercent: number;
+  isOverflow: boolean;
+}
+
+export interface BudgetSummary {
+  month: string;
+  totalBudget: number;
+  totalSpent: number;
+  remainingBudget: number;
+  overflowCount: number;
+}
+
+export interface BudgetExpenseCategoryTotal {
+  _id: string;
+  total: number;
+}
+
 type AssetBreakdown = Record<string, number>;
 type LiabilityBreakdown = Record<string, number>;
 
@@ -112,6 +137,13 @@ export function useUserFinance() {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [liabilities, setLiabilities] = useState<Liability[]>([]);
   const [cashFlows, setCashFlows] = useState<CashFlow[]>([]);
+  const [budgets, setBudgets] = useState<Budget[]>([]);
+  const [budgetSummary, setBudgetSummary] = useState<BudgetSummary | null>(
+    null
+  );
+  const [budgetExpenseByCategory, setBudgetExpenseByCategory] = useState<
+    BudgetExpenseCategoryTotal[]
+  >([]);
   const [netWorth, setNetWorth] = useState<NetWorthSummary | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -178,6 +210,27 @@ export function useUserFinance() {
       const data = await res.json();
       if (data.success) {
         setNetWorth(data.data);
+      } else {
+        setError(data.error);
+      }
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const fetchBudgets = useCallback(async (month?: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const query = month ? `?month=${encodeURIComponent(month)}` : '';
+      const res = await fetch(`/api/user/finance/list-budgets${query}`);
+      const data = await res.json();
+      if (data.success) {
+        setBudgets(data.data?.budgets || []);
+        setBudgetSummary(data.data?.summary || null);
+        setBudgetExpenseByCategory(data.data?.monthExpensesByCategory || []);
       } else {
         setError(data.error);
       }
@@ -364,7 +417,8 @@ export function useUserFinance() {
         if (data.success) {
           setCashFlows([...cashFlows, data.data]);
           await fetchNetWorth();
-          return data.data;
+          await fetchBudgets();
+          return data;
         } else {
           setError(data.error);
         }
@@ -374,7 +428,7 @@ export function useUserFinance() {
         setLoading(false);
       }
     },
-    [cashFlows, fetchNetWorth]
+    [cashFlows, fetchBudgets, fetchNetWorth]
   );
 
   const updateCashFlow = useCallback(
@@ -393,7 +447,8 @@ export function useUserFinance() {
             cashFlows.map((c) => (c._id === cashflowId ? data.data : c))
           );
           await fetchNetWorth();
-          return data.data;
+          await fetchBudgets();
+          return data;
         } else {
           setError(data.error);
         }
@@ -403,7 +458,7 @@ export function useUserFinance() {
         setLoading(false);
       }
     },
-    [cashFlows, fetchNetWorth]
+    [cashFlows, fetchBudgets, fetchNetWorth]
   );
 
   const deleteCashFlow = useCallback(
@@ -420,6 +475,7 @@ export function useUserFinance() {
         if (data.success) {
           setCashFlows(cashFlows.filter((c) => c._id !== cashflowId));
           await fetchNetWorth();
+          await fetchBudgets();
         } else {
           setError(data.error);
         }
@@ -429,19 +485,109 @@ export function useUserFinance() {
         setLoading(false);
       }
     },
-    [cashFlows, fetchNetWorth]
+    [cashFlows, fetchBudgets, fetchNetWorth]
+  );
+
+  const addBudget = useCallback(
+    async (budget: Omit<Budget, '_id' | 'spent' | 'remaining' | 'usagePercent' | 'isOverflow'>) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch('/api/user/finance/add-budget', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(budget),
+        });
+        const data = await res.json();
+        if (data.success) {
+          await fetchBudgets();
+          await fetchNetWorth();
+          return data.data;
+        } else {
+          setError(data.error);
+        }
+      } catch (err) {
+        setError((err as Error).message);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [fetchBudgets, fetchNetWorth]
+  );
+
+  const updateBudget = useCallback(
+    async (
+      budgetId: string,
+      budget: Partial<
+        Omit<
+          Budget,
+          '_id' | 'spent' | 'remaining' | 'usagePercent' | 'isOverflow'
+        >
+      >
+    ) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch('/api/user/finance/update-budget', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ budgetId, ...budget }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          await fetchBudgets();
+          return data.data;
+        } else {
+          setError(data.error);
+        }
+      } catch (err) {
+        setError((err as Error).message);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [fetchBudgets]
+  );
+
+  const deleteBudget = useCallback(
+    async (budgetId: string) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch('/api/user/finance/delete-budget', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ budgetId }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          await fetchBudgets();
+        } else {
+          setError(data.error);
+        }
+      } catch (err) {
+        setError((err as Error).message);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [fetchBudgets]
   );
 
   return {
     assets,
     liabilities,
     cashFlows,
+    budgets,
+    budgetSummary,
+    budgetExpenseByCategory,
     netWorth,
     loading,
     error,
     fetchAssets,
     fetchLiabilities,
     fetchCashFlows,
+    fetchBudgets,
     fetchNetWorth,
     addAsset,
     updateAsset,
@@ -452,5 +598,8 @@ export function useUserFinance() {
     addCashFlow,
     updateCashFlow,
     deleteCashFlow,
+    addBudget,
+    updateBudget,
+    deleteBudget,
   };
 }

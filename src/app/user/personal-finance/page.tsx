@@ -8,6 +8,7 @@ import NetWorthSummaryCard from '@/components/user/finance/NetWorthSummaryCard';
 import AssetManager from '@/components/user/finance/AssetManager';
 import LiabilityManager from '@/components/user/finance/LiabilityManager';
 import CashFlowManager from '@/components/user/finance/CashFlowManager';
+import BudgetDashboard from '@/components/user/finance/BudgetDashboard';
 import AssetForm from '@/components/user/finance/AssetForm';
 import LiabilityForm from '@/components/user/finance/LiabilityForm';
 import CashFlowForm from '@/components/user/finance/CashFlowForm';
@@ -23,7 +24,7 @@ export default function UserFinanceFeaturePage() {
   const [userId, setUserId] = useState<string>('');
   const [pageLoading, setPageLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<
-    'assets' | 'liabilities' | 'cashflow'
+    'assets' | 'liabilities' | 'cashflow' | 'budgets'
   >('assets');
   const [showAssetForm, setShowAssetForm] = useState(false);
   const [showLiabilityForm, setShowLiabilityForm] = useState(false);
@@ -42,11 +43,15 @@ export default function UserFinanceFeaturePage() {
     assets,
     liabilities,
     cashFlows,
+    budgets,
+    budgetSummary,
+    budgetExpenseByCategory,
     netWorth,
     loading: financeLoading,
     fetchAssets,
     fetchLiabilities,
     fetchCashFlows,
+    fetchBudgets,
     fetchNetWorth,
     addAsset,
     updateAsset,
@@ -57,6 +62,9 @@ export default function UserFinanceFeaturePage() {
     addCashFlow,
     updateCashFlow,
     deleteCashFlow,
+    addBudget,
+    updateBudget,
+    deleteBudget,
   } = useUserFinance();
 
   useEffect(() => {
@@ -92,6 +100,7 @@ export default function UserFinanceFeaturePage() {
         await fetchAssets();
         await fetchLiabilities();
         await fetchCashFlows();
+        await fetchBudgets();
       }
     }
     fetchFinanceData();
@@ -101,6 +110,7 @@ export default function UserFinanceFeaturePage() {
     fetchAssets,
     fetchLiabilities,
     fetchCashFlows,
+    fetchBudgets,
   ]);
 
   const handleAddAsset = async (data: Omit<Asset, '_id'>) => {
@@ -128,11 +138,29 @@ export default function UserFinanceFeaturePage() {
   ): Promise<boolean> => {
     if (editingCashFlow) {
       const updated = await updateCashFlow(editingCashFlow._id, data);
+      if (updated?.budgetStatus?.hasBudget && updated.budgetStatus.isOverflow) {
+        alert(
+          `Budget overflow: ${updated.budgetStatus.category} exceeded by ${Math.abs(updated.budgetStatus.remaining).toLocaleString('en-IN', {
+            style: 'currency',
+            currency: 'INR',
+            maximumFractionDigits: 0,
+          })}`
+        );
+      }
       setEditingCashFlow(undefined);
       if (updated) setShowCashFlowForm(false);
       return false;
     }
     const created = await addCashFlow(data);
+    if (created?.budgetStatus?.hasBudget && created.budgetStatus.isOverflow) {
+      alert(
+        `Budget overflow: ${created.budgetStatus.category} exceeded by ${Math.abs(created.budgetStatus.remaining).toLocaleString('en-IN', {
+          style: 'currency',
+          currency: 'INR',
+          maximumFractionDigits: 0,
+        })}`
+      );
+    }
     return !!created;
   };
 
@@ -304,6 +332,16 @@ export default function UserFinanceFeaturePage() {
                 >
                   Income & Expenses
                 </button>
+                <button
+                  onClick={() => setActiveTab('budgets')}
+                  className={`px-6 py-4 font-medium text-sm transition-colors ${
+                    activeTab === 'budgets'
+                      ? 'text-cyan-400 border-b-2 border-cyan-400'
+                      : 'text-gray-300 hover:text-white'
+                  }`}
+                >
+                  Budgets
+                </button>
               </div>
               {/* Tab Content */}
               <div className="p-6">
@@ -334,6 +372,18 @@ export default function UserFinanceFeaturePage() {
                     onEdit={handleEditCashFlow}
                     onDelete={deleteCashFlow}
                     onAddClick={() => setShowCashFlowForm(true)}
+                  />
+                )}
+                {activeTab === 'budgets' && (
+                  <BudgetDashboard
+                    budgets={budgets}
+                    summary={budgetSummary}
+                    expenseByCategory={budgetExpenseByCategory}
+                    loading={financeLoading}
+                    onRefresh={fetchBudgets}
+                    onAddBudget={addBudget}
+                    onUpdateBudget={updateBudget}
+                    onDeleteBudget={deleteBudget}
                   />
                 )}
               </div>
