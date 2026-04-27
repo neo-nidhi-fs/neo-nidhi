@@ -7,7 +7,7 @@ import { ArrowRight, TrendingUp, Shield, Zap } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { getSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import content from '@/content/content.json';
+import content from '@/content';
 
 interface Scheme {
   _id: string;

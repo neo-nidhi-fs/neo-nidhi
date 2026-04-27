@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { androidRelease } from '@/config/android';
-import content from '@/content/content.json';
+import content from '@/content';
 
 export default function AndroidInstallPage() {
   const hasRealChecksum = androidRelease.checksumSha256 !== 'REPLACE_WITH_RELEASE_SHA256';

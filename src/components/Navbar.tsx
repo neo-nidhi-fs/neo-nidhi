@@ -8,7 +8,7 @@ import { useEffect, useState } from 'react';
 import { Menu, X } from 'lucide-react';
 import { useUser } from '@/hooks/useServices';
 import { getUserFeatures } from '@/lib/userFeatures';
-import content from '@/content/content.json';
+import content from '@/content';
 
 interface CustomSession extends Session {
   user?: Session['user'] & {

@@ -1,0 +1,111 @@
+{
+  "app": {
+    "name": "GrowFund",
+    "slug": "grow-fund",
+    "description": "An enterprise-ready financial management platform for GrowFund companies, built for money management and financial literacy.",
+    "tagline": "Professional Banking Intelligence"
+  },
+  "navigation": {
+    "home": "Home",
+    "about": "About",
+    "login": "Sign In",
+    "dashboard": "Dashboard",
+    "transactions": "Transactions",
+    "featureToggles": "Feature Controls",
+    "passbook": "Passbook",
+    "personalFinance": "Personal Finance",
+    "androidApp": "Android App",
+    "quizzes": "Assessments",
+    "challenges": "Learning Paths",
+    "onlineTransfer": "Online Transfer",
+    "logout": "Sign Out"
+  },
+  "footer": {
+    "quote": "Disciplined saving and informed borrowing are the foundation of long-term financial stability.",
+    "copyrightLearn": "Practical banking education for modern users.",
+    "copyrightRights": "All rights reserved."
+  },
+  "home": {
+    "badge": "Trusted Digital Platform for Financial Learning",
+    "heroSubtitle": "Build strong financial capabilities with structured learning modules covering savings, credit, and long-term wealth planning.",
+    "ctaPrimary": "Start Learning",
+    "ctaSecondary": "Explore Features",
+    "stats": [
+      { "value": "100%", "label": "Free Access" },
+      { "value": "Interactive", "label": "Practical Modules" },
+      { "value": "Secure", "label": "User Experience" }
+    ],
+    "schemes": {
+      "interestRateLabel": "Interest Rate:"
+    },
+    "featuresHeading": "Why Organizations Choose {appName}",
+    "featuresSubtitle": "A comprehensive ecosystem for financial literacy and responsible banking decisions",
+    "features": [
+      {
+        "title": "Strategic Savings",
+        "description": "Learn how consistent deposits and compounding create sustainable long-term value."
+      },
+      {
+        "title": "Responsible Credit",
+        "description": "Understand borrowing decisions, repayment planning, and debt optimization techniques."
+      },
+      {
+        "title": "Goal-Based Planning",
+        "description": "Define measurable financial milestones and track progress with confidence."
+      }
+    ],
+    "ctaHeading": "Advance Your Financial Capability",
+    "ctaDescription": "Join learners building practical financial confidence with {appName}.",
+    "ctaButton": "Get Started Now",
+    "copyright": "Professional financial literacy for every learner."
+  },
+  "about": {
+    "heroTitle": "About {appName}",
+    "heroSubtitle": "Enabling financially informed decisions through practical, interactive banking education.",
+    "introTitle": "What is {appName}?",
+    "introDescription": "{appName} is a modern financial education platform designed to help individuals understand savings, borrowing, and money management through realistic scenarios. We focus on practical outcomes, helping users build disciplined habits and stronger financial decision-making.",
+    "featuresHeading": "Core Advantages",
+    "features": [
+      {
+        "title": "Savings Excellence",
+        "description": "Develop disciplined saving strategies and understand the long-term impact of compounding."
+      },
+      {
+        "title": "Financial Development",
+        "description": "Build competency in budgeting, planning, and sustainable wealth creation."
+      },
+      {
+        "title": "Credit Discipline",
+        "description": "Learn to evaluate borrowing options and manage obligations responsibly."
+      }
+    ],
+    "missionHeading": "Our Mission",
+    "missionDescription": "To deliver accessible, practical, and outcome-driven financial education that helps every learner make informed money decisions.",
+    "stats": [
+      { "value": "100%", "label": "Free Access" },
+      { "value": "Interactive", "label": "Practical Modules" },
+      { "value": "Secure", "label": "User Experience" }
+    ],
+    "copyright": "Professional financial literacy for every learner."
+  },
+  "login": {
+    "heading": "Welcome Back",
+    "subtitle": "Sign in to your account to continue your learning journey",
+    "heroSubtitle": "Financial Learning, Structured Professionally",
+    "usernameLabel": "Username",
+    "usernamePlaceholder": "Enter your username",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "Enter your password",
+    "invalidCredentials": "Invalid credentials. Please verify and try again.",
+    "loginButton": "Sign In",
+    "loggingInButton": "Signing in..."
+  },
+  "adminRegister": {
+    "successMessage": "User registered successfully.",
+    "fallbackError": "Unable to complete the request. Please try again."
+  },
+  "android": {
+    "title": "Install {appSlug} on Android",
+    "step3": "3. Complete installation and open {appSlug} from your app drawer."
+  }
+}

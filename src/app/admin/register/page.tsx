@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowRight, Loader } from 'lucide-react';
-import content from '@/content/content.json';
+import content from '@/content';
 
 export default function RegisterUserPage() {
   const [name, setName] = useState('');

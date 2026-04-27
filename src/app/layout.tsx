@@ -4,7 +4,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import AppProviders from '@/components/AppProviders';
 import ServiceWorkerRegistration from '@/components/ServiceWorkerRegistration';
-import content from '@/content/content.json';
+import content from '@/content';
 
 export const metadata: Metadata = {
   title: {

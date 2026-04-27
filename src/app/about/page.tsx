@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Wallet, TrendingUp, Shield } from 'lucide-react';
-import content from '@/content/content.json';
+import content from '@/content';
 
 export default function AboutPage() {
   return (
