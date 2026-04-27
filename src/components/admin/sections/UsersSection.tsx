@@ -29,6 +29,7 @@ import { ManagePrivilegedAccessDialog } from '../dialogs/ManagePrivilegedAccessD
 type InterestRateUpdate = {
   saving?: number | null;
   fd?: number | null;
+  rd?: number | null;
   loan?: number | null;
 };
 
@@ -70,9 +71,11 @@ interface UsersSectionProps {
       managedUserIds: string[];
       savingsBalance: number;
       fd: number;
+      rd: number;
       loanBalance: number;
       accruedSavingInterest: number;
       accruedFdInterest: number;
+      accruedRdInterest: number;
       accruedLoanInterest: number;
     }
   ) => Promise<{
@@ -116,6 +119,8 @@ const userTableColumns: UsersTableColumn[] = [
   { header: 'SB Int', accessor: 'accruedSavingInterest', type: 'currency' },
   { header: 'FD', accessor: 'fd', type: 'currency' },
   { header: 'FD Int', accessor: 'accruedFdInterest', type: 'currency' },
+  { header: 'RD', accessor: 'rd', type: 'currency' },
+  { header: 'RD Int', accessor: 'accruedRdInterest', type: 'currency' },
   { header: 'Loans', accessor: 'loanBalance', type: 'currency' },
   { header: 'Loan Int', accessor: 'accruedLoanInterest', type: 'currency' },
   { header: 'Actions', accessor: 'actions', type: 'action' },
@@ -210,9 +215,11 @@ export function UsersSection({
       managedUserIds: string[];
       savingsBalance: number;
       fd: number;
+      rd: number;
       loanBalance: number;
       accruedSavingInterest: number;
       accruedFdInterest: number;
+      accruedRdInterest: number;
       accruedLoanInterest: number;
     }
   ) => {

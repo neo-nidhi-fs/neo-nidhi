@@ -53,7 +53,7 @@ export interface TransactionRecord {
   fromUserId: string;
   toUserId: string;
   amount: number;
-  type: 'transfer' | 'deposit' | 'withdrawal' | 'interest' | 'loan';
+  type: 'transfer' | 'deposit' | 'withdrawal' | 'interest' | 'loan' | 'rd';
   status: 'completed' | 'pending' | 'failed';
   date: string;
   description?: string;
@@ -66,7 +66,9 @@ export interface User {
   email: string;
   savingsBalance?: number;
   fd?: number;
+  rd?: number;
   fdBalance?: number;
+  rdBalance?: number;
   loanBalance?: number;
   phoneNumber?: string;
   mpin?: string;

@@ -4,6 +4,7 @@ import bcrypt from 'bcrypt';
 export interface ICustomInterestRate {
   saving?: number;
   fd?: number;
+  rd?: number;
   loan?: number;
 }
 
@@ -61,12 +62,14 @@ export interface IUser extends Document {
   managedUserIds: mongoose.Types.ObjectId[];
   savingsBalance: number;
   fd: number;
+  rd: number;
   loanBalance: number;
   transactions: mongoose.Types.ObjectId[];
   password: string;
   createdAt: Date;
   accruedSavingInterest: number;
   accruedFdInterest: number;
+  accruedRdInterest: number;
   accruedLoanInterest: number;
   lastInterestCalc: Date | null;
   customInterestRates: ICustomInterestRate;
@@ -93,17 +96,20 @@ const UserSchema: Schema<IUser> = new Schema({
   managedUserIds: [{ type: Schema.Types.ObjectId, ref: 'User' }],
   savingsBalance: { type: Number, default: 0 },
   fd: { type: Number, default: 0 },
+  rd: { type: Number, default: 0 },
   loanBalance: { type: Number, default: 0 },
   transactions: [{ type: Schema.Types.ObjectId, ref: 'Transaction' }],
   lastInterestCalc: { type: Date, default: null },
   password: { type: String, required: true },
   accruedSavingInterest: { type: Number, default: 0 },
   accruedFdInterest: { type: Number, default: 0 },
+  accruedRdInterest: { type: Number, default: 0 },
   accruedLoanInterest: { type: Number, default: 0 },
   customInterestRates: {
     type: {
       saving: { type: Number, default: null },
       fd: { type: Number, default: null },
+      rd: { type: Number, default: null },
       loan: { type: Number, default: null },
     },
     default: {},

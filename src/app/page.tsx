@@ -13,6 +13,8 @@ interface Scheme {
   _id: string;
   name: string;
   interestRate: number;
+  amount?: number | null;
+  tenureMonths?: number | null;
 }
 
 export default function HomePage() {
@@ -135,6 +137,12 @@ export default function HomePage() {
                         {s.interestRate}%
                       </span>
                     </p>
+                    {s.name === 'rd' && (
+                      <p className="text-gray-300 mt-2 text-sm">
+                        Amount: ₹{(s.amount || 0).toFixed(2)} | Tenure:{' '}
+                        {s.tenureMonths || 0} months
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>

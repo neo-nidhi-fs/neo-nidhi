@@ -38,6 +38,7 @@ export interface INetWorthSummary {
 export interface IAssetBreakdown {
   savings: number;
   fd: number;
+  rd: number;
   portfolio: number;
   byType: { [key: string]: number };
 }
@@ -91,7 +92,8 @@ export function calculateAssetValue(asset: IAsset): number {
  * Calculate total assets from user data
  */
 export function calculateTotalAssets(user: IUser): number {
-  const legacyAssets = (user.savingsBalance || 0) + (user.fd || 0);
+  const legacyAssets =
+    (user.savingsBalance || 0) + (user.fd || 0) + (user.rd || 0);
   const portfolioAssets = (user.assetPortfolio || []).reduce(
     (sum: number, asset: IAsset) => sum + calculateAssetValue(asset),
     0
@@ -128,6 +130,7 @@ export function getAssetBreakdown(user: IUser): IAssetBreakdown {
   return {
     savings: user.savingsBalance || 0,
     fd: user.fd || 0,
+    rd: user.rd || 0,
     portfolio: (user.assetPortfolio || []).reduce(
       (sum: number, asset: IAsset) => sum + calculateAssetValue(asset),
       0
@@ -537,7 +540,10 @@ export function getNetWorthSummary(
     monthlyIncome: cashFlowStats.income,
     monthlyExpenses: cashFlowStats.expenses,
     monthlySavings: cashFlowStats.savings,
-    totalInterestEarned: user.accruedSavingInterest + user.accruedFdInterest,
+    totalInterestEarned:
+      user.accruedSavingInterest +
+      user.accruedFdInterest +
+      (user.accruedRdInterest || 0),
     totalInterestAccrued: user.accruedLoanInterest,
     totalOutstandingLoans,
     debtFreeDate,

@@ -10,7 +10,7 @@ import { differenceInDays, getDaysInMonth } from 'date-fns';
  * @param currentDate - date of calculation (usually last day of month)
  */
 export function calculateMonthlyInterest(
-  scheme: 'saving' | 'fd' | 'loan',
+  scheme: 'saving' | 'fd' | 'rd' | 'loan',
   principal: number,
   annualRate: number,
   depositDate: Date,
@@ -38,6 +38,10 @@ export function calculateMonthlyInterest(
 
     case 'fd':
       // FD: compound monthly interest
+      interest = principal * monthlyRate * proRataFactor;
+      break;
+    case 'rd':
+      // RD: treat accumulated RD balance like a deposit pool for monthly accrual
       interest = principal * monthlyRate * proRataFactor;
       break;
     case 'loan':

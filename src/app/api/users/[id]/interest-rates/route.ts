@@ -63,7 +63,7 @@ export async function PUT(
     const body = await req.json();
 
     // Validate input
-    const { saving, fd, loan } = body;
+    const { saving, fd, rd, loan } = body;
 
     if (typeof saving !== 'number' && saving !== null && saving !== undefined) {
       return NextResponse.json(
@@ -78,6 +78,13 @@ export async function PUT(
     if (typeof fd !== 'number' && fd !== null && fd !== undefined) {
       return NextResponse.json(
         { success: false, error: 'Invalid FD rate. Must be a number or null.' },
+        { status: 400 }
+      );
+    }
+
+    if (typeof rd !== 'number' && rd !== null && rd !== undefined) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid RD rate. Must be a number or null.' },
         { status: 400 }
       );
     }
@@ -110,6 +117,9 @@ export async function PUT(
     }
     if (fd !== undefined) {
       customInterestRates.fd = fd;
+    }
+    if (rd !== undefined) {
+      customInterestRates.rd = rd;
     }
     if (loan !== undefined) {
       customInterestRates.loan = loan;

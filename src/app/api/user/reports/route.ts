@@ -47,13 +47,18 @@ export async function GET() {
     const totalFdDeposits = transactions
       .filter((t) => t.type === 'fd')
       .reduce((sum, t) => sum + t.amount, 0);
+    const totalRdDeposits = transactions
+      .filter((t) => t.type === 'rd')
+      .reduce((sum, t) => sum + t.amount, 0);
 
     const totalFdWithdrawals = transactions
       .filter((t) => t.type === 'withdrawal_fd')
       .reduce((sum, t) => sum + t.amount, 0);
 
     const totalInterestEarned =
-      user.accruedSavingInterest + user.accruedFdInterest;
+      user.accruedSavingInterest +
+      user.accruedFdInterest +
+      (user.accruedRdInterest || 0);
     const totalInterestAccrued = user.accruedLoanInterest;
 
     // Transaction breakdown
@@ -63,6 +68,7 @@ export async function GET() {
       loan: transactions.filter((t) => t.type === 'loan').length,
       repayment: transactions.filter((t) => t.type === 'repayment').length,
       fd: transactions.filter((t) => t.type === 'fd').length,
+      rd: transactions.filter((t) => t.type === 'rd').length,
       withdrawal_fd: transactions.filter((t) => t.type === 'withdrawal_fd')
         .length,
     };
@@ -122,6 +128,7 @@ export async function GET() {
     const interestBreakdown = {
       savingsInterest: user.accruedSavingInterest,
       fdInterest: user.accruedFdInterest,
+      rdInterest: user.accruedRdInterest || 0,
       loanInterest: user.accruedLoanInterest,
     };
 
@@ -139,6 +146,7 @@ export async function GET() {
           name: user.name,
           savingsBalance: user.savingsBalance,
           fdBalance: user.fd,
+          rdBalance: user.rd || 0,
           loanBalance: user.loanBalance,
         },
         metrics: {
@@ -147,11 +155,13 @@ export async function GET() {
           totalLoans,
           totalRepayments,
           totalFdDeposits,
+          totalRdDeposits,
           totalFdWithdrawals,
           totalInterestEarned,
           totalInterestAccrued,
           netSavings: totalDeposits - totalWithdrawals,
           netFd: totalFdDeposits - totalFdWithdrawals,
+          netRd: totalRdDeposits,
           netLoan: totalLoans - totalRepayments,
           totalTransactions: transactions.length,
           recentTransactionCount,

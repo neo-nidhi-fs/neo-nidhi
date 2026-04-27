@@ -236,7 +236,9 @@ export function useUser(userId: string) {
   const [user, setUser] = useState<{
     savingsBalance: number;
     fd: number;
+    rd?: number;
     loanBalance: number;
+    accruedRdInterest?: number;
     mpin?: string | null;
     features?: Partial<UserFeatures>;
     // Legacy field for backward compatibility

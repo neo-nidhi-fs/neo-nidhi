@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { dbConnect } from '@/lib/dbConnect';
 import { Transaction } from '@/models/Transaction';
 import { User } from '@/models/User';
+import { Scheme } from '@/models/Scheme';
 import { recalculateBalances } from '@/utils/recalculateBalance';
 import {
   canManageUser,
@@ -36,7 +37,14 @@ export async function POST(req: Request) {
       );
     }
 
-    const validTypes = ['deposit', 'withdrawal', 'loan', 'repayment', 'fd'];
+    const validTypes = [
+      'deposit',
+      'withdrawal',
+      'loan',
+      'repayment',
+      'fd',
+      'rd',
+    ];
     if (!validTypes.includes(type)) {
       return NextResponse.json(
         { success: false, error: `Invalid transaction type: ${type}` },
@@ -88,12 +96,46 @@ export async function POST(req: Request) {
       }
     }
 
+    let metadata: Record<string, unknown> | undefined;
+    if (type === 'rd') {
+      const rdScheme = await Scheme.findOne({ name: 'rd' });
+      if (!rdScheme) {
+        return NextResponse.json(
+          { success: false, error: 'RD scheme is not configured' },
+          { status: 400 }
+        );
+      }
+      if (
+        rdScheme.amount !== null &&
+        rdScheme.amount !== undefined &&
+        Math.abs(amount - rdScheme.amount) > 0.0001
+      ) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: `RD amount must be exactly ₹${rdScheme.amount.toFixed(2)}`,
+          },
+          { status: 400 }
+        );
+      }
+
+      if (rdScheme.tenureMonths) {
+        const maturityDate = new Date();
+        maturityDate.setMonth(maturityDate.getMonth() + rdScheme.tenureMonths);
+        metadata = {
+          tenureMonths: rdScheme.tenureMonths,
+          maturityDate: maturityDate.toISOString(),
+        };
+      }
+    }
+
     // Create transaction
     const transaction = new Transaction({
       userId,
       type,
       amount,
       date: new Date(),
+      metadata,
     });
     await transaction.save();
 
@@ -103,6 +145,7 @@ export async function POST(req: Request) {
     // Update user balances
     user.savingsBalance = newBalances.savingsBalance;
     user.fd = newBalances.fdBalance;
+    user.rd = newBalances.rdBalance;
     user.loanBalance = newBalances.loanBalance;
     await user.save();
 
@@ -113,6 +156,7 @@ export async function POST(req: Request) {
         balances: {
           savingsBalance: user.savingsBalance,
           fdBalance: user.fd,
+          rdBalance: user.rd,
           loanBalance: user.loanBalance,
         },
       },

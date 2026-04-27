@@ -11,12 +11,52 @@ export async function PUT(
     await dbConnect();
     const { id } = await context.params;
     const body = await req.json();
+    const name = String(body.name || '').trim().toLowerCase();
+    const interestRate = Number(body.interestRate);
+    const amount =
+      body.amount === null || body.amount === undefined || body.amount === ''
+        ? null
+        : Number(body.amount);
+    const tenureMonths =
+      body.tenureMonths === null ||
+      body.tenureMonths === undefined ||
+      body.tenureMonths === ''
+        ? null
+        : Number(body.tenureMonths);
+
+    if (!name || Number.isNaN(interestRate)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid scheme payload' },
+        { status: 400 }
+      );
+    }
+
+    if (name === 'rd') {
+      if (amount === null || Number.isNaN(amount) || amount <= 0) {
+        return NextResponse.json(
+          { success: false, error: 'RD amount must be greater than 0' },
+          { status: 400 }
+        );
+      }
+      if (
+        tenureMonths === null ||
+        Number.isNaN(tenureMonths) ||
+        tenureMonths <= 0
+      ) {
+        return NextResponse.json(
+          { success: false, error: 'RD tenure must be greater than 0 months' },
+          { status: 400 }
+        );
+      }
+    }
 
     const scheme = await Scheme.findByIdAndUpdate(
       id,
       {
-        name: body.name,
-        interestRate: body.interestRate,
+        name,
+        interestRate,
+        amount: name === 'rd' ? amount : null,
+        tenureMonths: name === 'rd' ? tenureMonths : null,
       },
       { new: true }
     );

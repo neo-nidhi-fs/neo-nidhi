@@ -26,6 +26,7 @@ interface InterestRateDialogProps {
   onSubmit: (rates: {
     saving?: number | null;
     fd?: number | null;
+    rd?: number | null;
     loan?: number | null;
   }) => void;
   loading: boolean;
@@ -44,6 +45,7 @@ export function InterestRateDialog({
   const [form, setForm] = useState({
     saving: '',
     fd: '',
+    rd: '',
     loan: '',
   });
 
@@ -53,6 +55,7 @@ export function InterestRateDialog({
         setForm({
           saving: user.customInterestRates?.saving?.toString() || '',
           fd: user.customInterestRates?.fd?.toString() || '',
+          rd: user.customInterestRates?.rd?.toString() || '',
           loan: user.customInterestRates?.loan?.toString() || '',
         });
       }, 0);
@@ -68,6 +71,9 @@ export function InterestRateDialog({
     }
     if (form.fd !== '') {
       rates.fd = form.fd === 'null' ? null : Number(form.fd);
+    }
+    if (form.rd !== '') {
+      rates.rd = form.rd === 'null' ? null : Number(form.rd);
     }
     if (form.loan !== '') {
       rates.loan = form.loan === 'null' ? null : Number(form.loan);
@@ -118,6 +124,25 @@ export function InterestRateDialog({
               value={form.fd}
               onChange={(e) =>
                 setForm((prev) => ({ ...prev, fd: e.target.value }))
+              }
+              disabled={loading}
+              className="bg-slate-700 border-slate-600 text-white disabled:opacity-50"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor={`rd-${user._id}`} className="text-gray-100">
+              Recurring Deposit Rate (%) - Leave empty to use default
+            </Label>
+            <Input
+              id={`rd-${user._id}`}
+              type="number"
+              step="0.01"
+              min="0"
+              placeholder="e.g., 6.8"
+              value={form.rd}
+              onChange={(e) =>
+                setForm((prev) => ({ ...prev, rd: e.target.value }))
               }
               disabled={loading}
               className="bg-slate-700 border-slate-600 text-white disabled:opacity-50"

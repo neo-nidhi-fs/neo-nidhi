@@ -145,9 +145,11 @@ export function useAdminUsers() {
         managedUserIds: string[];
         savingsBalance: number;
         fd: number;
+        rd: number;
         loanBalance: number;
         accruedSavingInterest: number;
         accruedFdInterest: number;
+        accruedRdInterest: number;
         accruedLoanInterest: number;
       }
     ) => {

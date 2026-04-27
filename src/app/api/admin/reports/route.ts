@@ -22,6 +22,7 @@ export async function GET() {
       0
     );
     const totalFdBalance = users.reduce((sum, u) => sum + u.fd, 0);
+    const totalRdBalance = users.reduce((sum, u) => sum + (u.rd || 0), 0);
     const totalLoanBalance = users.reduce((sum, u) => sum + u.loanBalance, 0);
     const totalAccruedSavingInterest = users.reduce(
       (sum, u) => sum + u.accruedSavingInterest,
@@ -29,6 +30,10 @@ export async function GET() {
     );
     const totalAccruedFdInterest = users.reduce(
       (sum, u) => sum + u.accruedFdInterest,
+      0
+    );
+    const totalAccruedRdInterest = users.reduce(
+      (sum, u) => sum + (u.accruedRdInterest || 0),
       0
     );
     const totalAccruedLoanInterest = users.reduce(
@@ -43,12 +48,14 @@ export async function GET() {
       loan: transactions.filter((t) => t.type === 'loan').length,
       repayment: transactions.filter((t) => t.type === 'repayment').length,
       fd: transactions.filter((t) => t.type === 'fd').length,
+      rd: transactions.filter((t) => t.type === 'rd').length,
       withdrawal_fd: transactions.filter((t) => t.type === 'withdrawal_fd')
         .length,
       interest_deposit: transactions.filter(
         (t) => t.type === 'interest_deposit'
       ).length,
       interest_fd: transactions.filter((t) => t.type === 'interest_fd').length,
+      interest_rd: transactions.filter((t) => t.type === 'interest_rd').length,
       interest_loan: transactions.filter((t) => t.type === 'interest_loan')
         .length,
     };
@@ -69,6 +76,9 @@ export async function GET() {
       fd: transactions
         .filter((t) => t.type === 'fd')
         .reduce((sum, t) => sum + t.amount, 0),
+      rd: transactions
+        .filter((t) => t.type === 'rd')
+        .reduce((sum, t) => sum + t.amount, 0),
       withdrawal_fd: transactions
         .filter((t) => t.type === 'withdrawal_fd')
         .reduce((sum, t) => sum + t.amount, 0),
@@ -77,6 +87,9 @@ export async function GET() {
         .reduce((sum, t) => sum + t.amount, 0),
       interest_fd: transactions
         .filter((t) => t.type === 'interest_fd')
+        .reduce((sum, t) => sum + t.amount, 0),
+      interest_rd: transactions
+        .filter((t) => t.type === 'interest_rd')
         .reduce((sum, t) => sum + t.amount, 0),
       interest_loan: transactions
         .filter((t) => t.type === 'interest_loan')
@@ -88,6 +101,7 @@ export async function GET() {
       const count = users.filter((u) => {
         if (scheme.name === 'deposit') return u.savingsBalance > 0;
         if (scheme.name === 'fd') return u.fd > 0;
+        if (scheme.name === 'rd') return (u.rd || 0) > 0;
         if (scheme.name === 'loan') return u.loanBalance > 0;
         return false;
       }).length;
@@ -120,17 +134,23 @@ export async function GET() {
     // User balance distribution
     const balanceRanges = {
       '0-10k': users.filter(
-        (u) => u.savingsBalance + u.fd >= 0 && u.savingsBalance + u.fd < 10000
+        (u) =>
+          u.savingsBalance + u.fd + (u.rd || 0) >= 0 &&
+          u.savingsBalance + u.fd + (u.rd || 0) < 10000
       ).length,
       '10k-50k': users.filter(
         (u) =>
-          u.savingsBalance + u.fd >= 10000 && u.savingsBalance + u.fd < 50000
+          u.savingsBalance + u.fd + (u.rd || 0) >= 10000 &&
+          u.savingsBalance + u.fd + (u.rd || 0) < 50000
       ).length,
       '50k-100k': users.filter(
         (u) =>
-          u.savingsBalance + u.fd >= 50000 && u.savingsBalance + u.fd < 100000
+          u.savingsBalance + u.fd + (u.rd || 0) >= 50000 &&
+          u.savingsBalance + u.fd + (u.rd || 0) < 100000
       ).length,
-      '100k+': users.filter((u) => u.savingsBalance + u.fd >= 100000).length,
+      '100k+': users.filter(
+        (u) => u.savingsBalance + u.fd + (u.rd || 0) >= 100000
+      ).length,
     };
 
     return Response.json({
@@ -142,9 +162,11 @@ export async function GET() {
           totalNormalUsers,
           totalSavingsBalance,
           totalFdBalance,
+          totalRdBalance,
           totalLoanBalance,
           totalAccruedSavingInterest,
           totalAccruedFdInterest,
+          totalAccruedRdInterest,
           totalAccruedLoanInterest,
         },
         transactionsByType,

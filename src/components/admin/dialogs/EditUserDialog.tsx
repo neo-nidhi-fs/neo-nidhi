@@ -35,9 +35,11 @@ interface EditUserDialogProps {
       managedUserIds: string[];
       savingsBalance: number;
       fd: number;
+      rd: number;
       loanBalance: number;
       accruedSavingInterest: number;
       accruedFdInterest: number;
+      accruedRdInterest: number;
       accruedLoanInterest: number;
     }
   ) => Promise<{ success: boolean; message: string }>;
@@ -75,6 +77,7 @@ export function EditUserDialog({
     String(user?.savingsBalance || 0)
   );
   const [fd, setFd] = useState(() => String(user?.fd || 0));
+  const [rd, setRd] = useState(() => String(user?.rd || 0));
   const [loanBalance, setLoanBalance] = useState(() =>
     String(user?.loanBalance || 0)
   );
@@ -83,6 +86,9 @@ export function EditUserDialog({
   );
   const [accruedFdInterest, setAccruedFdInterest] = useState(() =>
     String(user?.accruedFdInterest || 0)
+  );
+  const [accruedRdInterest, setAccruedRdInterest] = useState(() =>
+    String(user?.accruedRdInterest || 0)
   );
   const [accruedLoanInterest, setAccruedLoanInterest] = useState(() =>
     String(user?.accruedLoanInterest || 0)
@@ -112,9 +118,11 @@ export function EditUserDialog({
       managedUserIds: role === 'privileged' ? managedUserIds : [],
       savingsBalance: parseNumber(savingsBalance),
       fd: parseNumber(fd),
+      rd: parseNumber(rd),
       loanBalance: parseNumber(loanBalance),
       accruedSavingInterest: parseNumber(accruedSavingInterest),
       accruedFdInterest: parseNumber(accruedFdInterest),
+      accruedRdInterest: parseNumber(accruedRdInterest),
       accruedLoanInterest: parseNumber(accruedLoanInterest),
     });
 
@@ -207,7 +215,7 @@ export function EditUserDialog({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <Label htmlFor="edit-savings" className="text-gray-100">
                 Savings Balance
@@ -250,9 +258,23 @@ export function EditUserDialog({
                 className="bg-slate-700 border-slate-600 text-white disabled:opacity-50"
               />
             </div>
+            <div>
+              <Label htmlFor="edit-rd" className="text-gray-100">
+                RD Balance
+              </Label>
+              <Input
+                id="edit-rd"
+                type="number"
+                step="0.01"
+                value={rd}
+                onChange={(e) => setRd(e.target.value)}
+                disabled={loading}
+                className="bg-slate-700 border-slate-600 text-white disabled:opacity-50"
+              />
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <Label htmlFor="edit-sb-interest" className="text-gray-100">
                 SB Accrued Interest
@@ -291,6 +313,20 @@ export function EditUserDialog({
                 step="0.01"
                 value={accruedLoanInterest}
                 onChange={(e) => setAccruedLoanInterest(e.target.value)}
+                disabled={loading}
+                className="bg-slate-700 border-slate-600 text-white disabled:opacity-50"
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-rd-interest" className="text-gray-100">
+                RD Accrued Interest
+              </Label>
+              <Input
+                id="edit-rd-interest"
+                type="number"
+                step="0.01"
+                value={accruedRdInterest}
+                onChange={(e) => setAccruedRdInterest(e.target.value)}
                 disabled={loading}
                 className="bg-slate-700 border-slate-600 text-white disabled:opacity-50"
               />

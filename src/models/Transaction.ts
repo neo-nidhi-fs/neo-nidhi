@@ -8,7 +8,9 @@ export interface ITransaction extends Document {
     | 'repayment'
     | 'withdrawal'
     | 'fd'
+    | 'rd'
     | 'interest_fd'
+    | 'interest_rd'
     | 'interest_loan'
     | 'withdrawal_fd'
     | 'challenge_fee'
@@ -18,6 +20,7 @@ export interface ITransaction extends Document {
   date: Date;
   relatedUserId?: mongoose.Types.ObjectId; // For user-to-user transfers
   relatedUserName?: string; // Display name of the related user in transfer
+  metadata?: Record<string, unknown>;
 }
 
 const TransactionSchema: Schema<ITransaction> = new Schema({
@@ -30,9 +33,11 @@ const TransactionSchema: Schema<ITransaction> = new Schema({
       'repayment',
       'withdrawal',
       'fd',
+      'rd',
       'challenge_fee',
       'challenge_reward',
       'interest_fd',
+      'interest_rd',
       'withdrawal_fd',
       'interest_loan',
       'interest_deposit',
@@ -43,6 +48,7 @@ const TransactionSchema: Schema<ITransaction> = new Schema({
   date: { type: Date, default: Date.now },
   relatedUserId: { type: Schema.Types.ObjectId, ref: 'User' },
   relatedUserName: { type: String },
+  metadata: { type: Schema.Types.Mixed, default: null },
 });
 
 export const Transaction: Model<ITransaction> =

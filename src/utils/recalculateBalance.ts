@@ -3,6 +3,7 @@ import { Transaction } from '@/models/Transaction';
 interface BalanceUpdate {
   savingsBalance: number;
   fdBalance: number;
+  rdBalance: number;
   loanBalance: number;
 }
 
@@ -14,6 +15,7 @@ export async function recalculateBalances(
 
   let savingsBalance = 0;
   let fdBalance = 0;
+  let rdBalance = 0;
   let loanBalance = 0;
 
   for (const tx of transactions) {
@@ -31,6 +33,9 @@ export async function recalculateBalances(
       case 'fd':
         fdBalance += tx.amount;
         break;
+      case 'rd':
+        rdBalance += tx.amount;
+        break;
       case 'loan':
         loanBalance += tx.amount;
         break;
@@ -46,6 +51,9 @@ export async function recalculateBalances(
       case 'interest_fd':
         fdBalance += tx.amount;
         break;
+      case 'interest_rd':
+        rdBalance += tx.amount;
+        break;
       case 'interest_loan':
         loanBalance += tx.amount;
         break;
@@ -60,6 +68,7 @@ export async function recalculateBalances(
   return {
     savingsBalance: Math.max(0, savingsBalance),
     fdBalance: Math.max(0, fdBalance),
+    rdBalance: Math.max(0, rdBalance),
     loanBalance: Math.max(0, loanBalance),
   };
 }

@@ -134,17 +134,21 @@ export async function PUT(
       key:
         | 'savingsBalance'
         | 'fd'
+        | 'rd'
         | 'loanBalance'
         | 'accruedSavingInterest'
         | 'accruedFdInterest'
+        | 'accruedRdInterest'
         | 'accruedLoanInterest';
       label: string;
     }> = [
       { key: 'savingsBalance', label: 'savings balance' },
       { key: 'fd', label: 'FD balance' },
+      { key: 'rd', label: 'RD balance' },
       { key: 'loanBalance', label: 'loan balance' },
       { key: 'accruedSavingInterest', label: 'accrued saving interest' },
       { key: 'accruedFdInterest', label: 'accrued FD interest' },
+      { key: 'accruedRdInterest', label: 'accrued RD interest' },
       { key: 'accruedLoanInterest', label: 'accrued loan interest' },
     ];
 

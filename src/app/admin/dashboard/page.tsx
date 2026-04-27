@@ -16,6 +16,7 @@ import { Scheme, User } from '@/lib/services/adminService';
 type InterestRateUpdate = {
   saving?: number | null;
   fd?: number | null;
+  rd?: number | null;
   loan?: number | null;
 };
 
@@ -108,9 +109,11 @@ export default function AdminDashboard() {
       managedUserIds: string[];
       savingsBalance: number;
       fd: number;
+      rd: number;
       loanBalance: number;
       accruedSavingInterest: number;
       accruedFdInterest: number;
+      accruedRdInterest: number;
       accruedLoanInterest: number;
     }
   ) => {
@@ -211,8 +214,13 @@ export default function AdminDashboard() {
   };
 
   // Handle scheme operations
-  const handleAddScheme = async (name: string, interestRate: number) => {
-    const result = await addScheme(name, interestRate);
+  const handleAddScheme = async (
+    name: string,
+    interestRate: number,
+    amount?: number | null,
+    tenureMonths?: number | null
+  ) => {
+    const result = await addScheme(name, interestRate, amount, tenureMonths);
     setMessage(result.message);
     return result;
   };
@@ -220,9 +228,17 @@ export default function AdminDashboard() {
   const handleEditScheme = async (
     schemeId: string,
     name: string,
-    interestRate: number
+    interestRate: number,
+    amount?: number | null,
+    tenureMonths?: number | null
   ) => {
-    const result = await editScheme(schemeId, name, interestRate);
+    const result = await editScheme(
+      schemeId,
+      name,
+      interestRate,
+      amount,
+      tenureMonths
+    );
     setMessage(result.message);
     return result;
   };

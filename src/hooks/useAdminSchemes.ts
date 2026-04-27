@@ -30,39 +30,60 @@ export function useAdminSchemes() {
     fetchSchemes();
   }, [fetchSchemes]);
 
-  const addScheme = useCallback(async (name: string, interestRate: number) => {
-    try {
-      setAddSchemeLoading(true);
-      const newScheme = await adminService.createScheme(name, interestRate);
-      setSchemes((prev) => [...prev, newScheme]);
-      return { success: true, message: '✅ Scheme added successfully' };
-    } catch (err) {
-      return {
-        success: false,
-        message: `❌ Error: ${(err as Error).message}`,
-      };
-    } finally {
-      setAddSchemeLoading(false);
-    }
-  }, []);
+  const addScheme = useCallback(
+    async (
+      name: string,
+      interestRate: number,
+      amount?: number | null,
+      tenureMonths?: number | null
+    ) => {
+      try {
+        setAddSchemeLoading(true);
+        const newScheme = await adminService.createScheme(
+          name,
+          interestRate,
+          amount,
+          tenureMonths
+        );
+        setSchemes((prev) => [...prev, newScheme]);
+        return { success: true, message: 'Scheme added successfully' };
+      } catch (err) {
+        return {
+          success: false,
+          message: `Error: ${(err as Error).message}`,
+        };
+      } finally {
+        setAddSchemeLoading(false);
+      }
+    },
+    []
+  );
 
   const editScheme = useCallback(
-    async (schemeId: string, name: string, interestRate: number) => {
+    async (
+      schemeId: string,
+      name: string,
+      interestRate: number,
+      amount?: number | null,
+      tenureMonths?: number | null
+    ) => {
       try {
         setEditSchemeLoading(true);
         const updatedScheme = await adminService.updateScheme(
           schemeId,
           name,
-          interestRate
+          interestRate,
+          amount,
+          tenureMonths
         );
         setSchemes((prev) =>
           prev.map((s) => (s._id === schemeId ? updatedScheme : s))
         );
-        return { success: true, message: '✅ Scheme updated successfully' };
+        return { success: true, message: 'Scheme updated successfully' };
       } catch (err) {
         return {
           success: false,
-          message: `❌ Error: ${(err as Error).message}`,
+          message: `Error: ${(err as Error).message}`,
         };
       } finally {
         setEditSchemeLoading(false);
@@ -76,11 +97,11 @@ export function useAdminSchemes() {
       setDeleteSchemeLoading(schemeId);
       await adminService.deleteScheme(schemeId);
       setSchemes((prev) => prev.filter((s) => s._id !== schemeId));
-      return { success: true, message: '✅ Scheme deleted successfully' };
+      return { success: true, message: 'Scheme deleted successfully' };
     } catch (err) {
       return {
         success: false,
-        message: `❌ Error: ${(err as Error).message}`,
+        message: `Error: ${(err as Error).message}`,
       };
     } finally {
       setDeleteSchemeLoading(null);

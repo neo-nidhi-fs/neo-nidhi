@@ -17,10 +17,12 @@ export function calculateDailyInterest(
 export type DailyInterestAccountSlice = {
   savingsBalance: number;
   fd: number;
+  rd: number;
   loanBalance: number;
   customInterestRates?: {
     saving?: number | null;
     fd?: number | null;
+    rd?: number | null;
     loan?: number | null;
   } | null;
 };
@@ -31,10 +33,11 @@ type SchemeRateSlice = { name: string; interestRate: number };
 export function computeDailyInterestDeltas(
   account: DailyInterestAccountSlice,
   schemes: SchemeRateSlice[]
-): { deltaSaving: number; deltaFd: number; deltaLoan: number } {
-  const { savingsBalance, fd, loanBalance, customInterestRates } = account;
+): { deltaSaving: number; deltaFd: number; deltaRd: number; deltaLoan: number } {
+  const { savingsBalance, fd, rd, loanBalance, customInterestRates } = account;
   let deltaSaving = 0;
   let deltaFd = 0;
+  let deltaRd = 0;
   let deltaLoan = 0;
 
   for (const scheme of schemes) {
@@ -53,6 +56,12 @@ export function computeDailyInterestDeltas(
         customInterestRates.fd !== undefined
       ) {
         rate = customInterestRates.fd;
+      } else if (
+        scheme.name === 'rd' &&
+        customInterestRates.rd !== null &&
+        customInterestRates.rd !== undefined
+      ) {
+        rate = customInterestRates.rd;
       } else if (
         scheme.name === 'loan' &&
         customInterestRates.loan !== null &&
@@ -74,6 +83,11 @@ export function computeDailyInterestDeltas(
           deltaFd += calculateDailyInterest(fd, annualRate);
         }
         break;
+      case 'rd':
+        if (rd > 0) {
+          deltaRd += calculateDailyInterest(rd, annualRate);
+        }
+        break;
       case 'loan':
         if (loanBalance > 0) {
           deltaLoan += calculateDailyInterest(loanBalance, annualRate);
@@ -82,7 +96,7 @@ export function computeDailyInterestDeltas(
     }
   }
 
-  return { deltaSaving, deltaFd, deltaLoan };
+  return { deltaSaving, deltaFd, deltaRd, deltaLoan };
 }
 
 /** Calendar start of day (local) for storing lastInterestCalculationDate. */
@@ -119,7 +133,7 @@ export async function recalculateAccruedInterestMonthToDate(
   const accounts = await User.find({});
 
   for (const account of accounts) {
-    const { deltaSaving, deltaFd, deltaLoan } = computeDailyInterestDeltas(
+    const { deltaSaving, deltaFd, deltaRd, deltaLoan } = computeDailyInterestDeltas(
       account,
       schemes
     );
@@ -127,6 +141,7 @@ export async function recalculateAccruedInterestMonthToDate(
       $set: {
         accruedSavingInterest: deltaSaving * daysElapsed,
         accruedFdInterest: deltaFd * daysElapsed,
+        accruedRdInterest: deltaRd * daysElapsed,
         accruedLoanInterest: deltaLoan * daysElapsed,
       },
     });
@@ -210,11 +225,12 @@ export async function processInterest(shouldAddToAccount = false) {
   async function saveAccountInterest(
     userId: string | { toString(): string },
     interest: number,
-    type: 'deposit' | 'fd' | 'loan'
+    type: 'deposit' | 'fd' | 'rd' | 'loan'
   ) {
     const fieldMap: Record<string, string> = {
       deposit: 'accruedSavingInterest',
       fd: 'accruedFdInterest',
+      rd: 'accruedRdInterest',
       loan: 'accruedLoanInterest',
     };
     const field = fieldMap[type];
@@ -231,7 +247,7 @@ export async function processInterest(shouldAddToAccount = false) {
   }
 
   for (const account of accounts) {
-    const { deltaSaving, deltaFd, deltaLoan } = computeDailyInterestDeltas(
+    const { deltaSaving, deltaFd, deltaRd, deltaLoan } = computeDailyInterestDeltas(
       account,
       schemes
     );
@@ -253,6 +269,9 @@ export async function processInterest(shouldAddToAccount = false) {
       if (deltaFd !== 0) {
         await saveAccountInterest(account._id, deltaFd, 'fd');
       }
+      if (deltaRd !== 0) {
+        await saveAccountInterest(account._id, deltaRd, 'rd');
+      }
       if (deltaLoan !== 0) {
         await saveAccountInterest(account._id, deltaLoan, 'loan');
       }
@@ -269,6 +288,7 @@ export async function processInterest(shouldAddToAccount = false) {
             transactionType:
               | 'interest_deposit'
               | 'interest_fd'
+              | 'interest_rd'
               | 'interest_loan',
             amount: number,
             balanceField: string
@@ -312,6 +332,16 @@ export async function processInterest(shouldAddToAccount = false) {
                 'fd'
               );
               updateData.accruedFdInterest = 0;
+            }
+
+            if (refreshedAccount.accruedRdInterest > 0) {
+              await createInterestTransaction(
+                account._id,
+                'interest_rd',
+                refreshedAccount.accruedRdInterest,
+                'rd'
+              );
+              updateData.accruedRdInterest = 0;
             }
 
             if (refreshedAccount.accruedLoanInterest > 0) {

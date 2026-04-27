@@ -19,12 +19,16 @@ interface SchemesSectionProps {
   onEditingSchemeChange: (scheme: Scheme | null) => void;
   onAddScheme: (
     name: string,
-    interestRate: number
+    interestRate: number,
+    amount?: number | null,
+    tenureMonths?: number | null
   ) => Promise<{ success: boolean; message: string }>;
   onEditScheme: (
     schemeId: string,
     name: string,
-    interestRate: number
+    interestRate: number,
+    amount?: number | null,
+    tenureMonths?: number | null
   ) => Promise<{ success: boolean; message: string }>;
   addSchemeLoading: boolean;
   editSchemeLoading: boolean;
@@ -47,15 +51,26 @@ export function SchemesSection({
   onDeleteScheme,
   deleteSchemeLoading,
 }: SchemesSectionProps) {
-  const handleSubmit = async (name: string, interestRate: number) => {
+  const handleSubmit = async (
+    name: string,
+    interestRate: number,
+    amount?: number | null,
+    tenureMonths?: number | null
+  ) => {
     if (editingScheme) {
-      const result = await onEditScheme(editingScheme._id, name, interestRate);
+      const result = await onEditScheme(
+        editingScheme._id,
+        name,
+        interestRate,
+        amount,
+        tenureMonths
+      );
       if (result.success) {
         onEditingSchemeChange(null);
         onSchemeDialogOpenChange(false);
       }
     } else {
-      const result = await onAddScheme(name, interestRate);
+      const result = await onAddScheme(name, interestRate, amount, tenureMonths);
       if (result.success) {
         onSchemeDialogOpenChange(false);
       }
@@ -119,6 +134,12 @@ export function SchemesSection({
                     {s.interestRate}%
                   </span>
                 </p>
+                {s.name === 'rd' && (
+                  <p className="text-gray-300 mt-2 text-sm">
+                    Amount: ₹{(s.amount || 0).toFixed(2)} | Tenure:{' '}
+                    {s.tenureMonths || 0} months
+                  </p>
+                )}
               </div>
             ))}
           </div>

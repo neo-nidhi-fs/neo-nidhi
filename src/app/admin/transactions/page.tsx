@@ -34,7 +34,7 @@ interface User {
 interface Transaction {
   _id: string;
   userId: string;
-  type: 'deposit' | 'loan' | 'repayment' | 'fd' | 'withdrawal';
+  type: 'deposit' | 'loan' | 'repayment' | 'fd' | 'rd' | 'withdrawal';
   amount: number;
   date: string;
 }
@@ -104,6 +104,7 @@ export default function AdminTransactionsPage() {
   const transactionTypes = [
     { value: 'deposit', label: 'Deposit' },
     { value: 'fd', label: 'Fixed Deposit' },
+    { value: 'rd', label: 'Recurring Deposit' },
     { value: 'loan', label: 'Loan' },
     { value: 'repayment', label: 'Repayment' },
     { value: 'withdrawal', label: 'Withdrawal' },
@@ -113,6 +114,7 @@ export default function AdminTransactionsPage() {
     switch (type) {
       case 'deposit':
       case 'fd':
+      case 'rd':
         return 'text-green-400';
       case 'loan':
         return 'text-orange-400';
@@ -131,7 +133,9 @@ export default function AdminTransactionsPage() {
       repayment: 'rep',
       withdrawal: 'wd',
       fd: 'fd',
+      rd: 'rd',
       interest_fd: 'int_fd',
+      interest_rd: 'int_rd',
       interest_loan: 'int_loan',
       withdrawal_fd: 'wd_fd',
       interest_deposit: 'int_dep',

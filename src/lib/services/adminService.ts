@@ -19,12 +19,15 @@ export interface User {
   accruedLoanInterest?: number;
   fd?: number;
   accruedFdInterest?: number;
+  rd?: number;
+  accruedRdInterest?: number;
   features?: Partial<UserFeatures>;
   // Legacy field for backward compatibility
   financeFeaturesEnabled?: boolean;
   customInterestRates?: {
     saving?: number | null;
     fd?: number | null;
+    rd?: number | null;
     loan?: number | null;
   };
 }
@@ -33,6 +36,8 @@ export interface Scheme {
   _id: string;
   name: string;
   interestRate: number;
+  amount?: number | null;
+  tenureMonths?: number | null;
 }
 
 export interface FdWithdrawInfo {
@@ -89,9 +94,11 @@ class AdminService {
       managedUserIds?: string[];
       savingsBalance?: number;
       fd?: number;
+      rd?: number;
       loanBalance?: number;
       accruedSavingInterest?: number;
       accruedFdInterest?: number;
+      accruedRdInterest?: number;
       accruedLoanInterest?: number;
       features?: Partial<UserFeatures>;
       financeFeaturesEnabled?: boolean;
@@ -150,12 +157,14 @@ class AdminService {
     rates: {
       saving?: number | null;
       fd?: number | null;
+      rd?: number | null;
       loan?: number | null;
     }
   ): Promise<User['customInterestRates']> {
     const updateData: Record<string, number | null> = {};
     if (rates.saving !== undefined) updateData.saving = rates.saving;
     if (rates.fd !== undefined) updateData.fd = rates.fd;
+    if (rates.rd !== undefined) updateData.rd = rates.rd;
     if (rates.loan !== undefined) updateData.loan = rates.loan;
 
     const res = await fetch(
@@ -180,11 +189,16 @@ class AdminService {
     return data.data;
   }
 
-  async createScheme(name: string, interestRate: number): Promise<Scheme> {
+  async createScheme(
+    name: string,
+    interestRate: number,
+    amount?: number | null,
+    tenureMonths?: number | null
+  ): Promise<Scheme> {
     const res = await fetch(`${this.baseUrl}/api/schemes`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, interestRate }),
+      body: JSON.stringify({ name, interestRate, amount, tenureMonths }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed to create scheme');
@@ -194,12 +208,14 @@ class AdminService {
   async updateScheme(
     schemeId: string,
     name: string,
-    interestRate: number
+    interestRate: number,
+    amount?: number | null,
+    tenureMonths?: number | null
   ): Promise<Scheme> {
     const res = await fetch(`${this.baseUrl}/api/schemes/${schemeId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, interestRate }),
+      body: JSON.stringify({ name, interestRate, amount, tenureMonths }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed to update scheme');

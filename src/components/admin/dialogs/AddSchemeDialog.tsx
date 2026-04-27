@@ -16,13 +16,18 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Plus, Loader } from 'lucide-react';
-import { FormEvent } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Scheme } from '@/lib/services/adminService';
 
 interface AddSchemeDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (name: string, interestRate: number) => void;
+  onSubmit: (
+    name: string,
+    interestRate: number,
+    amount?: number | null,
+    tenureMonths?: number | null
+  ) => void;
   loading: boolean;
   editingScheme: Scheme | null;
   onEditingSchemeChange: (scheme: Scheme | null) => void;
@@ -36,12 +41,30 @@ export function AddSchemeDialog({
   editingScheme,
   onEditingSchemeChange,
 }: AddSchemeDialogProps) {
+  const [selectedName, setSelectedName] = useState('deposit');
+
+  useEffect(() => {
+    if (editingScheme?.name) {
+      setSelectedName(editingScheme.name);
+      return;
+    }
+    if (!open) {
+      setSelectedName('deposit');
+    }
+  }, [editingScheme?.name, open]);
+
+  const isRd = useMemo(() => selectedName === 'rd', [selectedName]);
+
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const name = formData.get('name')?.toString() || '';
     const interestRate = Number(formData.get('interestRate'));
-    onSubmit(name, interestRate);
+    const amountRaw = formData.get('amount')?.toString() || '';
+    const tenureRaw = formData.get('tenureMonths')?.toString() || '';
+    const amount = amountRaw === '' ? null : Number(amountRaw);
+    const tenureMonths = tenureRaw === '' ? null : Number(tenureRaw);
+    onSubmit(name, interestRate, amount, tenureMonths);
     if (!editingScheme) e.currentTarget.reset();
   };
 
@@ -69,15 +92,20 @@ export function AddSchemeDialog({
             <Label htmlFor="name" className="text-gray-100">
               Scheme Name
             </Label>
-            <Input
+            <select
               id="name"
               name="name"
-              placeholder="Normal Deposit / FD / RD"
-              defaultValue={editingScheme?.name || ''}
+              defaultValue={editingScheme?.name || 'deposit'}
+              onChange={(e) => setSelectedName(e.target.value)}
               required
               disabled={loading}
-              className="bg-slate-700 border-slate-600 text-white disabled:opacity-50"
-            />
+              className="w-full mt-1 rounded-md bg-slate-700 border border-slate-600 px-3 py-2 text-white disabled:opacity-50"
+            >
+              <option value="deposit">deposit</option>
+              <option value="fd">fd</option>
+              <option value="loan">loan</option>
+              <option value="rd">rd</option>
+            </select>
           </div>
           <div>
             <Label htmlFor="interestRate" className="text-gray-100">
@@ -94,6 +122,42 @@ export function AddSchemeDialog({
               className="bg-slate-700 border-slate-600 text-white disabled:opacity-50"
             />
           </div>
+          {isRd && (
+            <>
+              <div>
+                <Label htmlFor="amount" className="text-gray-100">
+                  RD Amount
+                </Label>
+                <Input
+                  id="amount"
+                  name="amount"
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  defaultValue={editingScheme?.amount ?? ''}
+                  required
+                  disabled={loading}
+                  className="bg-slate-700 border-slate-600 text-white disabled:opacity-50"
+                />
+              </div>
+              <div>
+                <Label htmlFor="tenureMonths" className="text-gray-100">
+                  RD Tenure (Months)
+                </Label>
+                <Input
+                  id="tenureMonths"
+                  name="tenureMonths"
+                  type="number"
+                  step="1"
+                  min="1"
+                  defaultValue={editingScheme?.tenureMonths ?? ''}
+                  required
+                  disabled={loading}
+                  className="bg-slate-700 border-slate-600 text-white disabled:opacity-50"
+                />
+              </div>
+            </>
+          )}
           <Button
             type="submit"
             disabled={loading}

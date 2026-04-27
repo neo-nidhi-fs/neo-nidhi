@@ -19,6 +19,7 @@ export function useAdminInterestRates() {
       rates: {
         saving?: number | null;
         fd?: number | null;
+        rd?: number | null;
         loan?: number | null;
       }
     ) => {

@@ -10,6 +10,7 @@ import { recalculateBalances } from '@/utils/recalculateBalance';
 interface BalanceUpdate {
   savingsBalance: number;
   fdBalance: number;
+  rdBalance: number;
   loanBalance: number;
 }
 
@@ -43,21 +44,19 @@ export async function POST() {
     const results: Result[] = [];
 
     for (const user of users) {
-      // // Check if already calculated this month
       if (
         user.lastInterestCalc &&
         user.lastInterestCalc.getMonth() === today.getMonth() &&
         user.lastInterestCalc.getFullYear() === today.getFullYear()
       ) {
-        console.log(`Skipping ${user.name} - already calculated this month`);
         continue;
       }
 
       const transactions = await Transaction.find({ userId: user._id }).sort({
         date: 1,
       });
+
       if (transactions.length === 0) {
-        console.log(`No transactions for user ${user.name}`);
         continue;
       }
 
@@ -69,7 +68,6 @@ export async function POST() {
         date: Date;
       }> = [];
 
-      // Process each scheme
       for (const scheme of schemes) {
         let interest = 0;
 
@@ -80,8 +78,6 @@ export async function POST() {
 
           if (savingTransactions.length > 0) {
             const lastCalcDate = user.lastInterestCalc || new Date(0);
-
-            // Separate old deposits (before last calc) and new deposits (after last calc)
             const oldTransactions = savingTransactions.filter(
               (tx) => tx.date <= lastCalcDate
             );
@@ -92,7 +88,6 @@ export async function POST() {
             let oldInterest = 0;
             let newInterest = 0;
 
-            // Calculate interest on old deposits only for the period after last calc
             if (oldTransactions.length > 0) {
               oldInterest = calculateInterestFromTransactions(
                 [
@@ -115,7 +110,6 @@ export async function POST() {
               );
             }
 
-            // Calculate interest on new deposits
             if (newTransactions.length > 0) {
               newInterest = calculateInterestFromTransactions(
                 newTransactions.map((tx) => ({
@@ -129,32 +123,24 @@ export async function POST() {
             }
 
             interest = oldInterest + newInterest;
-            console.log('newInterest ==> ', newInterest);
-            console.log('oldInterest ==> ', oldInterest);
           }
-        } else if (scheme.name === 'fd') {
-          const fdTransactions = transactions.filter((tx) => tx.type === 'fd');
-          console.log('fdTransactions ==> ', fdTransactions);
-
+        } else if (scheme.name === 'fd' || scheme.name === 'rd') {
+          const txType = scheme.name;
+          const schemeTransactions = transactions.filter((tx) => tx.type === txType);
           const lastCalcDate = user.lastInterestCalc || new Date(0);
-
-          // Separate old deposits (before last calc) and new deposits (after last calc)
-          const oldTransactions = fdTransactions.filter(
+          const oldTransactions = schemeTransactions.filter(
             (tx) => tx.date <= lastCalcDate
           );
-          const newTransactions = fdTransactions.filter(
+          const newTransactions = schemeTransactions.filter(
             (tx) => tx.date > lastCalcDate
           );
-          console.log('oldTransactions ==> ', oldTransactions);
-          console.log('newTransactions ==> ', newTransactions);
 
           let oldInterest = 0;
           let newInterest = 0;
 
-          // Calculate interest on old deposits only for the period after last calc
           if (oldTransactions.length > 0) {
             oldInterest = calculateMonthlyInterest(
-              scheme.name,
+              txType,
               oldTransactions.reduce((sum, tx) => sum + tx.amount, 0),
               scheme.interestRate,
               oldTransactions[0].date,
@@ -162,10 +148,9 @@ export async function POST() {
             );
           }
 
-          // Calculate interest on new deposits
           if (newTransactions.length > 0) {
             newInterest = calculateMonthlyInterest(
-              scheme.name,
+              txType,
               newTransactions.reduce((sum, tx) => sum + tx.amount, 0),
               scheme.interestRate,
               newTransactions[0].date,
@@ -174,8 +159,6 @@ export async function POST() {
           }
 
           interest = oldInterest + newInterest;
-          console.log('fd newInterest ==> ', newInterest);
-          console.log('fd oldInterest ==> ', oldInterest);
         } else if (scheme.name === 'loan') {
           const loanTransactions = transactions.filter(
             (tx) => tx.type === 'loan' || tx.type === 'repayment'
@@ -183,10 +166,9 @@ export async function POST() {
 
           if (loanTransactions.length > 0) {
             interest = calculateMonthlyInterest(
-              scheme.name,
+              'loan',
               loanTransactions.reduce(
-                (sum, tx) =>
-                  sum + (tx.type === 'loan' ? tx.amount : -tx.amount),
+                (sum, tx) => sum + (tx.type === 'loan' ? tx.amount : -tx.amount),
                 0
               ),
               scheme.interestRate,
@@ -199,29 +181,29 @@ export async function POST() {
         if (interest > 0) {
           const interestTx = new Transaction({
             userId: user._id,
-            type: 'interest_' + scheme.name,
+            type: `interest_${scheme.name}`,
             amount: interest,
             date: today,
           });
           await interestTx.save();
+
           interestTransactions.push({
             userId: user._id,
-            type: 'interest',
+            type: `interest_${scheme.name}`,
             amount: interest,
             date: today,
           });
+
           interestAdded += interest;
         }
       }
 
-      // Only update lastInterestCalc if interest was actually added
       if (interestAdded > 0) {
-        // Recalculate balances from all transactions
         const newBalances = await recalculateBalances(user._id.toString());
 
-        // Update user with new balances and mark interest as calculated
         user.savingsBalance = newBalances.savingsBalance;
         user.fd = newBalances.fdBalance;
+        user.rd = newBalances.rdBalance;
         user.loanBalance = newBalances.loanBalance;
         user.lastInterestCalc = today;
 
@@ -234,10 +216,6 @@ export async function POST() {
           interestTransactions,
           newBalances,
         });
-
-        console.log(
-          `✅ Updated balances for ${user.name}: Savings=${newBalances.savingsBalance}, FD=${newBalances.fdBalance}, Loan=${newBalances.loanBalance}`
-        );
       }
     }
 
