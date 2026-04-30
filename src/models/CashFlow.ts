@@ -13,7 +13,7 @@ export interface ICashFlow extends Document {
    * Optional source mode; older docs may have missing value or `credit_card`.
    * New values should use `card` instead of `credit_card`.
    */
-  paymentSource?: 'account' | 'cash' | 'card' | 'credit_card';
+  paymentSource?: 'account' | 'cash' | 'card' | 'wallet' | 'credit_card';
   note?: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -30,7 +30,7 @@ const CashFlowSchema: Schema<ICashFlow> = new Schema(
     liabilityId: { type: Schema.Types.ObjectId, ref: 'User', default: null },
     paymentSource: {
       type: String,
-      enum: ['account', 'cash', 'card', 'credit_card'],
+      enum: ['account', 'cash', 'card', 'wallet', 'credit_card'],
       required: false,
     },
     note: { type: String, default: null },

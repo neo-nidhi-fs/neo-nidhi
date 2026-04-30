@@ -55,6 +55,7 @@ export type ExpensePaymentSource =
   | 'account'
   | 'cash'
   | 'card'
+  | 'wallet'
   | 'credit_card';
 
 export interface CashFlow {

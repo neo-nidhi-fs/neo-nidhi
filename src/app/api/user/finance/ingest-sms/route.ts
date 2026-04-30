@@ -16,6 +16,28 @@ type SmsPayload = {
   messageId?: string;
 };
 
+function escapeForRegex(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function extractSmsReferences(payload: SmsPayload): string[] {
+  const raw = `${payload.sender || ''} ${payload.body || ''}`;
+  const patterns = [
+    /\b(?:utr|rrn|txn(?:\s*id)?|transaction(?:\s*id)?|ref(?:erence)?(?:\s*no)?|upi(?:\s*ref(?:erence)?)?)\s*[:\-]?\s*([a-z0-9\-]{6,})\b/gi,
+    /\b([0-9]{12})\b/g,
+  ];
+
+  const refs = new Set<string>();
+  for (const pattern of patterns) {
+    let match: RegExpExecArray | null = pattern.exec(raw);
+    while (match) {
+      refs.add(String(match[1] || '').toLowerCase().trim());
+      match = pattern.exec(raw);
+    }
+  }
+  return Array.from(refs).filter(Boolean).slice(0, 5);
+}
+
 function buildMessageHash(payload: SmsPayload): string {
   const raw = `${payload.id || payload.messageId || ''}|${payload.sender || ''}|${payload.receivedAt || ''}|${payload.body || ''}`;
   return createHash('sha256').update(raw).digest('hex');
@@ -51,7 +73,10 @@ export async function POST(req: Request) {
     let skippedDuplicates = 0;
 
     for (const message of messages) {
-      const parsed = parseFinanceSms(String(message.body || ''));
+      const parsed = parseFinanceSms(
+        String(message.body || ''),
+        String(message.sender || '')
+      );
       if (!parsed) {
         skippedNonFinance += 1;
         continue;
@@ -59,11 +84,15 @@ export async function POST(req: Request) {
 
       const hash = buildMessageHash(message);
       const dedupeTag = `[sms-hash:${hash}]`;
+      const references = extractSmsReferences(message);
+      const referenceTags = references.map((ref) => `[sms-ref:${ref}]`);
+      const dedupeNeedles = [dedupeTag, ...referenceTags];
+      const dedupeRegexes = dedupeNeedles.map((tag) => new RegExp(escapeForRegex(tag)));
 
       const duplicate = await CashFlow.findOne({
         user: user._id,
         source: 'sms_auto',
-        note: { $regex: `\\[sms-hash:${hash}\\]` },
+        note: { $in: dedupeRegexes },
       })
         .select('_id')
         .lean();
@@ -82,7 +111,7 @@ export async function POST(req: Request) {
         source: parsed.source,
         liabilityId: null,
         paymentSource: parsed.paymentSource,
-        note: `${parsed.note} ${dedupeTag}`,
+        note: `${parsed.note} ${[dedupeTag, ...referenceTags].join(' ')}`,
       });
 
       createdIds.push(String(created._id));

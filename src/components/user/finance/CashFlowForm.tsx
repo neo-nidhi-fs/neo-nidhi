@@ -46,6 +46,7 @@ const INCOME_CATEGORIES = [
   'Salary',
   'Bonus',
   'Freelance',
+  'Investment',
   'Investment Returns',
   'Interest',
   'Dividends',
@@ -66,6 +67,7 @@ const EXPENSE_CATEGORIES = [
   'part payment of loan',
   'Shopping',
   'Insurance',
+  'Investment',
   'EMI/Loan',
   'Other Expense',
 ];
@@ -238,6 +240,7 @@ export default function CashFlowForm({
               <option value="account">Account</option>
               <option value="cash">Cash</option>
               <option value="card">Card</option>
+              <option value="wallet">Wallet</option>
             </select>
           </div>
 

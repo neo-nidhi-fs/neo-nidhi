@@ -39,7 +39,13 @@ export async function POST(req: Request) {
     const { date, type, category, amount, source, liabilityId, note, paymentSource } =
       body;
 
-    const validPaymentSources = ['account', 'cash', 'card', 'credit_card'] as const;
+    const validPaymentSources = [
+      'account',
+      'cash',
+      'card',
+      'wallet',
+      'credit_card',
+    ] as const;
 
     // Validation
     if (!date || !type || !category || amount === undefined || !source) {

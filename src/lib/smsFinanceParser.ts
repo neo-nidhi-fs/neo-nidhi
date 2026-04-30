@@ -4,7 +4,7 @@ export type ParsedFinanceSms = {
   category: string;
   note: string;
   source: string;
-  paymentSource: 'account' | 'cash' | 'card';
+  paymentSource: 'account' | 'cash' | 'card' | 'wallet';
 };
 
 const DEBIT_KEYWORDS = [
@@ -45,6 +45,9 @@ function detectType(text: string): 'income' | 'expense' | null {
 function detectCategory(text: string, type: 'income' | 'expense'): string {
   const lower = text.toLowerCase();
 
+  if (lower.includes('groww invest tech pvt ltd')) return 'Investment';
+  if (lower.includes('abhirami v m')) return 'Gift';
+
   if (lower.includes('upi')) return type === 'income' ? 'UPI Credit' : 'UPI Payment';
   if (lower.includes('atm')) return 'ATM';
   if (lower.includes('imps')) return type === 'income' ? 'IMPS Credit' : 'IMPS Transfer';
@@ -58,8 +61,9 @@ function detectCategory(text: string, type: 'income' | 'expense'): string {
   return type === 'income' ? 'Other Income' : 'Other Expense';
 }
 
-function detectPaymentSource(text: string): 'account' | 'cash' | 'card' {
+function detectPaymentSource(text: string): 'account' | 'cash' | 'card' | 'wallet' {
   const lower = text.toLowerCase();
+  if (lower.includes('wallet')) return 'wallet';
   if (lower.includes('card') || lower.includes('credit card') || lower.includes('debit card')) {
     return 'card';
   }
@@ -67,18 +71,20 @@ function detectPaymentSource(text: string): 'account' | 'cash' | 'card' {
   return 'account';
 }
 
-export function parseFinanceSms(messageBody: string): ParsedFinanceSms | null {
+export function parseFinanceSms(messageBody: string, sender?: string): ParsedFinanceSms | null {
   const normalized = String(messageBody || '').trim();
   if (!normalized) return null;
+  const senderText = String(sender || '').trim();
+  const combinedText = `${senderText} ${normalized}`.trim();
 
-  const amount = parseAmount(normalized);
+  const amount = parseAmount(combinedText);
   if (!amount) return null;
 
-  const type = detectType(normalized);
+  const type = detectType(combinedText);
   if (!type) return null;
 
-  const category = detectCategory(normalized, type);
-  const paymentSource = detectPaymentSource(normalized);
+  const category = detectCategory(combinedText, type);
+  const paymentSource = detectPaymentSource(combinedText);
 
   return {
     type,

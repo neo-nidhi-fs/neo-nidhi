@@ -13,17 +13,24 @@ import {
   ChevronRight,
 } from 'lucide-react';
 
-const PAYMENT_MODES: Array<'account' | 'cash' | 'card'> = [
+const PAYMENT_MODES: Array<'account' | 'cash' | 'card' | 'wallet'> = [
   'account',
   'cash',
   'card',
+  'wallet',
 ];
 
 function normalizePaymentSource(
   paymentSource?: ExpensePaymentSource
-): 'account' | 'cash' | 'card' {
+): 'account' | 'cash' | 'card' | 'wallet' {
   if (paymentSource === 'credit_card') return 'card';
-  if (paymentSource === 'cash' || paymentSource === 'card') return paymentSource;
+  if (
+    paymentSource === 'cash' ||
+    paymentSource === 'card' ||
+    paymentSource === 'wallet'
+  ) {
+    return paymentSource;
+  }
   return 'account';
 }
 
@@ -33,6 +40,7 @@ function labelPaymentSource(paymentSource?: ExpensePaymentSource): string {
     account: 'Account',
     cash: 'Cash',
     card: 'Card',
+    wallet: 'Wallet',
     credit_card: 'Card',
   };
   return labels[p];
@@ -58,14 +66,15 @@ function CashFlowSummaryBar({
   totalExpense: number;
   totalRemaining: number;
   modeTotals: Record<
-    'account' | 'cash' | 'card',
+    'account' | 'cash' | 'card' | 'wallet',
     { income: number; expense: number }
   >;
 }) {
-  const modeLabels: Record<'account' | 'cash' | 'card', string> = {
+  const modeLabels: Record<'account' | 'cash' | 'card' | 'wallet', string> = {
     account: 'Account',
     cash: 'Cash',
     card: 'Card',
+    wallet: 'Wallet',
   };
 
   return (
@@ -285,7 +294,10 @@ export default function CashFlowManager({
     .reduce((sum, cf) => sum + cf.amount, 0);
 
   const modeTotals = visibleCashflows.reduce<
-    Record<'account' | 'cash' | 'card', { income: number; expense: number }>
+    Record<
+      'account' | 'cash' | 'card' | 'wallet',
+      { income: number; expense: number }
+    >
   >(
     (acc, cf) => {
       const paymentSource = normalizePaymentSource(cf.paymentSource);
@@ -300,6 +312,7 @@ export default function CashFlowManager({
       account: { income: 0, expense: 0 },
       cash: { income: 0, expense: 0 },
       card: { income: 0, expense: 0 },
+      wallet: { income: 0, expense: 0 },
     }
   );
 

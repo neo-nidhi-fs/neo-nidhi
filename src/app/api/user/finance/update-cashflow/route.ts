@@ -32,7 +32,13 @@ export async function PUT(req: Request) {
       paymentSource,
     } = body;
 
-    const validPaymentSources = ['account', 'cash', 'card', 'credit_card'] as const;
+    const validPaymentSources = [
+      'account',
+      'cash',
+      'card',
+      'wallet',
+      'credit_card',
+    ] as const;
 
     if (!cashflowId) {
       return NextResponse.json(
