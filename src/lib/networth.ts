@@ -464,8 +464,24 @@ export function calculateFIRECorpus(
     const date = new Date(now.getFullYear(), now.getMonth() - m, 1);
     const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 
+    // Exclude loan EMI and loan part payment from expenses
     const monthExpense = (cashFlows || [])
       .filter((cf) => cf.type === 'expense')
+      .filter((cf) => {
+        // Exclude if category or description indicates loan emi or part payment
+        const category = (cf.category || '').toLowerCase();
+        const desc = (cf.source || '').toLowerCase();
+        if (
+          category.includes('emi') ||
+          category.includes('loan') ||
+          desc.includes('emi') ||
+          desc.includes('loan') ||
+          desc.includes('part payment')
+        ) {
+          return false;
+        }
+        return true;
+      })
       .filter((cf) => {
         const cfDate = new Date(cf.date);
         const key = `${cfDate.getFullYear()}-${String(cfDate.getMonth() + 1).padStart(2, '0')}`;
