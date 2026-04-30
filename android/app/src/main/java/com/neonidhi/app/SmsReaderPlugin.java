@@ -14,6 +14,7 @@ import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 import com.getcapacitor.annotation.Permission;
+import com.getcapacitor.annotation.PermissionCallback;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -63,6 +64,7 @@ public class SmsReaderPlugin extends Plugin {
         call.resolve(response);
     }
 
+    @PermissionCallback
     @SuppressWarnings("unused")
     private void onSmsPermissionResult(PluginCall call) {
         JSObject response = new JSObject();
