@@ -21,6 +21,7 @@ export default function UserDashboard() {
   const [smsPermissionStatus, setSmsPermissionStatus] = useState<
     'idle' | 'granted' | 'denied' | 'error'
   >('idle');
+  const [smsPermissionError, setSmsPermissionError] = useState('');
   const [pageLoading, setPageLoading] = useState(true);
 
   const { user, fetchUser } = useUser(userId);
@@ -81,9 +82,11 @@ export default function UserDashboard() {
   const handleRequestSmsPermission = useCallback(async () => {
     try {
       const granted = await requestSmsReadPermission();
+      setSmsPermissionError('');
       setSmsPermissionStatus(granted ? 'granted' : 'denied');
     } catch (error) {
       console.error('Failed to request SMS permission:', error);
+      setSmsPermissionError(error instanceof Error ? error.message : String(error));
       setSmsPermissionStatus('error');
     }
   }, []);
@@ -165,7 +168,7 @@ export default function UserDashboard() {
               {smsPermissionStatus === 'denied' &&
                 'SMS permission denied. Please allow SMS in Android app settings.'}
               {smsPermissionStatus === 'error' &&
-                'Could not request SMS permission. Check app logs and plugin setup.'}
+                `Could not request SMS permission. ${smsPermissionError || 'Check app logs and plugin setup.'}`}
             </p>
           )}
         </div>
