@@ -4,6 +4,7 @@
 
 - PWA install from Chrome (Add to Home screen)
 - Direct APK distribution via TWA packaging
+- Native Android app packaging via Capacitor
 
 ## Local development
 
@@ -25,11 +26,17 @@ npm run dev
 - `npm run android:twa:init`
 - `npm run android:twa:update`
 - `npm run android:twa:release`
+- `npm run android:cap:init`
+- `npm run android:cap:add`
+- `npm run android:cap:build`
+- `npm run android:cap:open`
 
 Detailed steps:
 
 - `android/twa/README.md`
 - `docs/android-direct-install.md`
+- `docs/android-native-capacitor.md`
+- `docs/android-sms-auto-finance.md`
 
 ### Public install page
 

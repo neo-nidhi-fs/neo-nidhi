@@ -10,10 +10,17 @@ import QRCodeDisplay from '@/components/QRCodeDisplay';
 import { useUser, useChallenges } from '@/hooks/useServices';
 import { useUserFinance } from '@/hooks/useUserFinance';
 import { getUserFeatures } from '@/lib/userFeatures';
+import { useAutoSmsFinanceSync } from '@/hooks/useAutoSmsFinanceSync';
+import { isNativeApp } from '@/lib/native';
+import { requestSmsReadPermission } from '@/lib/native/sms';
 
 export default function UserDashboard() {
   const [userId, setUserId] = useState<string>('');
   const [userName, setUserName] = useState<string>('');
+  const [financeFeatureEnabled, setFinanceFeatureEnabled] = useState(false);
+  const [smsPermissionStatus, setSmsPermissionStatus] = useState<
+    'idle' | 'granted' | 'denied' | 'error'
+  >('idle');
   const [pageLoading, setPageLoading] = useState(true);
 
   const { user, fetchUser } = useUser(userId);
@@ -26,6 +33,7 @@ export default function UserDashboard() {
 
   const { fetchAssets, fetchLiabilities, fetchCashFlows, fetchNetWorth } =
     useUserFinance();
+  useAutoSmsFinanceSync(financeFeatureEnabled);
 
   async function initializeUser() {
     try {
@@ -48,6 +56,7 @@ export default function UserDashboard() {
       await fetchActiveChallenges();
 
       const financeEnabled = getUserFeatures(currentUser).financeFeaturesEnabled;
+      setFinanceFeatureEnabled(financeEnabled);
 
       if (financeEnabled) {
         await fetchNetWorth();
@@ -68,6 +77,16 @@ export default function UserDashboard() {
     fetchLiabilities,
     fetchCashFlows,
   ]);
+
+  const handleRequestSmsPermission = useCallback(async () => {
+    try {
+      const granted = await requestSmsReadPermission();
+      setSmsPermissionStatus(granted ? 'granted' : 'denied');
+    } catch (error) {
+      console.error('Failed to request SMS permission:', error);
+      setSmsPermissionStatus('error');
+    }
+  }, []);
 
   // Initialize session on mount
   useEffect(() => {
@@ -130,7 +149,25 @@ export default function UserDashboard() {
               onMPINSet={fetchUser}
             />
             <QRCodeDisplay userId={userId} userName={userName} />
+            {isNativeApp() && (
+              <button
+                type="button"
+                onClick={handleRequestSmsPermission}
+                className="px-4 py-2 rounded-md bg-cyan-600 hover:bg-cyan-500 text-white font-medium"
+              >
+                Allow SMS Access
+              </button>
+            )}
           </div>
+          {isNativeApp() && smsPermissionStatus !== 'idle' && (
+            <p className="text-sm text-gray-200">
+              {smsPermissionStatus === 'granted' && 'SMS permission granted.'}
+              {smsPermissionStatus === 'denied' &&
+                'SMS permission denied. Please allow SMS in Android app settings.'}
+              {smsPermissionStatus === 'error' &&
+                'Could not request SMS permission. Check app logs and plugin setup.'}
+            </p>
+          )}
         </div>
       </div>
     </main>
