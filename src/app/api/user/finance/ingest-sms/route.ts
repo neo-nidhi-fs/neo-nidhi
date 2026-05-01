@@ -16,6 +16,12 @@ type SmsPayload = {
   messageId?: string;
 };
 
+type ParsedMessage = {
+  message: SmsPayload;
+  parsed: ReturnType<typeof parseFinanceSms>;
+  receivedAtMs: number;
+};
+
 function escapeForRegex(text: string): string {
   return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
@@ -36,6 +42,18 @@ function extractSmsReferences(payload: SmsPayload): string[] {
     }
   }
   return Array.from(refs).filter(Boolean).slice(0, 5);
+}
+
+function isTransferLikeText(payload: SmsPayload): boolean {
+  const lower = `${payload.sender || ''} ${payload.body || ''}`.toLowerCase();
+  return (
+    lower.includes('transfer') ||
+    lower.includes('transferred') ||
+    lower.includes('to a/c') ||
+    lower.includes('to account') ||
+    lower.includes('from a/c') ||
+    lower.includes('from account')
+  );
 }
 
 function buildMessageHash(payload: SmsPayload): string {
@@ -71,7 +89,9 @@ export async function POST(req: Request) {
     const createdIds: string[] = [];
     let skippedNonFinance = 0;
     let skippedDuplicates = 0;
+    let skippedTransfers = 0;
 
+    const parsedMessages: ParsedMessage[] = [];
     for (const message of messages) {
       const parsed = parseFinanceSms(
         String(message.body || ''),
@@ -81,7 +101,39 @@ export async function POST(req: Request) {
         skippedNonFinance += 1;
         continue;
       }
+      parsedMessages.push({
+        message,
+        parsed,
+        receivedAtMs: message.receivedAt ? new Date(message.receivedAt).getTime() : Date.now(),
+      });
+    }
 
+    const skipIndexes = new Set<number>();
+    const transferWindowMs = 60 * 60 * 1000;
+    for (let i = 0; i < parsedMessages.length; i += 1) {
+      if (skipIndexes.has(i)) continue;
+      const left = parsedMessages[i];
+      if (!left.parsed || !isTransferLikeText(left.message)) continue;
+
+      for (let j = i + 1; j < parsedMessages.length; j += 1) {
+        if (skipIndexes.has(j)) continue;
+        const right = parsedMessages[j];
+        if (!right.parsed || !isTransferLikeText(right.message)) continue;
+        if (left.parsed.amount !== right.parsed.amount) continue;
+        if (left.parsed.type === right.parsed.type) continue;
+        if (Math.abs(left.receivedAtMs - right.receivedAtMs) > transferWindowMs) continue;
+
+        skipIndexes.add(i);
+        skipIndexes.add(j);
+        skippedTransfers += 2;
+        break;
+      }
+    }
+
+    for (let index = 0; index < parsedMessages.length; index += 1) {
+      if (skipIndexes.has(index)) continue;
+      const { message, parsed } = parsedMessages[index];
+      if (!parsed) continue;
       const hash = buildMessageHash(message);
       const dedupeTag = `[sms-hash:${hash}]`;
       const references = extractSmsReferences(message);
@@ -124,6 +176,7 @@ export async function POST(req: Request) {
         createdIds,
         skippedNonFinance,
         skippedDuplicates,
+        skippedTransfers,
       },
     });
   } catch (error: unknown) {

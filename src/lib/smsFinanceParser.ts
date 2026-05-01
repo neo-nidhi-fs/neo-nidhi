@@ -37,6 +37,9 @@ function parseAmount(text: string): number | null {
 
 function detectType(text: string): 'income' | 'expense' | null {
   const lower = text.toLowerCase();
+  // Hard rule: debited => expense, credited => income.
+  if (lower.includes('debited')) return 'expense';
+  if (lower.includes('credited')) return 'income';
   if (CREDIT_KEYWORDS.some((word) => lower.includes(word))) return 'income';
   if (DEBIT_KEYWORDS.some((word) => lower.includes(word))) return 'expense';
   return null;
@@ -74,6 +77,8 @@ function detectPaymentSource(text: string): 'account' | 'cash' | 'card' | 'walle
 export function parseFinanceSms(messageBody: string, sender?: string): ParsedFinanceSms | null {
   const normalized = String(messageBody || '').trim();
   if (!normalized) return null;
+  // Reminder messages should never be auto-booked as transactions.
+  if (/is\s+due\s+on/i.test(normalized)) return null;
   const senderText = String(sender || '').trim();
   const combinedText = `${senderText} ${normalized}`.trim();
 
