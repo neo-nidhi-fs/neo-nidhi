@@ -6,6 +6,8 @@ import HighchartsReact from 'highcharts-react-official';
 import {
   AlertTriangle,
   BarChart3,
+  ChevronLeft,
+  ChevronRight,
   Loader2,
   Pencil,
   PieChart,
@@ -17,10 +19,13 @@ import {
   Budget,
   BudgetExpenseCategoryTotal,
   BudgetSummary,
+  CashFlow,
 } from '@/hooks/useUserFinance';
+import { ALL_CASHFLOW_CATEGORIES } from '@/lib/financeCategories';
 
 interface BudgetDashboardProps {
   budgets: Budget[];
+  cashFlows: CashFlow[];
   summary: BudgetSummary | null;
   expenseByCategory: BudgetExpenseCategoryTotal[];
   loading?: boolean;
@@ -76,6 +81,17 @@ function monthLabel(month: string): string {
   });
 }
 
+function shiftMonth(month: string, delta: number): string {
+  const [yearRaw, monthRaw] = month.split('-');
+  const year = Number(yearRaw);
+  const monthIndex = Number(monthRaw) - 1;
+  if (Number.isNaN(year) || Number.isNaN(monthIndex)) return month;
+
+  const date = new Date(year, monthIndex, 1);
+  date.setMonth(date.getMonth() + delta);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+}
+
 function emptyForm(month: string): BudgetFormState {
   return {
     month,
@@ -87,6 +103,7 @@ function emptyForm(month: string): BudgetFormState {
 
 export default function BudgetDashboard({
   budgets,
+  cashFlows,
   summary,
   expenseByCategory,
   loading = false,
@@ -102,6 +119,7 @@ export default function BudgetDashboard({
     emptyForm(getCurrentMonthKey())
   );
   const [submitting, setSubmitting] = useState(false);
+  const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null);
 
   useEffect(() => {
     onRefresh(selectedMonth);
@@ -241,6 +259,32 @@ export default function BudgetDashboard({
     }
   };
 
+  const handlePreviousMonth = () => {
+    setSelectedMonth((prev) => shiftMonth(prev, -1));
+  };
+
+  const handleNextMonth = () => {
+    setSelectedMonth((prev) => shiftMonth(prev, 1));
+  };
+
+  const budgetTransactions = useMemo(() => {
+    if (!selectedBudget) return [];
+    const targetCategory = selectedBudget.category.trim().toLowerCase();
+    return cashFlows
+      .filter((cashFlow) => {
+        const monthKey = new Date(cashFlow.date).toISOString().slice(0, 7);
+        const category = String(cashFlow.category || '').trim().toLowerCase();
+        return (
+          cashFlow.type === 'expense' &&
+          monthKey === selectedBudget.month &&
+          category === targetCategory
+        );
+      })
+      .sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+      );
+  }, [cashFlows, selectedBudget]);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
@@ -251,12 +295,28 @@ export default function BudgetDashboard({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={handlePreviousMonth}
+            className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-md border border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700"
+            aria-label="Previous month"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
           <input
             type="month"
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(e.target.value)}
             className="rounded-md border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-gray-100"
           />
+          <button
+            type="button"
+            onClick={handleNextMonth}
+            className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-md border border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700"
+            aria-label="Next month"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
           <button
             type="button"
             onClick={handleCreateClick}
@@ -319,13 +379,18 @@ export default function BudgetDashboard({
             </div>
             <div>
               <label className="mb-1 block text-sm text-slate-300">Category</label>
-              <input
-                type="text"
+              <select
                 value={formData.category}
                 onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value }))}
-                placeholder="e.g. Groceries"
                 className="w-full rounded-md border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-gray-100"
-              />
+              >
+                <option value="">Select a category</option>
+                {ALL_CASHFLOW_CATEGORIES.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="mb-1 block text-sm text-slate-300">Budget Amount</label>
@@ -394,13 +459,17 @@ export default function BudgetDashboard({
               return (
                 <div key={budget._id} className="space-y-3 px-4 py-4">
                   <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                    <div>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedBudget(budget)}
+                      className="text-left rounded-md hover:bg-slate-800/60 px-2 py-1 -mx-2 transition-colors"
+                    >
                       <p className="font-medium text-white">{budget.category}</p>
                       <p className="text-xs text-slate-400">
                         {monthLabel(budget.month)} | Budget {formatCurrency(budget.amount)} | Spent{' '}
                         {formatCurrency(budget.spent)}
                       </p>
-                    </div>
+                    </button>
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
@@ -474,6 +543,67 @@ export default function BudgetDashboard({
           )}
         </div>
       </div>
+
+      {selectedBudget && (
+        <div
+          className="fixed inset-0 z-50 bg-black/60 p-4 flex items-center justify-center"
+          onClick={() => setSelectedBudget(null)}
+          role="presentation"
+        >
+          <div
+            className="w-full max-w-3xl max-h-[90vh] overflow-auto rounded-lg border border-slate-600 bg-slate-900 p-4"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+          >
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <div>
+                <h5 className="text-lg font-semibold text-white">
+                  {selectedBudget.category} Transactions
+                </h5>
+                <p className="text-sm text-slate-300">
+                  {monthLabel(selectedBudget.month)}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedBudget(null)}
+                className="rounded-md border border-slate-600 px-3 py-1 text-sm text-slate-200 hover:bg-slate-800"
+              >
+                Close
+              </button>
+            </div>
+
+            {budgetTransactions.length === 0 ? (
+              <p className="text-slate-300 text-sm">
+                No expense transactions found for this budget.
+              </p>
+            ) : (
+              <div className="divide-y divide-slate-700">
+                {budgetTransactions.map((tx) => (
+                  <div
+                    key={tx._id}
+                    className="py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
+                  >
+                    <div>
+                      <p className="text-sm text-white">{tx.source}</p>
+                      <p className="text-xs text-slate-400">
+                        {new Date(tx.date).toLocaleDateString('en-IN')} | {tx.paymentSource || 'account'}
+                      </p>
+                      {tx.note && (
+                        <p className="text-xs text-slate-500 mt-1">{tx.note}</p>
+                      )}
+                    </div>
+                    <p className="text-sm font-semibold text-red-300">
+                      {formatCurrency(tx.amount)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

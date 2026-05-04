@@ -1,11 +1,32 @@
-export type ParsedFinanceSms = {
-  type: 'income' | 'expense';
+/**
+ * Enum for transaction types.
+ */
+export enum FinanceTransactionType {
+  Income = 'income',
+  Expense = 'expense',
+}
+
+/**
+ * Enum for payment sources.
+ */
+export enum PaymentSource {
+  Account = 'account',
+  Cash = 'cash',
+  Card = 'card',
+  Wallet = 'wallet',
+}
+
+/**
+ * Parsed finance SMS structure.
+ */
+export interface ParsedFinanceSms {
+  type: FinanceTransactionType;
   amount: number;
   category: string;
   note: string;
   source: string;
-  paymentSource: 'account' | 'cash' | 'card' | 'wallet';
-};
+  paymentSource: PaymentSource;
+}
 
 const DEBIT_KEYWORDS = [
   'debited',
@@ -16,7 +37,6 @@ const DEBIT_KEYWORDS = [
   'paid',
   'dr',
 ];
-
 const CREDIT_KEYWORDS = [
   'credited',
   'received',
@@ -26,8 +46,13 @@ const CREDIT_KEYWORDS = [
   'cr',
 ];
 
+/**
+ * Extracts the amount from the SMS text.
+ */
 function parseAmount(text: string): number | null {
-  const match = text.match(/(?:rs\.?|inr|\u20B9)\s*([0-9][0-9,]*(?:\.[0-9]{1,2})?)/i);
+  const match = text.match(
+    /(?:rs\.?|inr|\u20B9)\s*([0-9][0-9,]*(?:\.[0-9]{1,2})?)/i
+  );
   if (!match) return null;
   const normalized = match[1].replace(/,/g, '');
   const amount = Number.parseFloat(normalized);
@@ -35,49 +60,83 @@ function parseAmount(text: string): number | null {
   return amount;
 }
 
-function detectType(text: string): 'income' | 'expense' | null {
+/**
+ * Detects transaction type from SMS text.
+ */
+function detectType(text: string): FinanceTransactionType | null {
   const lower = text.toLowerCase();
-  // Hard rule: debited => expense, credited => income.
-  if (lower.includes('debited')) return 'expense';
-  if (lower.includes('credited')) return 'income';
-  if (CREDIT_KEYWORDS.some((word) => lower.includes(word))) return 'income';
-  if (DEBIT_KEYWORDS.some((word) => lower.includes(word))) return 'expense';
+  if (lower.includes('debited')) return FinanceTransactionType.Expense;
+  if (lower.includes('credited')) return FinanceTransactionType.Income;
+  if (CREDIT_KEYWORDS.some((word) => lower.includes(word)))
+    return FinanceTransactionType.Income;
+  if (DEBIT_KEYWORDS.some((word) => lower.includes(word)))
+    return FinanceTransactionType.Expense;
   return null;
 }
 
-function detectCategory(text: string, type: 'income' | 'expense'): string {
+/**
+ * Detects the category of the transaction from SMS text and type.
+ */
+function detectCategory(text: string, type: FinanceTransactionType): string {
   const lower = text.toLowerCase();
-
   if (lower.includes('groww invest tech pvt ltd')) return 'Investment';
   if (lower.includes('abhirami v m')) return 'Gift';
-
-  if (lower.includes('upi')) return type === 'income' ? 'UPI Credit' : 'UPI Payment';
+  if (lower.includes('upi'))
+    return type === FinanceTransactionType.Income
+      ? 'UPI Credit'
+      : 'UPI Payment';
   if (lower.includes('atm')) return 'ATM';
-  if (lower.includes('imps')) return type === 'income' ? 'IMPS Credit' : 'IMPS Transfer';
-  if (lower.includes('neft')) return type === 'income' ? 'NEFT Credit' : 'NEFT Transfer';
+  if (lower.includes('imps'))
+    return type === FinanceTransactionType.Income
+      ? 'IMPS Credit'
+      : 'IMPS Transfer';
+  if (lower.includes('neft'))
+    return type === FinanceTransactionType.Income
+      ? 'NEFT Credit'
+      : 'NEFT Transfer';
   if (lower.includes('salary')) return 'Salary';
   if (lower.includes('interest')) return 'Interest';
   if (lower.includes('refund')) return 'Refund';
   if (lower.includes('cashback')) return 'Cashback';
-  if (lower.includes('card')) return type === 'income' ? 'Card Credit' : 'Card Payment';
-
-  return type === 'income' ? 'Other Income' : 'Other Expense';
+  if (lower.includes('card'))
+    return type === FinanceTransactionType.Income
+      ? 'Card Credit'
+      : 'Card Payment';
+  return type === FinanceTransactionType.Income
+    ? 'Other Income'
+    : 'Other Expense';
 }
 
-function detectPaymentSource(text: string): 'account' | 'cash' | 'card' | 'wallet' {
+/**
+ * Detects the payment source from SMS text.
+ */
+function detectPaymentSource(text: string): PaymentSource {
   const lower = text.toLowerCase();
-  if (lower.includes('wallet')) return 'wallet';
-  if (lower.includes('card') || lower.includes('credit card') || lower.includes('debit card')) {
-    return 'card';
+  if (lower.includes('wallet')) return PaymentSource.Wallet;
+  if (
+    lower.includes('card') ||
+    lower.includes('credit card') ||
+    lower.includes('debit card')
+  ) {
+    return PaymentSource.Card;
   }
-  if (lower.includes('cash')) return 'cash';
-  return 'account';
+  if (lower.includes('cash')) return PaymentSource.Cash;
+  return PaymentSource.Account;
 }
 
-export function parseFinanceSms(messageBody: string, sender?: string): ParsedFinanceSms | null {
+/**
+ * Parses a finance-related SMS and returns a structured transaction object.
+ * @param messageBody The SMS message body.
+ * @param sender The sender of the SMS.
+ * @returns ParsedFinanceSms or null if not parsable.
+ */
+export function parseFinanceSms(
+  messageBody: string,
+  sender?: string
+): ParsedFinanceSms | null {
   const normalized = String(messageBody || '').trim();
   if (!normalized) return null;
-  // Reminder messages should never be auto-booked as transactions.
+  // Ignore reminder messages (e.g., bill due reminders)
   if (/is\s+due\s+on/i.test(normalized)) return null;
   const senderText = String(sender || '').trim();
   const combinedText = `${senderText} ${normalized}`.trim();

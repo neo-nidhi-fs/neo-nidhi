@@ -377,6 +377,7 @@ export default function UserFinanceFeaturePage() {
                 {activeTab === 'budgets' && (
                   <BudgetDashboard
                     budgets={budgets}
+                    cashFlows={cashFlows}
                     summary={budgetSummary}
                     expenseByCategory={budgetExpenseByCategory}
                     loading={financeLoading}

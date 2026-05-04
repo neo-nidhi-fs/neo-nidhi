@@ -60,6 +60,8 @@ function CashFlowSummaryBar({
   totalExpense,
   totalRemaining,
   modeTotals,
+  showModeBreakdown,
+  onToggleModeBreakdown,
 }: {
   formatCurrency: (value: number) => string;
   totalIncome: number;
@@ -69,6 +71,8 @@ function CashFlowSummaryBar({
     'account' | 'cash' | 'card' | 'wallet',
     { income: number; expense: number }
   >;
+  showModeBreakdown: boolean;
+  onToggleModeBreakdown: () => void;
 }) {
   const modeLabels: Record<'account' | 'cash' | 'card' | 'wallet', string> = {
     account: 'Account',
@@ -108,36 +112,48 @@ function CashFlowSummaryBar({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        {PAYMENT_MODES.map((mode) => {
-          const income = modeTotals[mode].income;
-          const expense = modeTotals[mode].expense;
-          const remaining = income - expense;
-          return (
-            <div
-              key={mode}
-              className="rounded-lg bg-slate-900/60 border border-slate-600/80 p-4"
-            >
-              <p className="text-sm font-semibold uppercase tracking-wide text-cyan-300 mb-2">
-                {modeLabels[mode]}
-              </p>
-              <p className="text-xs uppercase tracking-wide text-slate-400">
-                Income:{' '}
-                <span className="text-emerald-400">{formatCurrency(income)}</span>
-              </p>
-              <p className="text-xs uppercase tracking-wide text-slate-400 mt-1">
-                Expense:{' '}
-                <span className="text-red-400">{formatCurrency(expense)}</span>
-              </p>
-              <p
-                className={`text-xs uppercase tracking-wide mt-1 ${remaining >= 0 ? 'text-emerald-400' : 'text-red-400'}`}
-              >
-                Remaining: {formatCurrency(remaining)}
-              </p>
-            </div>
-          );
-        })}
+      <div>
+        <button
+          type="button"
+          onClick={onToggleModeBreakdown}
+          className="text-xs font-medium text-cyan-300 hover:text-cyan-200"
+        >
+          {showModeBreakdown ? 'View less' : 'View more'}
+        </button>
       </div>
+
+      {showModeBreakdown && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+          {PAYMENT_MODES.map((mode) => {
+            const income = modeTotals[mode].income;
+            const expense = modeTotals[mode].expense;
+            const remaining = income - expense;
+            return (
+              <div
+                key={mode}
+                className="rounded-lg bg-slate-900/60 border border-slate-600/80 p-4"
+              >
+                <p className="text-sm font-semibold uppercase tracking-wide text-cyan-300 mb-2">
+                  {modeLabels[mode]}
+                </p>
+                <p className="text-xs uppercase tracking-wide text-slate-400">
+                  Income:{' '}
+                  <span className="text-emerald-400">{formatCurrency(income)}</span>
+                </p>
+                <p className="text-xs uppercase tracking-wide text-slate-400 mt-1">
+                  Expense:{' '}
+                  <span className="text-red-400">{formatCurrency(expense)}</span>
+                </p>
+                <p
+                  className={`text-xs uppercase tracking-wide mt-1 ${remaining >= 0 ? 'text-emerald-400' : 'text-red-400'}`}
+                >
+                  Remaining: {formatCurrency(remaining)}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -182,6 +198,15 @@ function CashflowMobileCard({
     month: 'short',
     year: 'numeric',
   });
+
+  const handleDeleteClick = () => {
+    if (!onDelete) return;
+    const confirmed = window.confirm(
+      'Delete this transaction? This action cannot be undone.'
+    );
+    if (!confirmed) return;
+    onDelete(cashflow._id);
+  };
 
   return (
     <article
@@ -242,7 +267,7 @@ function CashflowMobileCard({
           </button>
           <button
             type="button"
-            onClick={() => onDelete && onDelete(cashflow._id)}
+            onClick={handleDeleteClick}
             className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg text-red-400 hover:bg-red-400/10 transition-colors"
             aria-label="Delete entry"
           >
@@ -262,6 +287,7 @@ export default function CashFlowManager({
   onAddClick,
 }: CashFlowManagerProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [showModeBreakdown, setShowModeBreakdown] = useState(false);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -332,6 +358,15 @@ export default function CashFlowManager({
 
   const handleToday = () => {
     setCurrentMonth(new Date());
+  };
+
+  const confirmAndDelete = (cashflowId: string) => {
+    if (!onDelete) return;
+    const confirmed = window.confirm(
+      'Delete this transaction? This action cannot be undone.'
+    );
+    if (!confirmed) return;
+    onDelete(cashflowId);
   };
 
   const sortedCashflows = visibleCashflows;
@@ -409,6 +444,10 @@ export default function CashFlowManager({
           totalExpense={totalExpense}
           totalRemaining={totalRemaining}
           modeTotals={modeTotals}
+          showModeBreakdown={showModeBreakdown}
+          onToggleModeBreakdown={() =>
+            setShowModeBreakdown((prev) => !prev)
+          }
         />
       </div>
 
@@ -497,7 +536,7 @@ export default function CashFlowManager({
                       </button>
                       <button
                         type="button"
-                        onClick={() => onDelete && onDelete(cashflow._id)}
+                        onClick={() => confirmAndDelete(cashflow._id)}
                         className="inline-flex items-center px-2 py-1 text-red-400 hover:bg-red-400/10 rounded transition-colors"
                         aria-label="Delete entry"
                       >

@@ -6,6 +6,7 @@ import {
   ExpensePaymentSource,
   Liability,
 } from '@/hooks/useUserFinance';
+import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '@/lib/financeCategories';
 import { X } from 'lucide-react';
 
 interface CashFlowFormData {
@@ -41,36 +42,6 @@ interface CashFlowFormProps {
   onCancel: () => void;
   loading?: boolean;
 }
-
-const INCOME_CATEGORIES = [
-  'Salary',
-  'Bonus',
-  'Freelance',
-  'Investment',
-  'Investment Returns',
-  'Interest',
-  'Dividends',
-  'Rental Income',
-  'Other Income',
-];
-
-const EXPENSE_CATEGORIES = [
-  'Groceries',
-  'Utilities',
-  'Rent',
-  'Transportation',
-  'Healthcare',
-  'Entertainment',
-  'Dining',
-  'Credit Card Payments',
-  'Gifts/Donations',
-  'part payment of loan',
-  'Shopping',
-  'Insurance',
-  'Investment',
-  'EMI/Loan',
-  'Other Expense',
-];
 
 export default function CashFlowForm({
   cashflow,
