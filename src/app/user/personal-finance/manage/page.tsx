@@ -182,7 +182,8 @@ export default function PersonalFinanceManagePage() {
     setShowLiabilityForm(true);
   };
 
-  const handleEditCashFlow = (cashflow: CashFlow) => {
+  const handleEditCashFlow = async (cashflow: CashFlow) => {
+    await ensureLiabilitiesLoaded();
     setEditingCashFlow(cashflow);
     setShowCashFlowForm(true);
   };
@@ -339,7 +340,9 @@ export default function PersonalFinanceManagePage() {
               <CashFlowManager
                 cashflows={cashFlows}
                 loading={tabLoading.cashflow || (financeLoading && !loadedTabs.cashflow)}
-                onEdit={handleEditCashFlow}
+                onEdit={(cashflow) => {
+                  void handleEditCashFlow(cashflow);
+                }}
                 onDelete={deleteCashFlow}
                 onAddClick={async () => {
                   await ensureLiabilitiesLoaded();

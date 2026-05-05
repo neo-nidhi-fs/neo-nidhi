@@ -27,8 +27,13 @@ export default function Navbar() {
   const features = getUserFeatures(user);
 
   async function handleLogout() {
+    setIsOpen(false);
     await signOut({ redirect: false });
     router.push('/');
+  }
+
+  function closeMobileMenu() {
+    setIsOpen(false);
   }
 
   useEffect(() => {
@@ -63,6 +68,7 @@ export default function Navbar() {
         {!session && (
           <Link
             href="/"
+            onClick={closeMobileMenu}
             className="text-gray-200 hover:text-blue-400 transition-colors duration-300 font-medium"
           >
             {content.navigation.home}
@@ -71,6 +77,7 @@ export default function Navbar() {
 
         <Link
           href="/about"
+          onClick={closeMobileMenu}
           className="text-gray-200 hover:text-blue-400 transition-colors duration-300 font-medium"
         >
           {content.navigation.about}
@@ -79,6 +86,7 @@ export default function Navbar() {
         {!session && (
           <Link
             href="/login"
+            onClick={closeMobileMenu}
             className="text-gray-200 hover:text-blue-400 transition-colors duration-300 font-medium"
           >
             {content.navigation.login}
@@ -89,12 +97,14 @@ export default function Navbar() {
           <>
             <Link
               href="/admin/dashboard"
+              onClick={closeMobileMenu}
               className="text-gray-200 hover:text-blue-400 transition-colors duration-300 font-medium"
             >
               {content.navigation.dashboard}
             </Link>
             <Link
               href="/admin/transactions"
+              onClick={closeMobileMenu}
               className="text-gray-200 hover:text-blue-400 transition-colors duration-300 font-medium"
             >
               {content.navigation.transactions}
@@ -102,6 +112,7 @@ export default function Navbar() {
             {userRole === 'admin' && (
               <Link
                 href="/admin/feature-toggles"
+                onClick={closeMobileMenu}
                 className="text-gray-200 hover:text-blue-400 transition-colors duration-300 font-medium"
               >
                 {content.navigation.featureToggles}
@@ -114,12 +125,14 @@ export default function Navbar() {
           <>
             <Link
               href="/user/dashboard"
+              onClick={closeMobileMenu}
               className="text-gray-200 hover:text-blue-400 transition-colors duration-300 font-medium"
             >
               {content.navigation.dashboard}
             </Link>
             <Link
               href="/user/passbook"
+              onClick={closeMobileMenu}
               className="text-gray-200 hover:text-blue-400 transition-colors duration-300 font-medium"
             >
               {content.navigation.passbook}
@@ -127,6 +140,7 @@ export default function Navbar() {
             {features.financeFeaturesEnabled && (
               <Link
                 href="/user/personal-finance"
+                onClick={closeMobileMenu}
                 className="text-gray-200 hover:text-blue-400 transition-colors duration-300 font-medium"
               >
                 {content.navigation.personalFinance}
@@ -135,6 +149,7 @@ export default function Navbar() {
             {features.androidAppEnabled && (
               <Link
                 href="/android"
+                onClick={closeMobileMenu}
                 className="text-gray-200 hover:text-blue-400 transition-colors duration-300 font-medium"
               >
                 {content.navigation.androidApp}
@@ -143,6 +158,7 @@ export default function Navbar() {
             {features.quizzesEnabled && (
               <Link
                 href="/user/quiz"
+                onClick={closeMobileMenu}
                 className="text-gray-200 hover:text-blue-400 transition-colors duration-300 font-medium"
               >
                 {content.navigation.quizzes}
@@ -151,6 +167,7 @@ export default function Navbar() {
             {features.challengesEnabled && (
               <Link
                 href="/user/challenges"
+                onClick={closeMobileMenu}
                 className="text-gray-200 hover:text-blue-400 transition-colors duration-300 font-medium"
               >
                 {content.navigation.challenges}
@@ -159,6 +176,7 @@ export default function Navbar() {
             {features.onlineTransferEnabled && (
               <Link
                 href="/user/online-transfer"
+                onClick={closeMobileMenu}
                 className="text-gray-200 hover:text-purple-400 transition-colors duration-300 font-medium"
               >
                 {content.navigation.onlineTransfer}

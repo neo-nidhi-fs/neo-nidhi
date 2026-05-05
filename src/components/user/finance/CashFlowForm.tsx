@@ -253,7 +253,7 @@ export default function CashFlowForm({
           </div>
 
           {/* Loan tie-in for loan payments */}
-          {formData.type === 'expense' && liabilities?.length > 0 && (
+          {formData.type === 'expense' && (
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">
                 Apply to Loan (optional)
@@ -264,8 +264,13 @@ export default function CashFlowForm({
                   setFormData({ ...formData, liabilityId: e.target.value })
                 }
                 className="w-full px-3 py-2 border border-slate-600 rounded-md bg-slate-700/50 text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                disabled={liabilities.length === 0}
               >
-                <option value="">No linked liability</option>
+                <option value="">
+                  {liabilities.length === 0
+                    ? 'No liabilities available'
+                    : 'No linked liability'}
+                </option>
                 {liabilities.map((liability) => (
                   <option key={liability._id} value={liability._id}>
                     {liability.type} - Outstanding: ₹{liability.amount}

@@ -30,6 +30,7 @@ export async function PUT(req: Request) {
       source,
       note,
       paymentSource,
+      liabilityId,
     } = body;
 
     const validPaymentSources = [
@@ -85,6 +86,16 @@ export async function PUT(req: Request) {
       }
     }
     if (note !== undefined) updates.note = note;
+    if (liabilityId !== undefined) {
+      const effectiveType = (type ?? existing.type) as string;
+      if (liabilityId && effectiveType !== 'expense') {
+        return NextResponse.json(
+          { success: false, error: 'Liability linked payments must be expenses' },
+          { status: 400 }
+        );
+      }
+      updates.liabilityId = liabilityId || null;
+    }
 
     const existingPaymentSource = existing.paymentSource || 'account';
     const resolvedPaymentSourceInput =
