@@ -57,8 +57,12 @@ const CashFlowSchema: Schema<ICashFlow> = new Schema(
 );
 
 CashFlowSchema.index(
-  { user: 1, source: 1, smsFingerprint: 1 },
-  { unique: true, sparse: true }
+  { user: 1, smsFingerprint: 1 },
+  {
+    unique: true,
+    sparse: true,
+    partialFilterExpression: { smsFingerprint: { $type: 'string' } },
+  }
 );
 
 export const CashFlow: Model<ICashFlow> =

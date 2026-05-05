@@ -152,7 +152,6 @@ export async function POST(req: Request) {
 
       const duplicateByFingerprint = await CashFlow.findOne({
         user: user._id,
-        source: 'sms_auto',
         smsFingerprint: hash,
       })
         .select('_id')
@@ -171,7 +170,6 @@ export async function POST(req: Request) {
 
       const duplicateByAmountDateAndRef = await CashFlow.findOne({
         user: user._id,
-        source: 'sms_auto',
         date: { $gte: dayStart, $lte: dayEnd },
         amount: parsed.amount,
         type: parsed.type,
