@@ -66,13 +66,13 @@ export function ManageFDDialog({
             <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3">
               <p className="text-green-400 text-xs font-semibold">Savings</p>
               <p className="text-xl font-bold text-green-300">
-                ₹{savingsBalance.toFixed(2)}
+                ?{savingsBalance.toFixed(2)}
               </p>
             </div>
             <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3">
               <p className="text-blue-400 text-xs font-semibold">FD Balance</p>
               <p className="text-xl font-bold text-blue-300">
-                ₹{fdBalance.toFixed(2)}
+                ?{fdBalance.toFixed(2)}
               </p>
             </div>
           </div>
@@ -106,7 +106,7 @@ export function ManageFDDialog({
             <form onSubmit={handleDepositSubmit} className="space-y-4">
               <div>
                 <Label htmlFor="deposit-amount" className="text-gray-100">
-                  Amount to Transfer (₹)
+                  Amount to Transfer (?)
                 </Label>
                 <Input
                   id="deposit-amount"
@@ -122,7 +122,7 @@ export function ManageFDDialog({
                   className="bg-slate-700 border-slate-600 text-white disabled:opacity-50"
                 />
                 <p className="text-xs text-gray-400 mt-1">
-                  Max: ₹{savingsBalance.toFixed(2)}
+                  Max: ?{savingsBalance.toFixed(2)}
                 </p>
               </div>
 
@@ -148,7 +148,7 @@ export function ManageFDDialog({
             <form onSubmit={handleWithdrawSubmit} className="space-y-4">
               <div>
                 <Label htmlFor="withdraw-amount" className="text-gray-100">
-                  Amount to Withdraw (₹)
+                  Amount to Withdraw (?)
                 </Label>
                 <Input
                   id="withdraw-amount"
@@ -164,7 +164,7 @@ export function ManageFDDialog({
                   className="bg-slate-700 border-slate-600 text-white disabled:opacity-50"
                 />
                 <p className="text-xs text-gray-400 mt-1">
-                  Max: ₹{fdBalance.toFixed(2)}
+                  Max: ?{fdBalance.toFixed(2)}
                 </p>
               </div>
 

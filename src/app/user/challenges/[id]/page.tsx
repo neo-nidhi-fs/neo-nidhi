@@ -337,7 +337,7 @@ export default function ChallengePage() {
                   <div className="text-center">
                     <p className="text-gray-300 mb-2">Prize Pool</p>
                     <p className="text-6xl font-black text-purple-400">
-                      ₹{challenge.totalPrizePool}
+                      ?{challenge.totalPrizePool}
                     </p>
                   </div>
                 </div>

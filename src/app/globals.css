@@ -121,5 +121,12 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family:
+      var(--font-geist-sans),
+      'Noto Sans',
+      'Noto Sans Devanagari',
+      'Segoe UI Symbol',
+      'Roboto',
+      sans-serif;
   }
 }

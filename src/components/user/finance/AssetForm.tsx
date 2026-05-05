@@ -201,8 +201,8 @@ export default function AssetForm({
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">
               {isRecurringDeposit
-                ? 'Monthly Installment Amount (₹) *'
-                : 'Amount Invested (₹)'}
+                ? 'Monthly Installment Amount (?) *'
+                : 'Amount Invested (?)'}
             </label>
             <input
               type="text"
@@ -224,7 +224,7 @@ export default function AssetForm({
           {/* Market Value */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">
-              Current Market Value (₹)
+              Current Market Value (?)
             </label>
             <input
               type="text"

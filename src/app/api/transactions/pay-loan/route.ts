@@ -84,7 +84,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      message: `Loan repayment of ₹${paymentAmount} completed successfully`,
+      message: `Loan repayment of ?${paymentAmount} completed successfully`,
       paidAmount: paymentAmount,
     });
   } catch (error: unknown) {

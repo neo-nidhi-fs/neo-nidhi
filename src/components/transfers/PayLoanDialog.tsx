@@ -48,13 +48,13 @@ export function PayLoanDialog({
           <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 mb-4">
             <p className="text-red-400 text-sm font-semibold">Loan Balance</p>
             <p className="text-2xl font-bold text-red-300">
-              ₹{loanBalance.toFixed(2)}
+              ?{loanBalance.toFixed(2)}
             </p>
           </div>
 
           <div>
             <Label htmlFor="repay-amount" className="text-gray-100">
-              Repayment Amount (₹)
+              Repayment Amount (?)
             </Label>
             <Input
               id="repay-amount"
@@ -70,7 +70,7 @@ export function PayLoanDialog({
               className="bg-slate-700 border-slate-600 text-white disabled:opacity-50"
             />
             <p className="text-xs text-gray-400 mt-1">
-              Max: ₹{Math.min(maxAmount, loanBalance).toFixed(2)}
+              Max: ?{Math.min(maxAmount, loanBalance).toFixed(2)}
             </p>
           </div>
 

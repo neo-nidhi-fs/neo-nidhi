@@ -112,21 +112,21 @@ export default function AdminReports() {
     },
     {
       label: 'Total Savings Balance',
-      value: `₹${(reportData.metrics.totalSavingsBalance / 100000).toFixed(2)}L`,
+      value: `?${(reportData.metrics.totalSavingsBalance / 100000).toFixed(2)}L`,
       bgGradient: 'from-cyan-900/30 to-blue-900/30',
       borderColor: 'border-cyan-400/30',
       textColor: 'text-cyan-400',
     },
     {
       label: 'Total FD Balance',
-      value: `₹${(reportData.metrics.totalFdBalance / 100000).toFixed(2)}L`,
+      value: `?${(reportData.metrics.totalFdBalance / 100000).toFixed(2)}L`,
       bgGradient: 'from-amber-900/30 to-orange-900/30',
       borderColor: 'border-amber-400/30',
       textColor: 'text-amber-400',
     },
     {
       label: 'Total Loan Balance',
-      value: `₹${(reportData.metrics.totalLoanBalance / 100000).toFixed(2)}L`,
+      value: `?${(reportData.metrics.totalLoanBalance / 100000).toFixed(2)}L`,
       bgGradient: 'from-red-900/30 to-pink-900/30',
       borderColor: 'border-red-400/30',
       textColor: 'text-red-400',
@@ -142,7 +142,7 @@ export default function AdminReports() {
       labels: { style: { color: '#9ca3af' } },
     },
     yAxis: {
-      title: { text: 'Amount (₹)', style: { color: '#9ca3af' } },
+      title: { text: 'Amount (?)', style: { color: '#9ca3af' } },
       labels: { style: { color: '#9ca3af' } },
     },
     series: [
@@ -205,7 +205,7 @@ export default function AdminReports() {
       labels: { style: { color: '#9ca3af' } },
     },
     yAxis: {
-      title: { text: 'Amount (₹)', style: { color: '#9ca3af' } },
+      title: { text: 'Amount (?)', style: { color: '#9ca3af' } },
       labels: { style: { color: '#9ca3af' } },
     },
     series: [

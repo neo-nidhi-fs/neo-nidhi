@@ -218,7 +218,7 @@ export default function CashFlowForm({
           {/* Amount */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">
-              Amount (₹) *
+              Amount (?) *
             </label>
             <input
               type="text"
@@ -273,7 +273,7 @@ export default function CashFlowForm({
                 </option>
                 {liabilities.map((liability) => (
                   <option key={liability._id} value={liability._id}>
-                    {liability.type} - Outstanding: ₹{liability.amount}
+                    {liability.type} - Outstanding: ?{liability.amount}
                   </option>
                 ))}
               </select>

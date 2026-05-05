@@ -88,7 +88,7 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           success: false,
-          error: `Insufficient FD balance. Total: ₹${totalAvailable.toFixed(2)}, Mature: ₹${matureAmount.toFixed(2)}, Premature: ₹${prematureAmount.toFixed(2)}`,
+          error: `Insufficient FD balance. Total: ?${totalAvailable.toFixed(2)}, Mature: ?${matureAmount.toFixed(2)}, Premature: ?${prematureAmount.toFixed(2)}`,
         },
         { status: 400 }
       );
@@ -164,7 +164,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      message: `FD withdrawal successful. Principal: ₹${amount.toFixed(2)}, Interest: ₹${interestEarned.toFixed(2)}, Total: ₹${withdrawalAmount.toFixed(2)}`,
+      message: `FD withdrawal successful. Principal: ?${amount.toFixed(2)}, Interest: ?${interestEarned.toFixed(2)}, Total: ?${withdrawalAmount.toFixed(2)}`,
       data: {
         principalWithdrawn: amount,
         interestEarned,

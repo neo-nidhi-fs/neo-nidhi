@@ -136,7 +136,7 @@ export function SchemesSection({
                 </p>
                 {s.name === 'rd' && (
                   <p className="text-gray-300 mt-2 text-sm">
-                    Amount: ₹{(s.amount || 0).toFixed(2)} | Tenure:{' '}
+                    Amount: ?{(s.amount || 0).toFixed(2)} | Tenure:{' '}
                     {s.tenureMonths || 0} months
                   </p>
                 )}

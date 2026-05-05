@@ -45,11 +45,11 @@ export function ChallengeCard({
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-slate-700/30 rounded p-3">
             <p className="text-xs text-gray-400">Registration Fee</p>
-            <p className="text-lg font-bold text-blue-400">₹{challenge.registrationFee}</p>
+            <p className="text-lg font-bold text-blue-400">?{challenge.registrationFee}</p>
           </div>
           <div className="bg-slate-700/30 rounded p-3">
             <p className="text-xs text-gray-400">Prize Pool</p>
-            <p className="text-lg font-bold text-green-400">₹{challenge.totalPrizePool}</p>
+            <p className="text-lg font-bold text-green-400">?{challenge.totalPrizePool}</p>
           </div>
           <div className="bg-slate-700/30 rounded p-3">
             <p className="text-xs text-gray-400 flex items-center gap-1">

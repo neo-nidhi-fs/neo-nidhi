@@ -182,7 +182,7 @@ export default function AdminTransactionsPage() {
           </CardHeader>
           <CardContent>
             <p className="text-4xl font-bold text-green-900">
-              ₹{totalTransactions.toFixed(2)}
+              ?{totalTransactions.toFixed(2)}
             </p>
             <p className="text-gray-200 text-sm mt-2">
               Across {transactions.length} transactions
@@ -337,7 +337,7 @@ export default function AdminTransactionsPage() {
                           <span className="hidden sm:inline">{tx.type}</span>
                         </TableCell>
                         <TableCell className="font-semibold text-gray-200">
-                          ₹{tx.amount.toFixed(2)}
+                          ?{tx.amount.toFixed(2)}
                         </TableCell>
                       </TableRow>
                     );

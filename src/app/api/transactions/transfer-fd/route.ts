@@ -77,7 +77,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      message: `₹${amount} transferred to Fixed Deposit successfully`,
+      message: `?${amount} transferred to Fixed Deposit successfully`,
     });
   } catch (error: unknown) {
     return NextResponse.json(

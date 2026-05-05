@@ -58,7 +58,7 @@ export function extractKeywordPhrase(text: string): string {
 /**
  * Formats currency to INR format
  */
-export function formatCurrency(amount: number, currency = '₹'): string {
+export function formatCurrency(amount: number, currency = '?'): string {
   return `${currency}${amount.toLocaleString('en-IN', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,

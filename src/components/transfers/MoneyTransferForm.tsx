@@ -45,7 +45,7 @@ export function MoneyTransferForm({
 
     if (trimmedName && amountValue > 0) {
       if (maxAmount && amountValue > maxAmount) {
-        alert(`Amount cannot exceed ₹${maxAmount}`);
+        alert(`Amount cannot exceed ?${maxAmount}`);
         return;
       }
       onSubmit(trimmedName, amountValue);
@@ -85,7 +85,7 @@ export function MoneyTransferForm({
           </div>
           <div>
             <Label htmlFor="amount" className="text-gray-100">
-              Amount (₹)
+              Amount (?)
             </Label>
             <Input
               id="amount"
@@ -100,7 +100,7 @@ export function MoneyTransferForm({
             />
             {maxAmount && (
               <p className="text-xs text-gray-400 mt-1">
-                Max: ₹{maxAmount.toFixed(2)}
+                Max: ?{maxAmount.toFixed(2)}
               </p>
             )}
           </div>

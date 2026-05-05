@@ -113,7 +113,7 @@ export async function POST(req: Request) {
         return NextResponse.json(
           {
             success: false,
-            error: `RD amount must be exactly ₹${rdScheme.amount.toFixed(2)}`,
+            error: `RD amount must be exactly ?${rdScheme.amount.toFixed(2)}`,
           },
           { status: 400 }
         );

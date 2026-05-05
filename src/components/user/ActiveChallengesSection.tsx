@@ -38,7 +38,7 @@ export function ActiveChallengesSection({
               <div className="bg-slate-700/30 p-3 rounded">
                 <p className="text-xs text-gray-400">Prize Pool</p>
                 <p className="text-2xl font-bold text-purple-300">
-                  ₹{challenge.totalPrizePool}
+                  ?{challenge.totalPrizePool}
                 </p>
               </div>
               <Link href={`/user/challenges/${challenge._id}`}>

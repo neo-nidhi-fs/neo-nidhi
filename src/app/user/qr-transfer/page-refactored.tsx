@@ -162,7 +162,7 @@ export default function QRTransferPage() {
             <CardContent className="pt-6">
               <form onSubmit={handleAmountSubmit} className="space-y-4">
                 <div>
-                  <Label className="text-gray-300">Amount (₹)</Label>
+                  <Label className="text-gray-300">Amount (?)</Label>
                   <Input
                     type="number"
                     step="0.01"
