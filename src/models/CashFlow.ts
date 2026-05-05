@@ -15,6 +15,19 @@ export interface ICashFlow extends Document {
    */
   paymentSource?: 'account' | 'cash' | 'card' | 'wallet' | 'credit_card';
   note?: string | null;
+  /**
+   * Stable fingerprint for SMS-ingested entries.
+   * Used to dedupe even if note/category/amount are edited later.
+   */
+  smsFingerprint?: string | null;
+  /**
+   * Device-side SMS timestamp (epoch ms) captured from client payload.
+   */
+  smsDeviceTimeMs?: number | null;
+  /**
+   * Extracted reference tokens (UTR/RRN/Txn/Ref IDs) for additional dedupe checks.
+   */
+  smsReferenceKeys?: string[] | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -34,10 +47,18 @@ const CashFlowSchema: Schema<ICashFlow> = new Schema(
       required: false,
     },
     note: { type: String, default: null },
+    smsFingerprint: { type: String, default: null },
+    smsDeviceTimeMs: { type: Number, default: null },
+    smsReferenceKeys: { type: [String], default: [] },
   },
   {
     timestamps: true,
   }
+);
+
+CashFlowSchema.index(
+  { user: 1, source: 1, smsFingerprint: 1 },
+  { unique: true, sparse: true }
 );
 
 export const CashFlow: Model<ICashFlow> =

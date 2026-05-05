@@ -16,6 +16,11 @@ type SmsPayload = {
   messageId?: string;
 };
 
+type IngestSmsRequest = {
+  messages?: SmsPayload[];
+  deviceSyncedAtMs?: number;
+};
+
 type ParsedMessage = {
   message: SmsPayload;
   parsed: ReturnType<typeof parseFinanceSms>;
@@ -69,7 +74,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await req.json();
+    const body = (await req.json()) as IngestSmsRequest;
     const messages: SmsPayload[] = Array.isArray(body?.messages) ? body.messages : [];
     if (!messages.length) {
       return NextResponse.json(
@@ -141,22 +146,51 @@ export async function POST(req: Request) {
       const dedupeNeedles = [dedupeTag, ...referenceTags];
       const dedupeRegexes = dedupeNeedles.map((tag) => new RegExp(escapeForRegex(tag)));
 
-      const duplicate = await CashFlow.findOne({
+      const smsDeviceTimeMs = message.receivedAt
+        ? new Date(message.receivedAt).getTime()
+        : null;
+
+      const duplicateByFingerprint = await CashFlow.findOne({
         user: user._id,
         source: 'sms_auto',
-        note: { $in: dedupeRegexes },
+        smsFingerprint: hash,
       })
         .select('_id')
         .lean();
 
-      if (duplicate) {
+      if (duplicateByFingerprint) {
+        skippedDuplicates += 1;
+        continue;
+      }
+
+      const receivedDate = message.receivedAt ? new Date(message.receivedAt) : new Date();
+      const dayStart = new Date(receivedDate);
+      dayStart.setHours(0, 0, 0, 0);
+      const dayEnd = new Date(receivedDate);
+      dayEnd.setHours(23, 59, 59, 999);
+
+      const duplicateByAmountDateAndRef = await CashFlow.findOne({
+        user: user._id,
+        source: 'sms_auto',
+        date: { $gte: dayStart, $lte: dayEnd },
+        amount: parsed.amount,
+        type: parsed.type,
+        $or: [
+          { note: { $in: dedupeRegexes } },
+          ...(references.length ? [{ smsReferenceKeys: { $in: references } }] : []),
+        ],
+      })
+        .select('_id')
+        .lean();
+
+      if (duplicateByAmountDateAndRef) {
         skippedDuplicates += 1;
         continue;
       }
 
       const created = await CashFlow.create({
         user: user._id,
-        date: message.receivedAt ? new Date(message.receivedAt) : new Date(),
+        date: receivedDate,
         type: parsed.type,
         category: parsed.category,
         amount: parsed.amount,
@@ -164,6 +198,9 @@ export async function POST(req: Request) {
         liabilityId: null,
         paymentSource: parsed.paymentSource,
         note: `${parsed.note} ${[dedupeTag, ...referenceTags].join(' ')}`,
+        smsFingerprint: hash,
+        smsDeviceTimeMs,
+        smsReferenceKeys: references,
       });
 
       createdIds.push(String(created._id));
@@ -177,6 +214,10 @@ export async function POST(req: Request) {
         skippedNonFinance,
         skippedDuplicates,
         skippedTransfers,
+        deviceSyncedAtMs:
+          typeof body?.deviceSyncedAtMs === 'number'
+            ? body.deviceSyncedAtMs
+            : Date.now(),
       },
     });
   } catch (error: unknown) {

@@ -30,6 +30,7 @@ export async function syncFinanceSmsToServer(): Promise<{
   createdCount: number;
   skippedNonFinance: number;
   skippedDuplicates: number;
+  skippedTransfers: number;
 } | null> {
   if (!isNativeApp()) return null;
 
@@ -47,7 +48,7 @@ export async function syncFinanceSmsToServer(): Promise<{
   const response = await fetch('/api/user/finance/ingest-sms', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ messages }),
+    body: JSON.stringify({ messages, deviceSyncedAtMs: Date.now() }),
   });
 
   const result = await response.json();
@@ -55,15 +56,22 @@ export async function syncFinanceSmsToServer(): Promise<{
     return null;
   }
 
-  const latestEpoch = messages.reduce((max, message) => {
+  const latestEpochFromMessages = messages.reduce((max, message) => {
     const current = new Date(message.receivedAt).getTime();
     return Number.isFinite(current) ? Math.max(max, current) : max;
   }, sinceEpochMs);
+
+  const syncedAtFromServer = Number(result.data?.deviceSyncedAtMs || 0);
+  const latestEpoch = Math.max(
+    latestEpochFromMessages,
+    Number.isFinite(syncedAtFromServer) ? syncedAtFromServer : 0
+  );
   localStorage.setItem(SYNC_CURSOR_KEY, String(latestEpoch));
 
   return {
     createdCount: Number(result.data?.createdCount || 0),
     skippedNonFinance: Number(result.data?.skippedNonFinance || 0),
     skippedDuplicates: Number(result.data?.skippedDuplicates || 0),
+    skippedTransfers: Number(result.data?.skippedTransfers || 0),
   };
 }
