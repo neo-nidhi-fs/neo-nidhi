@@ -124,6 +124,19 @@ function detectPaymentSource(text: string): PaymentSource {
   return PaymentSource.Account;
 }
 
+function isMessageLikelyPromotional(text: string): boolean {
+  const lower = text.toLowerCase();
+  return (
+    lower.includes('offer') ||
+    lower.includes('promo') ||
+    lower.includes('discount') ||
+    lower.includes("don't miss") ||
+    lower.includes('get instant') ||
+    lower.includes('sale') ||
+    lower.includes('deal')
+  );
+}
+
 /**
  * Parses a finance-related SMS and returns a structured transaction object.
  * @param messageBody The SMS message body.
@@ -151,6 +164,7 @@ export function parseFinanceSms(
   ) {
     return null;
   }
+  if (isMessageLikelyPromotional(normalized)) return null;
   // Ignore reminder messages (e.g., bill due reminders)
   if (/is\s+due\s+on/i.test(normalized)) return null;
   const senderText = String(sender || '').trim();
