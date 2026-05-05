@@ -42,7 +42,11 @@ function extractSmsReferences(payload: SmsPayload): string[] {
   for (const pattern of patterns) {
     let match: RegExpExecArray | null = pattern.exec(raw);
     while (match) {
-      refs.add(String(match[1] || '').toLowerCase().trim());
+      refs.add(
+        String(match[1] || '')
+          .toLowerCase()
+          .trim()
+      );
       match = pattern.exec(raw);
     }
   }
@@ -71,11 +75,16 @@ export async function POST(req: Request) {
     await dbConnect();
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
     }
 
     const body = (await req.json()) as IngestSmsRequest;
-    const messages: SmsPayload[] = Array.isArray(body?.messages) ? body.messages : [];
+    const messages: SmsPayload[] = Array.isArray(body?.messages)
+      ? body.messages
+      : [];
     if (!messages.length) {
       return NextResponse.json(
         { success: false, error: 'messages[] is required' },
@@ -85,7 +94,10 @@ export async function POST(req: Request) {
 
     const user = await User.findById(session.user.id);
     if (!user) {
-      return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 });
+      return NextResponse.json(
+        { success: false, error: 'User not found' },
+        { status: 404 }
+      );
     }
 
     const featureFlagError = enforceFinanceFeatureEnabled(user);
@@ -109,7 +121,9 @@ export async function POST(req: Request) {
       parsedMessages.push({
         message,
         parsed,
-        receivedAtMs: message.receivedAt ? new Date(message.receivedAt).getTime() : Date.now(),
+        receivedAtMs: message.receivedAt
+          ? new Date(message.receivedAt).getTime()
+          : Date.now(),
       });
     }
 
@@ -126,7 +140,8 @@ export async function POST(req: Request) {
         if (!right.parsed || !isTransferLikeText(right.message)) continue;
         if (left.parsed.amount !== right.parsed.amount) continue;
         if (left.parsed.type === right.parsed.type) continue;
-        if (Math.abs(left.receivedAtMs - right.receivedAtMs) > transferWindowMs) continue;
+        if (Math.abs(left.receivedAtMs - right.receivedAtMs) > transferWindowMs)
+          continue;
 
         skipIndexes.add(i);
         skipIndexes.add(j);
@@ -144,7 +159,9 @@ export async function POST(req: Request) {
       const references = extractSmsReferences(message);
       const referenceTags = references.map((ref) => `[sms-ref:${ref}]`);
       const dedupeNeedles = [dedupeTag, ...referenceTags];
-      const dedupeRegexes = dedupeNeedles.map((tag) => new RegExp(escapeForRegex(tag)));
+      const dedupeRegexes = dedupeNeedles.map(
+        (tag) => new RegExp(escapeForRegex(tag))
+      );
 
       const smsDeviceTimeMs = message.receivedAt
         ? new Date(message.receivedAt).getTime()
@@ -162,7 +179,9 @@ export async function POST(req: Request) {
         continue;
       }
 
-      const receivedDate = message.receivedAt ? new Date(message.receivedAt) : new Date();
+      const receivedDate = message.receivedAt
+        ? new Date(message.receivedAt)
+        : new Date();
       const dayStart = new Date(receivedDate);
       dayStart.setHours(0, 0, 0, 0);
       const dayEnd = new Date(receivedDate);
@@ -172,10 +191,11 @@ export async function POST(req: Request) {
         user: user._id,
         date: { $gte: dayStart, $lte: dayEnd },
         amount: parsed.amount,
-        type: parsed.type,
         $or: [
           { note: { $in: dedupeRegexes } },
-          ...(references.length ? [{ smsReferenceKeys: { $in: references } }] : []),
+          ...(references.length
+            ? [{ smsReferenceKeys: { $in: references } }]
+            : []),
         ],
       })
         .select('_id')
