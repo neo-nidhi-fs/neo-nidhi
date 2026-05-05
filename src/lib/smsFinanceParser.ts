@@ -136,6 +136,21 @@ export function parseFinanceSms(
 ): ParsedFinanceSms | null {
   const normalized = String(messageBody || '').trim();
   if (!normalized) return null;
+  // Ignore OTP/authentication messages to avoid false transaction entries.
+  if (
+    /\bone[-\s]?time\s+password\b/i.test(normalized) ||
+    /\botp\b/i.test(normalized)
+  ) {
+    return null;
+  }
+  // Ignore credit-card statement reminders (not actual transactions).
+  if (
+    /statement\s+is\s+sent\s+to/i.test(normalized) &&
+    /minimum\s+of\s+rs\.?\s*[0-9,]+/i.test(normalized) &&
+    /is\s+due\s+by/i.test(normalized)
+  ) {
+    return null;
+  }
   // Ignore reminder messages (e.g., bill due reminders)
   if (/is\s+due\s+on/i.test(normalized)) return null;
   const senderText = String(sender || '').trim();
