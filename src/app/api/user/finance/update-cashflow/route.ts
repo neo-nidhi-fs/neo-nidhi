@@ -77,14 +77,7 @@ export async function PUT(req: Request) {
     if (type !== undefined) updates.type = type;
     if (category !== undefined) updates.category = category;
     if (amount !== undefined) updates.amount = amount;
-    if (source !== undefined) {
-      // Keep source stable for SMS-ingested rows so dedupe semantics remain predictable.
-      if (existing.smsFingerprint) {
-        updates.source = existing.source;
-      } else {
-        updates.source = source;
-      }
-    }
+    if (source !== undefined) updates.source = source;
     if (note !== undefined) updates.note = note;
     if (liabilityId !== undefined) {
       const effectiveType = (type ?? existing.type) as string;
