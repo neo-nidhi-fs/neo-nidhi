@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import {
@@ -85,7 +85,7 @@ export function MoneyTransferForm({
           </div>
           <div>
             <Label htmlFor="amount" className="text-gray-100">
-              Amount (?)
+              Amount (₹)
             </Label>
             <Input
               id="amount"
@@ -100,7 +100,7 @@ export function MoneyTransferForm({
             />
             {maxAmount && (
               <p className="text-xs text-gray-400 mt-1">
-                Max: ?{maxAmount.toFixed(2)}
+                Max: ₹{maxAmount.toFixed(2)}
               </p>
             )}
           </div>
@@ -123,3 +123,4 @@ export function MoneyTransferForm({
     </Dialog>
   );
 }
+

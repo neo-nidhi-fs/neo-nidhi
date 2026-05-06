@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
@@ -337,7 +337,7 @@ export default function ChallengePage() {
                   <div className="text-center">
                     <p className="text-gray-300 mb-2">Prize Pool</p>
                     <p className="text-6xl font-black text-purple-400">
-                      ?{challenge.totalPrizePool}
+                      ₹{challenge.totalPrizePool}
                     </p>
                   </div>
                 </div>
@@ -370,3 +370,4 @@ export default function ChallengePage() {
     </main>
   );
 }
+

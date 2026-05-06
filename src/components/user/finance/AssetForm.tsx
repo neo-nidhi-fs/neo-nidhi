@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { Asset } from '@/hooks/useUserFinance';
@@ -201,7 +201,7 @@ export default function AssetForm({
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">
               {isRecurringDeposit
-                ? 'Monthly Installment Amount (?) *'
+                ? 'Monthly Installment Amount (₹) *'
                 : 'Amount Invested (?)'}
             </label>
             <input
@@ -263,3 +263,4 @@ export default function AssetForm({
     </div>
   );
 }
+

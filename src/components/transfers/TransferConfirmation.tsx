@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -30,7 +30,7 @@ export function TransferConfirmation({
           <div className="border-t border-slate-600"></div>
           <div className="flex justify-between">
             <span className="text-gray-400">Amount</span>
-            <span className="text-white font-semibold">?{amount.toFixed(2)}</span>
+            <span className="text-white font-semibold">₹{amount.toFixed(2)}</span>
           </div>
         </div>
 
@@ -62,3 +62,4 @@ export function TransferConfirmation({
     </Card>
   );
 }
+

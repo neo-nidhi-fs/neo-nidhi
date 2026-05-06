@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -139,7 +139,7 @@ export default function HomePage() {
                     </p>
                     {s.name === 'rd' && (
                       <p className="text-gray-300 mt-2 text-sm">
-                        Amount: ?{(s.amount || 0).toFixed(2)} | Tenure:{' '}
+                        Amount: ₹{(s.amount || 0).toFixed(2)} | Tenure:{' '}
                         {s.tenureMonths || 0} months
                       </p>
                     )}
@@ -249,4 +249,5 @@ export default function HomePage() {
     </main>
   );
 }
+
 

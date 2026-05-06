@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+﻿import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export type BalanceUser = {
   savingsBalance: number;
@@ -35,7 +35,7 @@ export function AccountSummary({ user }: AccountSummaryProps) {
             <div key={item.label} className="bg-slate-700/30 p-4 rounded-lg">
               <p className="text-gray-400 text-sm">{item.label}</p>
               <p className={`text-2xl font-bold ${item.color}`}>
-                ?{(item.value || 0).toFixed(2)}
+                ₹{(item.value || 0).toFixed(2)}
               </p>
             </div>
           ))}
@@ -44,3 +44,4 @@ export function AccountSummary({ user }: AccountSummaryProps) {
     </Card>
   );
 }
+

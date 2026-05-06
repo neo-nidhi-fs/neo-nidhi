@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import {
   Table,
@@ -90,7 +90,7 @@ export function TransactionTable({
                     <span className="hidden sm:inline">{tx.type}</span>
                   </TableCell>
                   <TableCell className="font-semibold text-gray-200">
-                    ?{tx.amount.toFixed(2)}
+                    ₹{tx.amount.toFixed(2)}
                   </TableCell>
                 </TableRow>
               ))
@@ -148,3 +148,4 @@ export function TransactionTable({
     </div>
   );
 }
+

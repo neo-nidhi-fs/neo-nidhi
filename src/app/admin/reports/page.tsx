@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import HighchartsReact from 'highcharts-react-official';
@@ -142,7 +142,7 @@ export default function AdminReports() {
       labels: { style: { color: '#9ca3af' } },
     },
     yAxis: {
-      title: { text: 'Amount (?)', style: { color: '#9ca3af' } },
+      title: { text: 'Amount (₹)', style: { color: '#9ca3af' } },
       labels: { style: { color: '#9ca3af' } },
     },
     series: [
@@ -205,7 +205,7 @@ export default function AdminReports() {
       labels: { style: { color: '#9ca3af' } },
     },
     yAxis: {
-      title: { text: 'Amount (?)', style: { color: '#9ca3af' } },
+      title: { text: 'Amount (₹)', style: { color: '#9ca3af' } },
       labels: { style: { color: '#9ca3af' } },
     },
     series: [
@@ -460,3 +460,4 @@ export default function AdminReports() {
     </main>
   );
 }
+

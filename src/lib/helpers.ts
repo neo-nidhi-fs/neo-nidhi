@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Extracts important keywords from a text string
  * Removes common words and returns the most relevant phrase
  */
@@ -58,7 +58,7 @@ export function extractKeywordPhrase(text: string): string {
 /**
  * Formats currency to INR format
  */
-export function formatCurrency(amount: number, currency = '?'): string {
+export function formatCurrency(amount: number, currency = '₹'): string {
   return `${currency}${amount.toLocaleString('en-IN', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
@@ -134,3 +134,4 @@ export function getDisplayAge(
   const calculatedAge = calculateAge(dob);
   return calculatedAge !== null ? calculatedAge : storedAge;
 }
+

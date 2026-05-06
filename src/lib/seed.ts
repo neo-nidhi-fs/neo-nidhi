@@ -1,4 +1,4 @@
-import 'dotenv/config';
+﻿import 'dotenv/config';
 import { dbConnect } from './dbConnect';
 import { QuizQuestion } from '@/models/QuizQuestion';
 
@@ -4153,7 +4153,7 @@ function generateGeneralKnowledgeQuestions(count: number): QuizQuestionData[] {
       wikiKeyword: 'Fraction',
     },
     {
-      q: 'A shopkeeper buys an item for ?500 and sells it for ?600. What is the profit percentage?',
+      q: 'A shopkeeper buys an item for ₹500 and sells it for ₹600. What is the profit percentage?',
       opts: ['10%', '15%', '20%', '25%'],
       ans: 2,
       difficulty: 'medium',
@@ -4181,8 +4181,8 @@ function generateGeneralKnowledgeQuestions(count: number): QuizQuestionData[] {
       wikiKeyword: 'Average',
     },
     {
-      q: 'Find the compound interest on ?1000 at 10% per annum for 2 years.',
-      opts: ['?100', '?200', '?210', '?220'],
+      q: 'Find the compound interest on ₹1000 at 10% per annum for 2 years.',
+      opts: ['₹100', '₹200', '₹210', '₹220'],
       ans: 2,
       difficulty: 'medium',
       wikiKeyword: 'Compound_interest',
@@ -4195,8 +4195,8 @@ function generateGeneralKnowledgeQuestions(count: number): QuizQuestionData[] {
       wikiKeyword: 'Linear_equation',
     },
     {
-      q: 'A man spends 1/3 of his salary on rent and 1/4 on food. If his salary is ?12,000, how much is left?',
-      opts: ['?4000', '?5000', '?6000', '?7000'],
+      q: 'A man spends 1/3 of his salary on rent and 1/4 on food. If his salary is ₹12,000, how much is left?',
+      opts: ['₹4000', '₹5000', '₹6000', '₹7000'],
       ans: 1,
       difficulty: 'medium',
       wikiKeyword: 'Salary',
@@ -4241,20 +4241,20 @@ function generateGeneralKnowledgeQuestions(count: number): QuizQuestionData[] {
 
     // Ratios & Proportions
     {
-      q: 'Divide ?600 in the ratio 2:3.',
+      q: 'Divide ₹600 in the ratio 2:3.',
       opts: [
-        '?240 and ?360',
-        '?200 and ?400',
-        '?300 and ?300',
-        '?250 and ?350',
+        '₹240 and ₹360',
+        '₹200 and ₹400',
+        '₹300 and ₹300',
+        '₹250 and ₹350',
       ],
       ans: 0,
       difficulty: 'medium',
       wikiKeyword: 'Ratio',
     },
     {
-      q: 'If 4 pencils cost ?20, what is the cost of 10 pencils?',
-      opts: ['?40', '?45', '?50', '?55'],
+      q: 'If 4 pencils cost ₹20, what is the cost of 10 pencils?',
+      opts: ['₹40', '₹45', '₹50', '₹55'],
       ans: 2,
       difficulty: 'easy',
       wikiKeyword: 'Proportion',
@@ -4278,14 +4278,14 @@ function generateGeneralKnowledgeQuestions(count: number): QuizQuestionData[] {
 
     // Profit & Loss
     {
-      q: 'A man buys a book for ?200 and sells it for ?250. What is the profit percentage?',
+      q: 'A man buys a book for ₹200 and sells it for ₹250. What is the profit percentage?',
       opts: ['20%', '25%', '30%', '35%'],
       ans: 0,
       difficulty: 'medium',
       wikiKeyword: 'Profit_(accounting)',
     },
     {
-      q: 'A shopkeeper incurs a loss of ?50 on selling a pen for ?150. What is the loss percentage?',
+      q: 'A shopkeeper incurs a loss of ₹50 on selling a pen for ₹150. What is the loss percentage?',
       opts: ['20%', '25%', '30%', '35%'],
       ans: 0,
       difficulty: 'medium',
@@ -4294,15 +4294,15 @@ function generateGeneralKnowledgeQuestions(count: number): QuizQuestionData[] {
 
     // Simple & Compound Interest
     {
-      q: 'Find the simple interest on ?1000 at 5% per annum for 3 years.',
-      opts: ['?100', '?150', '?200', '?250'],
+      q: 'Find the simple interest on ₹1000 at 5% per annum for 3 years.',
+      opts: ['₹100', '₹150', '₹200', '₹250'],
       ans: 1,
       difficulty: 'easy',
       wikiKeyword: 'Simple_interest',
     },
     {
-      q: 'Find the compound interest on ?2000 at 10% per annum for 2 years.',
-      opts: ['?200', '?400', '?420', '?440'],
+      q: 'Find the compound interest on ₹2000 at 10% per annum for 2 years.',
+      opts: ['₹200', '₹400', '₹420', '₹440'],
       ans: 2,
       difficulty: 'medium',
       wikiKeyword: 'Compound_interest',
@@ -4387,20 +4387,20 @@ function generateGeneralKnowledgeQuestions(count: number): QuizQuestionData[] {
 
     // Ratios & Proportions
     {
-      q: 'Divide ?900 in the ratio 2:1.',
+      q: 'Divide ₹900 in the ratio 2:1.',
       opts: [
-        '?600 and ?300',
-        '?450 and ?450',
-        '?500 and ?400',
-        '?700 and ?200',
+        '₹600 and ₹300',
+        '₹450 and ₹450',
+        '₹500 and ₹400',
+        '₹700 and ₹200',
       ],
       ans: 0,
       difficulty: 'easy',
       wikiKeyword: 'Ratio',
     },
     {
-      q: 'If 5 kg of rice costs ?250, what is the cost of 8 kg?',
-      opts: ['?350', '?400', '?450', '?500'],
+      q: 'If 5 kg of rice costs ₹250, what is the cost of 8 kg?',
+      opts: ['₹350', '₹400', '₹450', '₹500'],
       ans: 1,
       difficulty: 'easy',
       wikiKeyword: 'Proportion',
@@ -4438,14 +4438,14 @@ function generateGeneralKnowledgeQuestions(count: number): QuizQuestionData[] {
 
     // Profit & Loss
     {
-      q: 'A man buys a pen for ?50 and sells it for ?60. What is the profit percentage?',
+      q: 'A man buys a pen for ₹50 and sells it for ₹60. What is the profit percentage?',
       opts: ['10%', '15%', '20%', '25%'],
       ans: 2,
       difficulty: 'easy',
       wikiKeyword: 'Profit_(accounting)',
     },
     {
-      q: 'A shopkeeper incurs a loss of ?40 on selling a book for ?160. What is the loss percentage?',
+      q: 'A shopkeeper incurs a loss of ₹40 on selling a book for ₹160. What is the loss percentage?',
       opts: ['20%', '25%', '30%', '35%'],
       ans: 0,
       difficulty: 'medium',
@@ -4461,21 +4461,21 @@ function generateGeneralKnowledgeQuestions(count: number): QuizQuestionData[] {
 
     // Simple & Compound Interest
     {
-      q: 'Find the simple interest on ?2000 at 5% per annum for 4 years.',
-      opts: ['?300', '?400', '?500', '?600'],
+      q: 'Find the simple interest on ₹2000 at 5% per annum for 4 years.',
+      opts: ['₹300', '₹400', '₹500', '₹600'],
       ans: 1,
       difficulty: 'easy',
       wikiKeyword: 'Simple_interest',
     },
     {
-      q: 'Find the compound interest on ?5000 at 8% per annum for 2 years.',
-      opts: ['?800', '?832', '?860', '?900'],
+      q: 'Find the compound interest on ₹5000 at 8% per annum for 2 years.',
+      opts: ['₹800', '₹832', '₹860', '₹900'],
       ans: 1,
       difficulty: 'medium',
       wikiKeyword: 'Compound_interest',
     },
     {
-      q: 'At what rate of interest will ?1000 become ?1210 in 2 years compounded annually?',
+      q: 'At what rate of interest will ₹1000 become ₹1210 in 2 years compounded annually?',
       opts: ['5%', '8%', '10%', '12%'],
       ans: 2,
       difficulty: 'hard',
@@ -5544,7 +5544,7 @@ function generateGeneralKnowledgeQuestions(count: number): QuizQuestionData[] {
       wikiKeyword: 'Fraction',
     },
     {
-      q: 'A shopkeeper buys an item for ?500 and sells it for ?600. What is the profit percentage?',
+      q: 'A shopkeeper buys an item for ₹500 and sells it for ₹600. What is the profit percentage?',
       opts: ['10%', '15%', '20%', '25%'],
       ans: 2,
       difficulty: 'medium',
@@ -5572,8 +5572,8 @@ function generateGeneralKnowledgeQuestions(count: number): QuizQuestionData[] {
       wikiKeyword: 'Average',
     },
     {
-      q: 'Find the compound interest on ?1000 at 10% per annum for 2 years.',
-      opts: ['?100', '?200', '?210', '?220'],
+      q: 'Find the compound interest on ₹1000 at 10% per annum for 2 years.',
+      opts: ['₹100', '₹200', '₹210', '₹220'],
       ans: 2,
       difficulty: 'medium',
       wikiKeyword: 'Compound_interest',
@@ -5586,8 +5586,8 @@ function generateGeneralKnowledgeQuestions(count: number): QuizQuestionData[] {
       wikiKeyword: 'Linear_equation',
     },
     {
-      q: 'A man spends 1/3 of his salary on rent and 1/4 on food. If his salary is ?12,000, how much is left?',
-      opts: ['?4000', '?5000', '?6000', '?7000'],
+      q: 'A man spends 1/3 of his salary on rent and 1/4 on food. If his salary is ₹12,000, how much is left?',
+      opts: ['₹4000', '₹5000', '₹6000', '₹7000'],
       ans: 1,
       difficulty: 'medium',
       wikiKeyword: 'Salary',
@@ -5600,27 +5600,27 @@ function generateGeneralKnowledgeQuestions(count: number): QuizQuestionData[] {
       wikiKeyword: 'Ratio',
     },
     {
-      q: 'Find the simple interest on ?2000 at 5% per annum for 4 years.',
-      opts: ['?300', '?400', '?500', '?600'],
+      q: 'Find the simple interest on ₹2000 at 5% per annum for 4 years.',
+      opts: ['₹300', '₹400', '₹500', '₹600'],
       ans: 1,
       difficulty: 'easy',
       wikiKeyword: 'Simple_interest',
     },
     {
-      q: 'Divide ?900 in the ratio 2:1.',
+      q: 'Divide ₹900 in the ratio 2:1.',
       opts: [
-        '?600 and ?300',
-        '?450 and ?450',
-        '?500 and ?400',
-        '?700 and ?200',
+        '₹600 and ₹300',
+        '₹450 and ₹450',
+        '₹500 and ₹400',
+        '₹700 and ₹200',
       ],
       ans: 0,
       difficulty: 'easy',
       wikiKeyword: 'Ratio',
     },
     {
-      q: 'If 5 kg of rice costs ?250, what is the cost of 8 kg?',
-      opts: ['?350', '?400', '?450', '?500'],
+      q: 'If 5 kg of rice costs ₹250, what is the cost of 8 kg?',
+      opts: ['₹350', '₹400', '₹450', '₹500'],
       ans: 1,
       difficulty: 'easy',
       wikiKeyword: 'Proportion',
@@ -5959,7 +5959,7 @@ function generateGeneralKnowledgeQuestions(count: number): QuizQuestionData[] {
       wikiKeyword: 'Cardinal_direction',
     },
     {
-      q: 'Puzzle: If 5 pens cost ?50, how much do 12 pens cost?',
+      q: 'Puzzle: If 5 pens cost ₹50, how much do 12 pens cost?',
       opts: ['100', '110', '120', '130'],
       ans: 2,
       difficulty: 'easy',
@@ -6132,7 +6132,7 @@ function generateGeneralKnowledgeQuestions(count: number): QuizQuestionData[] {
       wikiKeyword: 'Family_relationships',
     },
     {
-      q: 'If 2 pencils cost ?10, how much do 12 pencils cost?',
+      q: 'If 2 pencils cost ₹10, how much do 12 pencils cost?',
       opts: ['50', '55', '60', '65'],
       ans: 2,
       difficulty: 'easy',
@@ -6233,21 +6233,21 @@ function generateGeneralKnowledgeQuestions(count: number): QuizQuestionData[] {
   const mathMentalAbilityExpectedAnswers: Record<string, string> = {
     'What is 25% of 200?': '50',
     'Simplify: 3/4 + 2/3': '17/12',
-    'A shopkeeper buys an item for ?500 and sells it for ?600. What is the profit percentage?':
+    'A shopkeeper buys an item for ₹500 and sells it for ₹600. What is the profit percentage?':
       '20%',
     'If 12 workers can complete a task in 8 days, how many days will 24 workers take?':
       '4',
     'A train travels 120 km in 2 hours. What is its average speed?': '60 km/h',
     'The average of 10, 20, 30, 40, and 50 is:': '30',
-    'Find the compound interest on ?1000 at 10% per annum for 2 years.': '?210',
+    'Find the compound interest on ₹1000 at 10% per annum for 2 years.': '₹210',
     'Solve: If x + 5 = 12, then x = ?': '7',
-    'A man spends 1/3 of his salary on rent and 1/4 on food. If his salary is ?12,000, how much is left?':
-      '?5000',
+    'A man spends 1/3 of his salary on rent and 1/4 on food. If his salary is ₹12,000, how much is left?':
+      '₹5000',
     'The ratio of ages of A and B is 3:5. If A is 15 years old, how old is B?':
       '25',
-    'Find the simple interest on ?2000 at 5% per annum for 4 years.': '?400',
-    'Divide ?900 in the ratio 2:1.': '?600 and ?300',
-    'If 5 kg of rice costs ?250, what is the cost of 8 kg?': '?400',
+    'Find the simple interest on ₹2000 at 5% per annum for 4 years.': '₹400',
+    'Divide ₹900 in the ratio 2:1.': '₹600 and ₹300',
+    'If 5 kg of rice costs ₹250, what is the cost of 8 kg?': '₹400',
     'A trader marks goods 20% above cost price and allows a discount of 10%. What is the profit percentage?':
       '8%',
     'A car travels 240 km in 4 hours. What is its speed?': '60 km/h',
@@ -6298,7 +6298,7 @@ function generateGeneralKnowledgeQuestions(count: number): QuizQuestionData[] {
     'Blood relation: A is B’s mother. B is C’s father. Relation of A to C?':
       'Grandmother',
     'Direction: Facing East, turn right, then left. Final direction?': 'East',
-    'Puzzle: If 5 pens cost ?50, how much do 12 pens cost?': '120',
+    'Puzzle: If 5 pens cost ₹50, how much do 12 pens cost?': '120',
     'How many days are there in a leap year?': '366',
     'If 1 Jan 2020 was Wednesday, what day was 1 Jan 2021?': 'Friday',
     'Angle between hands of clock at 3:00?': '90°',
@@ -6329,7 +6329,7 @@ function generateGeneralKnowledgeQuestions(count: number): QuizQuestionData[] {
       'B',
     'In a family of 6, P is father, Q is mother, R and S are sons, T and U are daughters. How many females?':
       '3',
-    'If 2 pencils cost ?10, how much do 12 pencils cost?': '60',
+    'If 2 pencils cost ₹10, how much do 12 pencils cost?': '60',
     'A clock shows 3:15. What is the angle between hands?': '7.5°',
     'If 1=2, 2=4, 3=6, then 5=?': '10',
     'Arrange: Mango, Apple, Banana, Orange alphabetically.':
@@ -6796,8 +6796,8 @@ async function seed() {
     {
       category: 'finance',
       question:
-        'If you invest ?10,000 at 5% annual interest for 2 years (Simple Interest), what will be the total amount?',
-      options: ['?11,000', '?11,025', '?11,150', '?12,000'],
+        'If you invest ₹10,000 at 5% annual interest for 2 years (Simple Interest), what will be the total amount?',
+      options: ['₹11,000', '₹11,025', '₹11,150', '₹12,000'],
       correctAnswer: 0,
       difficulty: 'medium',
       points: 20,
@@ -6878,3 +6878,4 @@ seed().catch((err) => {
   console.error(err);
   process.exit(1);
 });
+

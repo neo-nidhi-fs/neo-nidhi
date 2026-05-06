@@ -1,4 +1,4 @@
-/**
+﻿/**
  * FdWithdrawDialog Component
  * Responsibility: Render FD withdrawal dialog
  */
@@ -68,7 +68,7 @@ export function FdWithdrawDialog({
           <div className="bg-green-900/30 border border-green-500/30 rounded-lg p-3">
             <p className="text-sm text-gray-300">Mature Amount (3+ years):</p>
             <p className="text-2xl font-bold text-green-400">
-              ?{fdWithdrawInfo.matureAmount.toFixed(2)}
+              ₹{fdWithdrawInfo.matureAmount.toFixed(2)}
             </p>
             {fdWithdrawInfo.matureTransactions.length > 0 && (
               <p className="text-xs text-gray-400 mt-2">
@@ -83,7 +83,7 @@ export function FdWithdrawDialog({
               Premature Amount (under 3 years):
             </p>
             <p className="text-2xl font-bold text-orange-400">
-              ?{fdWithdrawInfo.prematureAmount.toFixed(2)}
+              ₹{fdWithdrawInfo.prematureAmount.toFixed(2)}
             </p>
             {fdWithdrawInfo.prematureTransactions.length > 0 && (
               <p className="text-xs text-gray-400 mt-1">
@@ -95,7 +95,7 @@ export function FdWithdrawDialog({
           <div className="bg-slate-700/50 border border-slate-600 rounded-lg p-3">
             <p className="text-sm text-gray-300">Total FD Balance:</p>
             <p className="text-xl font-bold text-blue-400">
-              ?{fdWithdrawInfo.totalFd.toFixed(2)}
+              ₹{fdWithdrawInfo.totalFd.toFixed(2)}
             </p>
           </div>
         </div>
@@ -150,3 +150,4 @@ export function FdWithdrawDialog({
     </Dialog>
   );
 }
+

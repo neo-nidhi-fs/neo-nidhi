@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
@@ -366,7 +366,7 @@ export default function QRTransferPage() {
             <CardContent className="pt-6">
               <form onSubmit={handleAmountSubmit} className="space-y-4">
                 <div>
-                  <Label className="text-gray-300">Amount (?)</Label>
+                  <Label className="text-gray-300">Amount (₹)</Label>
                   <Input
                     type="number"
                     step="0.01"
@@ -445,7 +445,7 @@ export default function QRTransferPage() {
               <div className="flex justify-between">
                 <span className="text-gray-400">Amount</span>
                 <span className="text-2xl font-bold text-green-400">
-                  ?{amount}
+                  ₹{amount}
                 </span>
               </div>
             </div>
@@ -497,3 +497,4 @@ export default function QRTransferPage() {
     </main>
   );
 }
+
