@@ -434,7 +434,7 @@ export function UsersSection({
                             />
                           </div>
                         ) : col.type === 'currency' ? (
-                          '?' +
+                          '₹' +
                           (
                             (u[col.accessor as keyof User] as number) || 0
                           ).toFixed(2)
