@@ -14,7 +14,7 @@ export function DashboardStats({ user }: { user: User }) {
   const stats = [
     {
       label: 'Savings Balance',
-      value: `?${user.savingsBalance?.toFixed(2) || '0.00'}`,
+      value: `₹${user.savingsBalance?.toFixed(2) || '0.00'}`,
       bgGradient: 'from-green-900/30 to-emerald-900/30',
       borderColor: 'border-green-400/30',
       textColor: 'text-green-400',
@@ -22,7 +22,7 @@ export function DashboardStats({ user }: { user: User }) {
     },
     {
       label: 'Fixed Deposit',
-      value: `?${(user.fd || 0).toFixed(2)}`,
+      value: `₹${(user.fd || 0).toFixed(2)}`,
       bgGradient: 'from-blue-900/30 to-indigo-900/30',
       borderColor: 'border-blue-400/30',
       textColor: 'text-blue-400',
@@ -30,7 +30,7 @@ export function DashboardStats({ user }: { user: User }) {
     },
     {
       label: 'Recurring Deposit',
-      value: `?${(user.rd || 0).toFixed(2)}`,
+      value: `₹${(user.rd || 0).toFixed(2)}`,
       bgGradient: 'from-cyan-900/30 to-teal-900/30',
       borderColor: 'border-cyan-400/30',
       textColor: 'text-cyan-400',
@@ -38,7 +38,7 @@ export function DashboardStats({ user }: { user: User }) {
     },
     {
       label: 'Loan Balance',
-      value: `?${user.loanBalance?.toFixed(2) || '0.00'}`,
+      value: `₹${user.loanBalance?.toFixed(2) || '0.00'}`,
       bgGradient: 'from-orange-900/30 to-red-900/30',
       borderColor: 'border-orange-400/30',
       textColor: 'text-orange-400',
@@ -57,12 +57,16 @@ export function DashboardStats({ user }: { user: User }) {
           >
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg text-white">{stat.label}</CardTitle>
+                <CardTitle className="text-lg text-white">
+                  {stat.label}
+                </CardTitle>
                 <Icon className={stat.textColor} size={24} />
               </div>
             </CardHeader>
             <CardContent>
-              <p className={`text-3xl font-bold ${stat.textColor} `}>{stat.value}</p>
+              <p className={`text-3xl font-bold ${stat.textColor} `}>
+                {stat.value}
+              </p>
             </CardContent>
           </Card>
         );

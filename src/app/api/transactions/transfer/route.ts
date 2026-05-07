@@ -95,7 +95,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      message: `?${amount} transferred to ${receiver.name} successfully`,
+      message: `₹${amount} transferred to ${receiver.name} successfully`,
     });
   } catch (error: unknown) {
     return NextResponse.json(

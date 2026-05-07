@@ -225,7 +225,7 @@ export function useUserFinance() {
     setLoading(true);
     setError(null);
     try {
-      const query = month ? `?month=${encodeURIComponent(month)}` : '';
+      const query = month ? `₹month=${encodeURIComponent(month)}` : '';
       const res = await fetch(`/api/user/finance/list-budgets${query}`);
       const data = await res.json();
       if (data.success) {
@@ -490,7 +490,12 @@ export function useUserFinance() {
   );
 
   const addBudget = useCallback(
-    async (budget: Omit<Budget, '_id' | 'spent' | 'remaining' | 'usagePercent' | 'isOverflow'>) => {
+    async (
+      budget: Omit<
+        Budget,
+        '_id' | 'spent' | 'remaining' | 'usagePercent' | 'isOverflow'
+      >
+    ) => {
       setLoading(true);
       setError(null);
       try {
