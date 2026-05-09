@@ -21,6 +21,26 @@ interface CashFlowFormData {
   note?: string;
 }
 
+function evaluateAmountExpression(input: string): number | null {
+  const normalized = input.replace(/\s+/g, '');
+  if (!normalized) return null;
+
+  if (!/^[0-9.+-]+$/.test(normalized)) return null;
+  if (!/[+-]/.test(normalized)) {
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  const tokens = normalized.match(/[+-]?\d*\.?\d+/g);
+  if (!tokens) return null;
+
+  const reconstructed = tokens.join('');
+  if (reconstructed !== normalized) return null;
+
+  const total = tokens.reduce((sum, token) => sum + Number(token), 0);
+  return Number.isFinite(total) ? total : null;
+}
+
 function emptyFormState(): CashFlowFormData {
   return {
     date: new Date().toISOString().split('T')[0],
@@ -50,22 +70,25 @@ export default function CashFlowForm({
   onCancel,
   loading = false,
 }: CashFlowFormProps) {
-  const [formData, setFormData] = useState(() =>
-    cashflow
-      ? {
-          date: cashflow.date.split('T')[0],
-          type: (cashflow.type as 'income' | 'expense') || 'income',
-          category: cashflow.category || '',
-          amount: cashflow.amount || 0,
-          source: cashflow.source || '',
-          paymentSource:
-            (cashflow.paymentSource === 'credit_card'
-              ? 'card'
-              : cashflow.paymentSource) || ('account' as ExpensePaymentSource),
-          liabilityId: cashflow.liabilityId || '',
-          note: cashflow.note || '',
-        }
-      : emptyFormState()
+  const initialFormData = cashflow
+    ? {
+        date: cashflow.date.split('T')[0],
+        type: (cashflow.type as 'income' | 'expense') || 'income',
+        category: cashflow.category || '',
+        amount: cashflow.amount || 0,
+        source: cashflow.source || '',
+        paymentSource:
+          (cashflow.paymentSource === 'credit_card'
+            ? 'card'
+            : cashflow.paymentSource) || ('account' as ExpensePaymentSource),
+        liabilityId: cashflow.liabilityId || '',
+        note: cashflow.note || '',
+      }
+    : emptyFormState();
+
+  const [formData, setFormData] = useState(initialFormData);
+  const [amountInput, setAmountInput] = useState(
+    String(initialFormData.amount || '')
   );
 
   const categories =
@@ -73,20 +96,25 @@ export default function CashFlowForm({
 
   const handleSubmit = async (e: React.FormEvent | React.MouseEvent) => {
     e.preventDefault();
+    const evaluatedAmount = evaluateAmountExpression(amountInput);
+    const finalAmount = evaluatedAmount ?? formData.amount;
+
     if (
       !formData.date ||
       !formData.type ||
       !formData.category ||
-      formData.amount <= 0 ||
+      finalAmount <= 0 ||
       !formData.source ||
       !formData.paymentSource
     ) {
       alert('Please fill in all required fields');
       return;
     }
-    const result = await onSubmit(formData);
+    const payload = { ...formData, amount: finalAmount };
+    const result = await onSubmit(payload);
     if (result === true && !cashflow) {
       setFormData(emptyFormState());
+      setAmountInput('');
     }
   };
 
@@ -222,16 +250,16 @@ export default function CashFlowForm({
             </label>
             <input
               type="text"
-              pattern="^\d*\.?\d*$"
-              value={formData.amount}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  amount: parseFloat(e.target.value) || 0,
-                })
-              }
+              value={amountInput}
+              onChange={(e) => setAmountInput(e.target.value)}
+              onBlur={() => {
+                const evaluated = evaluateAmountExpression(amountInput);
+                if (evaluated === null) return;
+                setFormData((prev) => ({ ...prev, amount: evaluated }));
+                setAmountInput(String(evaluated));
+              }}
               className="w-full px-3 py-2 border border-slate-600 rounded-md bg-slate-700/50 text-white focus:outline-none focus:ring-2 focus:ring-green-500"
-              placeholder="0"
+              placeholder="0 or 200+150-50"
               step="0.01"
             />
           </div>
