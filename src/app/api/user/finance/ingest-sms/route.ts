@@ -64,6 +64,18 @@ function isTransferLikeText(payload: SmsPayload): boolean {
     lower.includes('from account')
   );
 }
+function isTransferPromotionLikeText(payload: SmsPayload): boolean {
+  const lower = `${payload.sender || ''} ${payload.body || ''}`.toLowerCase();
+  return (
+    lower.includes('transfer') &&
+    (lower.includes('offer') ||
+      lower.includes('promo') ||
+      lower.includes('Apply') ||
+      lower.includes('Eligible') ||
+      lower.includes('2 LOANS. 1 Processing Fee') ||
+      lower.includes('promotion'))
+  );
+}
 
 function buildMessageHash(payload: SmsPayload): string {
   const raw = `${payload.id || payload.messageId || ''}|${payload.sender || ''}|${payload.receivedAt || ''}|${payload.body || ''}`;
@@ -137,7 +149,12 @@ export async function POST(req: Request) {
       for (let j = i + 1; j < parsedMessages.length; j += 1) {
         if (skipIndexes.has(j)) continue;
         const right = parsedMessages[j];
-        if (!right.parsed || !isTransferLikeText(right.message)) continue;
+        if (
+          !right.parsed ||
+          !isTransferLikeText(right.message) ||
+          !isTransferPromotionLikeText(right.message)
+        )
+          continue;
         if (left.parsed.amount !== right.parsed.amount) continue;
         if (left.parsed.type === right.parsed.type) continue;
         if (Math.abs(left.receivedAtMs - right.receivedAtMs) > transferWindowMs)

@@ -129,11 +129,15 @@ function isMessageLikelyPromotional(text: string): boolean {
   return (
     lower.includes('offer') ||
     lower.includes('promo') ||
+    lower.includes('Eligible') ||
     lower.includes('discount') ||
     lower.includes("don't miss") ||
+    lower.includes('2 LOANS. 1 Processing Fee') ||
     lower.includes('get instant') ||
     lower.includes('sale') ||
-    lower.includes('deal')
+    lower.includes('Apply') ||
+    lower.includes('deal') ||
+    lower.includes('Minimum Amount Due')
   );
 }
 
