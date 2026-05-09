@@ -15,7 +15,15 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { RotateCcw, Loader, Pencil, Key, MoreVertical } from 'lucide-react';
+import {
+  RotateCcw,
+  Loader,
+  Pencil,
+  Key,
+  MoreVertical,
+  BookOpen,
+  LayoutDashboard,
+} from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { User } from '@/lib/services/adminService';
 import { AddUserDialog } from '../dialogs/AddUserDialog';
@@ -299,6 +307,32 @@ export function UsersSection({
                                 ref={actionMenuRef}
                                 className="absolute right-0 z-50 mt-2 w-48 overflow-hidden rounded-md border border-slate-700 bg-slate-950 shadow-lg"
                               >
+                                <button
+                                  onClick={() => {
+                                    window.open(
+                                      `/user/dashboard?viewUserId=${u._id}`,
+                                      '_blank'
+                                    );
+                                    setOpenActionMenuFor(null);
+                                  }}
+                                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-white hover:bg-slate-800"
+                                >
+                                  <LayoutDashboard size={14} />
+                                  View user dashboard
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    window.open(
+                                      `/user/passbook?viewUserId=${u._id}`,
+                                      '_blank'
+                                    );
+                                    setOpenActionMenuFor(null);
+                                  }}
+                                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-white hover:bg-slate-800"
+                                >
+                                  <BookOpen size={14} />
+                                  View user passbook
+                                </button>
                                 <button
                                   onClick={() => {
                                     onResetPassword(u._id, u.name);

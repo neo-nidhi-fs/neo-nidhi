@@ -37,6 +37,14 @@ interface Transaction {
   type: 'deposit' | 'loan' | 'repayment' | 'fd' | 'rd' | 'withdrawal';
   amount: number;
   date: string;
+  userBalanceAfterTransaction?: {
+    userId: string;
+    name: string;
+    savingsBalance: number;
+    fdBalance: number;
+    rdBalance: number;
+    loanBalance: number;
+  } | null;
 }
 
 export default function AdminTransactionsPage() {
@@ -153,6 +161,7 @@ export default function AdminTransactionsPage() {
     { header: 'User', accessor: 'name' },
     { header: 'Type', accessor: 'type' },
     { header: 'Amount', accessor: 'amount' },
+    { header: 'Balance After Tx', accessor: 'userBalanceAfterTransaction' },
   ];
 
   return (
@@ -338,6 +347,24 @@ export default function AdminTransactionsPage() {
                         </TableCell>
                         <TableCell className="font-semibold text-gray-200">
                           ₹{tx.amount.toFixed(2)}
+                        </TableCell>
+                        <TableCell className="text-xs text-gray-200 min-w-[240px]">
+                          {tx.userBalanceAfterTransaction ? (
+                            <div>
+                              S ₹
+                              {tx.userBalanceAfterTransaction.savingsBalance.toFixed(
+                                2
+                              )}{' '}
+                              | FD ₹
+                              {tx.userBalanceAfterTransaction.fdBalance.toFixed(2)} |
+                              RD ₹
+                              {tx.userBalanceAfterTransaction.rdBalance.toFixed(2)} |
+                              L ₹
+                              {tx.userBalanceAfterTransaction.loanBalance.toFixed(2)}
+                            </div>
+                          ) : (
+                            '-'
+                          )}
                         </TableCell>
                       </TableRow>
                     );

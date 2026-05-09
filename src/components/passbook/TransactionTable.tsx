@@ -15,6 +15,14 @@ interface Transaction {
   type: string;
   amount: number;
   date: string;
+  userBalanceAfterTransaction?: {
+    userId: string;
+    name: string;
+    savingsBalance: number;
+    fdBalance: number;
+    rdBalance: number;
+    loanBalance: number;
+  } | null;
 }
 
 interface TransactionTableProps {
@@ -74,6 +82,7 @@ export function TransactionTable({
               <TableHead>Date</TableHead>
               <TableHead>Type</TableHead>
               <TableHead>Amount</TableHead>
+              <TableHead>Balance After Tx</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -92,11 +101,23 @@ export function TransactionTable({
                   <TableCell className="font-semibold text-gray-200">
                     ₹{tx.amount.toFixed(2)}
                   </TableCell>
+                  <TableCell className="text-xs text-gray-200 min-w-[240px]">
+                    {tx.userBalanceAfterTransaction ? (
+                      <div>
+                        S ₹{tx.userBalanceAfterTransaction.savingsBalance.toFixed(2)} | FD ₹
+                        {tx.userBalanceAfterTransaction.fdBalance.toFixed(2)} | RD ₹
+                        {tx.userBalanceAfterTransaction.rdBalance.toFixed(2)} | L ₹
+                        {tx.userBalanceAfterTransaction.loanBalance.toFixed(2)}
+                      </div>
+                    ) : (
+                      '-'
+                    )}
+                  </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={3} className="text-center text-gray-400 py-8">
+                <TableCell colSpan={4} className="text-center text-gray-400 py-8">
                   No transactions found
                 </TableCell>
               </TableRow>

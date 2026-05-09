@@ -4,6 +4,7 @@ import { Transaction } from '@/models/Transaction';
 import { User } from '@/models/User';
 import { Scheme } from '@/models/Scheme';
 import { recalculateBalances } from '@/utils/recalculateBalance';
+import { buildTransactionBalanceSnapshots } from '@/lib/transactionBalanceSnapshots';
 import {
   canManageUser,
   getManagedUsersFilter,
@@ -181,9 +182,26 @@ export async function GET() {
     const users = await User.find(userFilter).select('_id');
     const userIds = users.map((user) => user._id);
 
-    const transactions = accessResult.context.isAdmin
-      ? await Transaction.find({}).sort({ date: -1 })
-      : await Transaction.find({ userId: { $in: userIds } }).sort({ date: -1 });
+    const transactionsAsc = accessResult.context.isAdmin
+      ? await Transaction.find({}).sort({ date: 1 })
+      : await Transaction.find({ userId: { $in: userIds } }).sort({ date: 1 });
+
+    const visibleUsers = await User.find(userFilter).select(
+      '_id name savingsBalance fd rd loanBalance'
+    );
+    const snapshotsByTxId = buildTransactionBalanceSnapshots(
+      transactionsAsc,
+      visibleUsers
+    );
+
+    const transactions = [...transactionsAsc].reverse().map((tx) => {
+      const txObject = tx.toObject();
+      return {
+        ...txObject,
+        userBalanceAfterTransaction: snapshotsByTxId.get(String(tx._id)) ?? null,
+      };
+    });
+
     return NextResponse.json({ success: true, data: transactions });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error);

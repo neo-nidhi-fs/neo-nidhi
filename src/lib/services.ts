@@ -195,6 +195,7 @@ export class UserService {
 
   async getUserById(userId: string): Promise<
     IApiResponse<{
+      name?: string;
       savingsBalance: number;
       fd: number;
       rd?: number;

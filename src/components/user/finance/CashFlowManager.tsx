@@ -62,6 +62,8 @@ function CashFlowSummaryBar({
   modeTotals,
   showModeBreakdown,
   onToggleModeBreakdown,
+  selectedMode,
+  onModeToggle,
 }: {
   formatCurrency: (value: number) => string;
   totalIncome: number;
@@ -73,6 +75,8 @@ function CashFlowSummaryBar({
   >;
   showModeBreakdown: boolean;
   onToggleModeBreakdown: () => void;
+  selectedMode: 'account' | 'cash' | 'card' | 'wallet' | null;
+  onModeToggle: (mode: 'account' | 'cash' | 'card' | 'wallet') => void;
 }) {
   const modeLabels: Record<'account' | 'cash' | 'card' | 'wallet', string> = {
     account: 'Account',
@@ -131,11 +135,19 @@ function CashFlowSummaryBar({
             return (
               <div
                 key={mode}
-                className="rounded-lg bg-slate-900/60 border border-slate-600/80 p-4"
+                className={`rounded-lg bg-slate-900/60 border p-4 transition-colors ${
+                  selectedMode === mode
+                    ? 'border-cyan-400/80 bg-cyan-900/20'
+                    : 'border-slate-600/80'
+                }`}
               >
-                <p className="text-sm font-semibold uppercase tracking-wide text-cyan-300 mb-2">
+                <button
+                  type="button"
+                  onClick={() => onModeToggle(mode)}
+                  className="text-sm font-semibold uppercase tracking-wide text-cyan-300 mb-2 hover:text-cyan-200"
+                >
                   {modeLabels[mode]}
-                </p>
+                </button>
                 <p className="text-xs uppercase tracking-wide text-slate-400">
                   Income:{' '}
                   <span className="text-emerald-400">{formatCurrency(income)}</span>
@@ -288,6 +300,11 @@ export default function CashFlowManager({
 }: CashFlowManagerProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [showModeBreakdown, setShowModeBreakdown] = useState(false);
+  const [selectedMode, setSelectedMode] = useState<
+    'account' | 'cash' | 'card' | 'wallet' | null
+  >(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [typeFilter, setTypeFilter] = useState<'all' | 'income' | 'expense'>('all');
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -301,7 +318,7 @@ export default function CashFlowManager({
   const monthLabel = (date: Date) =>
     date.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
 
-  const visibleCashflows = [...cashflows]
+  const monthlyCashflows = [...cashflows]
     .filter((cashflow) => {
       const cfDate = new Date(cashflow.date);
       return (
@@ -311,6 +328,32 @@ export default function CashFlowManager({
     })
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
+  const visibleCashflows = monthlyCashflows.filter((cf) => {
+    if (selectedMode && normalizePaymentSource(cf.paymentSource) !== selectedMode) {
+      return false;
+    }
+    if (typeFilter !== 'all' && cf.type !== typeFilter) {
+      return false;
+    }
+
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return true;
+
+    const dateLabel = new Date(cf.date).toLocaleDateString('en-IN').toLowerCase();
+    const haystack = [
+      cf.category,
+      cf.source,
+      cf.type,
+      labelPaymentSource(cf.paymentSource),
+      String(cf.amount),
+      dateLabel,
+    ]
+      .join(' ')
+      .toLowerCase();
+
+    return haystack.includes(query);
+  });
+
   const totalIncome = visibleCashflows
     .filter((cf) => cf.type === 'income')
     .reduce((sum, cf) => sum + cf.amount, 0);
@@ -319,7 +362,7 @@ export default function CashFlowManager({
     .filter((cf) => cf.type === 'expense')
     .reduce((sum, cf) => sum + cf.amount, 0);
 
-  const modeTotals = visibleCashflows.reduce<
+  const modeTotals = monthlyCashflows.reduce<
     Record<
       'account' | 'cash' | 'card' | 'wallet',
       { income: number; expense: number }
@@ -343,6 +386,10 @@ export default function CashFlowManager({
   );
 
   const totalRemaining = totalIncome - totalExpense;
+
+  const handleModeToggle = (mode: 'account' | 'cash' | 'card' | 'wallet') => {
+    setSelectedMode((prev) => (prev === mode ? null : mode));
+  };
 
   const handlePrevMonth = () => {
     const prev = new Date(currentMonth);
@@ -448,13 +495,39 @@ export default function CashFlowManager({
           onToggleModeBreakdown={() =>
             setShowModeBreakdown((prev) => !prev)
           }
+          selectedMode={selectedMode}
+          onModeToggle={handleModeToggle}
         />
+      </div>
+
+      <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search transactions (category, source, mode, amount, date)"
+          className="md:col-span-2 w-full rounded-lg border border-slate-600 bg-slate-900/70 px-3 py-2 text-sm text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-400/50"
+          aria-label="Search transactions"
+        />
+        <select
+          value={typeFilter}
+          onChange={(e) =>
+            setTypeFilter(e.target.value as 'all' | 'income' | 'expense')
+          }
+          className="w-full rounded-lg border border-slate-600 bg-slate-900/70 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-400/50"
+          aria-label="Filter transaction type"
+        >
+          <option value="all">All types</option>
+          <option value="income">Income only</option>
+          <option value="expense">Expense only</option>
+        </select>
       </div>
 
       {sortedCashflows.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-gray-300">
-            No income or expense entries for {monthLabel(currentMonth)}.
+            No income or expense entries
+            {selectedMode ? ` for ${selectedMode}` : ''} for {monthLabel(currentMonth)}.
           </p>
         </div>
       ) : (

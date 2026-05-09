@@ -234,6 +234,7 @@ export function useQRCode(userId: string, userName: string) {
 // Hook for handling user operations
 export function useUser(userId: string) {
   const [user, setUser] = useState<{
+    name?: string;
     savingsBalance: number;
     fd: number;
     rd?: number;

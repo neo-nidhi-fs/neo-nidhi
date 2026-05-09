@@ -13,6 +13,14 @@ type Transaction = {
   amount: number;
   date: string;
   relatedUserName?: string;
+  userBalanceAfterTransaction?: {
+    userId: string;
+    name: string;
+    savingsBalance: number;
+    fdBalance: number;
+    rdBalance: number;
+    loanBalance: number;
+  } | null;
 };
 
 interface CustomSession extends Session {
@@ -27,13 +35,27 @@ export default function PassbookPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
+  const [isAdminViewingAnotherUser, setIsAdminViewingAnotherUser] =
+    useState(false);
   const ITEMS_PER_PAGE = 10;
 
   useEffect(() => {
     async function fetchTransactions() {
       if (!session?.user?.id) return;
       try {
-        const res = await fetch(`/api/users/${session.user.id}/transactions`);
+        const viewUserId = new URLSearchParams(window.location.search).get(
+          'viewUserId'
+        );
+        const isAdminLike =
+          session.user.role === 'admin' || session.user.role === 'privileged';
+        const targetUserId =
+          isAdminLike && viewUserId ? viewUserId : session.user.id;
+        setIsAdminViewingAnotherUser(
+          Boolean(
+            isAdminLike && viewUserId && viewUserId !== session.user.id
+          )
+        );
+        const res = await fetch(`/api/users/${targetUserId}/transactions`);
         const data = await res.json();
         setTransactions(data.data || []);
       } finally {
@@ -63,6 +85,11 @@ export default function PassbookPage() {
           <p className="text-gray-200 text-lg">
             View your complete transaction history
           </p>
+          {isAdminViewingAnotherUser && (
+            <p className="text-cyan-300 text-sm mt-2">
+              Admin view mode: showing selected user passbook.
+            </p>
+          )}
         </div>
 
         {/* Stats Card */}
