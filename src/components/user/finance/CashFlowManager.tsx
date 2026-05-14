@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CashFlow, ExpensePaymentSource } from '@/hooks/useUserFinance';
@@ -11,6 +11,9 @@ import {
   TrendingDown,
   ChevronLeft,
   ChevronRight,
+  MoreVertical,
+  EyeOff,
+  RotateCcw,
 } from 'lucide-react';
 
 const PAYMENT_MODES: Array<'account' | 'cash' | 'card' | 'wallet'> = [
@@ -305,6 +308,41 @@ export default function CashFlowManager({
   >(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<'all' | 'income' | 'expense'>('all');
+  const [ignoredCashflowIds, setIgnoredCashflowIds] = useState<string[]>([]);
+  const [openActionMenuFor, setOpenActionMenuFor] = useState<string | null>(null);
+  const actionMenuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const stored = localStorage.getItem('ignoredCashflowIds');
+    if (!stored) return;
+    try {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed)) {
+        setIgnoredCashflowIds(parsed.filter((id) => typeof id === 'string'));
+      }
+    } catch {
+      // Ignore malformed localStorage value
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('ignoredCashflowIds', JSON.stringify(ignoredCashflowIds));
+  }, [ignoredCashflowIds]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        openActionMenuFor &&
+        actionMenuRef.current &&
+        !actionMenuRef.current.contains(event.target as Node)
+      ) {
+        setOpenActionMenuFor(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [openActionMenuFor]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -328,7 +366,7 @@ export default function CashFlowManager({
     })
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-  const visibleCashflows = monthlyCashflows.filter((cf) => {
+  const matchesFilters = (cf: CashFlow) => {
     if (selectedMode && normalizePaymentSource(cf.paymentSource) !== selectedMode) {
       return false;
     }
@@ -352,7 +390,14 @@ export default function CashFlowManager({
       .toLowerCase();
 
     return haystack.includes(query);
-  });
+  };
+
+  const visibleCashflows = monthlyCashflows.filter(
+    (cf) => !ignoredCashflowIds.includes(cf._id) && matchesFilters(cf)
+  );
+  const ignoredCashflows = monthlyCashflows.filter(
+    (cf) => ignoredCashflowIds.includes(cf._id) && matchesFilters(cf)
+  );
 
   const totalIncome = visibleCashflows
     .filter((cf) => cf.type === 'income')
@@ -414,6 +459,19 @@ export default function CashFlowManager({
     );
     if (!confirmed) return;
     onDelete(cashflowId);
+    setIgnoredCashflowIds((prev) => prev.filter((id) => id !== cashflowId));
+  };
+
+  const handleIgnore = (cashflowId: string) => {
+    setIgnoredCashflowIds((prev) =>
+      prev.includes(cashflowId) ? prev : [...prev, cashflowId]
+    );
+    setOpenActionMenuFor(null);
+  };
+
+  const handleUnignore = (cashflowId: string) => {
+    setIgnoredCashflowIds((prev) => prev.filter((id) => id !== cashflowId));
+    setOpenActionMenuFor(null);
   };
 
   const sortedCashflows = visibleCashflows;
@@ -598,23 +656,57 @@ export default function CashFlowManager({
                       {cashflow.type === 'income' ? '+' : '-'}
                       {formatCurrency(cashflow.amount)}
                     </td>
-                    <td className="py-4 px-3 lg:px-4 text-right space-x-2 whitespace-nowrap">
-                      <button
-                        type="button"
-                        onClick={() => onEdit && onEdit(cashflow)}
-                        className="inline-flex items-center px-2 py-1 text-blue-400 hover:bg-blue-400/10 rounded transition-colors"
-                        aria-label="Edit entry"
-                      >
-                        <Edit2 size={16} />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => confirmAndDelete(cashflow._id)}
-                        className="inline-flex items-center px-2 py-1 text-red-400 hover:bg-red-400/10 rounded transition-colors"
-                        aria-label="Delete entry"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                    <td className="py-4 px-3 lg:px-4 text-right whitespace-nowrap">
+                      <div className="relative inline-block text-left">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setOpenActionMenuFor(
+                              openActionMenuFor === cashflow._id
+                                ? null
+                                : cashflow._id
+                            )
+                          }
+                          className="inline-flex items-center justify-center rounded p-1.5 text-slate-200 hover:bg-slate-700/50"
+                          aria-label="Open actions"
+                        >
+                          <MoreVertical size={16} />
+                        </button>
+                        {openActionMenuFor === cashflow._id && (
+                          <div
+                            ref={actionMenuRef}
+                            className="absolute right-0 z-50 mt-2 w-44 overflow-hidden rounded-md border border-slate-700 bg-slate-950 shadow-lg"
+                          >
+                            <button
+                              onClick={() => {
+                                onEdit && onEdit(cashflow);
+                                setOpenActionMenuFor(null);
+                              }}
+                              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-white hover:bg-slate-800"
+                            >
+                              <Edit2 size={14} />
+                              Edit entry
+                            </button>
+                            <button
+                              onClick={() => handleIgnore(cashflow._id)}
+                              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-white hover:bg-slate-800"
+                            >
+                              <EyeOff size={14} />
+                              Ignore entry
+                            </button>
+                            <button
+                              onClick={() => {
+                                confirmAndDelete(cashflow._id);
+                                setOpenActionMenuFor(null);
+                              }}
+                              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-300 hover:bg-slate-800"
+                            >
+                              <Trash2 size={14} />
+                              Delete entry
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -622,6 +714,38 @@ export default function CashFlowManager({
             </table>
           </div>
         </>
+      )}
+
+      {ignoredCashflows.length > 0 && (
+        <div className="mt-8 rounded-lg border border-slate-700 bg-slate-900/40 p-4">
+          <h4 className="mb-3 text-base font-semibold text-slate-200">
+            Ignored Transactions
+          </h4>
+          <div className="space-y-2">
+            {ignoredCashflows.map((cashflow) => (
+              <div
+                key={`ignored-${cashflow._id}`}
+                className="flex flex-wrap items-center justify-between gap-2 rounded border border-slate-700/70 bg-slate-900/60 p-3 text-sm"
+              >
+                <div className="text-slate-200">
+                  {new Date(cashflow.date).toLocaleDateString('en-IN')} |{' '}
+                  {cashflow.category} | {labelPaymentSource(cashflow.paymentSource)} |
+                  {' '}
+                  {cashflow.type === 'income' ? '+' : '-'}
+                  {formatCurrency(cashflow.amount)}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleUnignore(cashflow._id)}
+                  className="inline-flex items-center gap-1 rounded px-2 py-1 text-cyan-300 hover:bg-cyan-400/10"
+                >
+                  <RotateCcw size={14} />
+                  Restore
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
     </Card>
   );

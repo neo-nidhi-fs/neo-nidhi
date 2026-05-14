@@ -7,13 +7,15 @@
 
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Trophy, BarChart3, RefreshCw } from 'lucide-react';
+import { Trophy, BarChart3, RefreshCw, LineChart } from 'lucide-react';
 
 interface DashboardHeaderProps {
   message: string;
   currentUserRole?: string;
   onRecalculateMonthAccrued?: () => void;
   recalculateMonthAccruedLoading?: boolean;
+  onRunAssetRevaluation?: () => void;
+  assetRevaluationLoading?: boolean;
 }
 
 export function DashboardHeader({
@@ -21,6 +23,8 @@ export function DashboardHeader({
   currentUserRole,
   onRecalculateMonthAccrued,
   recalculateMonthAccruedLoading = false,
+  onRunAssetRevaluation,
+  assetRevaluationLoading = false,
 }: DashboardHeaderProps) {
   const isAdmin = currentUserRole === 'admin';
 
@@ -71,6 +75,22 @@ export function DashboardHeader({
             {recalculateMonthAccruedLoading
               ? 'Recalculating…'
               : 'Reset MTD accrued interest'}
+          </Button>
+        )}
+        {isAdmin && onRunAssetRevaluation && (
+          <Button
+            type="button"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-2 disabled:opacity-60"
+            disabled={assetRevaluationLoading}
+            onClick={onRunAssetRevaluation}
+          >
+            <LineChart
+              size={18}
+              className={assetRevaluationLoading ? 'animate-spin' : undefined}
+            />
+            {assetRevaluationLoading
+              ? 'Revaluating assets...'
+              : 'Run asset revaluation'}
           </Button>
         )}
       </div>

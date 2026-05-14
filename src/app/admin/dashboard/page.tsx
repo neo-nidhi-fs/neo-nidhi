@@ -25,6 +25,7 @@ export default function AdminDashboard() {
   const [message, setMessage] = useState('');
   const [recalculateAccruedLoading, setRecalculateAccruedLoading] =
     useState(false);
+  const [assetRevaluationLoading, setAssetRevaluationLoading] = useState(false);
   const [userDialogOpen, setUserDialogOpen] = useState(false);
   const [schemeDialogOpen, setSchemeDialogOpen] = useState(false);
   const [fdWithdrawDialogOpen, setFdWithdrawDialogOpen] = useState(false);
@@ -278,6 +279,29 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleRunAssetRevaluation = async () => {
+    setAssetRevaluationLoading(true);
+    try {
+      const res = await fetch('/api/run-asset-revaluation');
+      const data = await res.json();
+
+      if (res.ok) {
+        const result = data?.result;
+        const updated = result?.assetsUpdated ?? 0;
+        const scanned = result?.assetsScanned ?? 0;
+        setMessage(`Asset revaluation completed. Updated ${updated}/${scanned}.`);
+      } else {
+        setMessage(data?.error ?? 'Asset revaluation failed.');
+      }
+      setTimeout(() => setMessage(''), 4000);
+    } catch {
+      setMessage('Asset revaluation failed.');
+      setTimeout(() => setMessage(''), 3000);
+    } finally {
+      setAssetRevaluationLoading(false);
+    }
+  };
+
   if (status === 'loading' || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-slate-950 via-blue-950 to-slate-950">
@@ -306,6 +330,8 @@ export default function AdminDashboard() {
           currentUserRole={session.user.role}
           onRecalculateMonthAccrued={handleRecalculateMonthAccrued}
           recalculateMonthAccruedLoading={recalculateAccruedLoading}
+          onRunAssetRevaluation={handleRunAssetRevaluation}
+          assetRevaluationLoading={assetRevaluationLoading}
         />
 
         {/* Stats Cards */}
