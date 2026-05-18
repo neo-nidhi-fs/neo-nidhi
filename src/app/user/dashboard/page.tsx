@@ -51,35 +51,6 @@ export default function UserDashboard() {
     useUserFinance();
   useAutoSmsFinanceSync(financeFeatureEnabled);
 
-  async function initializeUser() {
-    try {
-      if (!session?.user?.id) return;
-
-      const viewUserId = new URLSearchParams(window.location.search).get(
-        'viewUserId'
-      );
-      const isAdminLike =
-        session.user.role === 'admin' || session.user.role === 'privileged';
-      const targetUserId = isAdminLike && viewUserId ? viewUserId : session.user.id;
-
-      if (!targetUserId) return;
-      setUserId(targetUserId);
-      setUserName(session.user.name || '');
-      setIsAdminViewingAnotherUser(
-        Boolean(
-          isAdminLike && viewUserId && viewUserId !== session.user.id
-        )
-      );
-      if (!viewUserId || !isAdminLike) {
-        setIsAdminViewingAnotherUser(false);
-      }
-    } catch (error) {
-      console.error('Error initializing user:', error);
-    } finally {
-      setPageLoading(false);
-    }
-  }
-
   async function fetchUserData() {
     try {
       let currentUser = await fetchUser();
@@ -133,10 +104,36 @@ export default function UserDashboard() {
     }
   }, [session]);
 
-  // Initialize session on mount
+  // Initialize user after auth status resolves (session can arrive after mount).
   useEffect(() => {
-    initializeUser();
-  }, []);
+    if (status === 'loading') return;
+
+    try {
+      if (!session?.user?.id) {
+        setUserId('');
+        setPageLoading(false);
+        return;
+      }
+
+      const viewUserId = new URLSearchParams(window.location.search).get(
+        'viewUserId'
+      );
+      const isAdminLike =
+        session.user.role === 'admin' || session.user.role === 'privileged';
+      const targetUserId =
+        isAdminLike && viewUserId ? viewUserId : session.user.id;
+
+      setUserId(targetUserId || '');
+      setUserName(session.user.name || '');
+      setIsAdminViewingAnotherUser(
+        Boolean(isAdminLike && viewUserId && viewUserId !== session.user.id)
+      );
+    } catch (error) {
+      console.error('Error initializing user:', error);
+    } finally {
+      setPageLoading(false);
+    }
+  }, [session, status]);
 
   // Fetch user data when userId changes
   useEffect(() => {
