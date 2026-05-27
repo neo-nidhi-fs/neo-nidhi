@@ -5,6 +5,7 @@ import { useAdminUsers } from '@/hooks/useAdminUsers';
 import {
   Loader,
   PiggyBank,
+  BadgeIndianRupee,
   Smartphone,
   ArrowLeftRight,
   CircleHelp,
@@ -22,6 +23,12 @@ const FEATURES: Array<{
     key: 'financeFeaturesEnabled',
     label: 'Personal Finance',
     icon: PiggyBank,
+    bg: 'bg-[url(/feature-bg-finance.svg)] bg-cover bg-center',
+  },
+  {
+    key: 'creditScoreEnabled',
+    label: 'Credit Score',
+    icon: BadgeIndianRupee,
     bg: 'bg-[url(/feature-bg-finance.svg)] bg-cover bg-center',
   },
   {

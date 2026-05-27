@@ -22,6 +22,13 @@ export default function UserDashboard() {
   const [isAdminViewingAnotherUser, setIsAdminViewingAnotherUser] =
     useState(false);
   const [financeFeatureEnabled, setFinanceFeatureEnabled] = useState(false);
+  const [creditScoreFeatureEnabled, setCreditScoreFeatureEnabled] =
+    useState(false);
+  const [creditScoreData, setCreditScoreData] = useState<{
+    score: number;
+    rating: string;
+    source: string;
+  } | null>(null);
   const [resolvedUser, setResolvedUser] = useState<{
     name?: string;
     savingsBalance: number;
@@ -67,8 +74,22 @@ export default function UserDashboard() {
       await fetchActiveChallenges();
 
       if (!currentUser) return;
-      const financeEnabled = getUserFeatures(currentUser).financeFeaturesEnabled;
+      const userFeatures = getUserFeatures(currentUser);
+      const financeEnabled = userFeatures.financeFeaturesEnabled;
       setFinanceFeatureEnabled(financeEnabled);
+      setCreditScoreFeatureEnabled(userFeatures.creditScoreEnabled);
+
+      if (userFeatures.creditScoreEnabled) {
+        const creditScoreRes = await fetch('/api/user/credit-score');
+        const creditScoreJson = await creditScoreRes.json();
+        if (creditScoreRes.ok && creditScoreJson?.success) {
+          setCreditScoreData(creditScoreJson.data);
+        } else {
+          setCreditScoreData(null);
+        }
+      } else {
+        setCreditScoreData(null);
+      }
 
       if (financeEnabled) {
         await fetchNetWorth();
@@ -186,6 +207,24 @@ export default function UserDashboard() {
 
         {/* Existing Hero Stats */}
         <DashboardStats user={displayUser} />
+
+        {creditScoreFeatureEnabled && creditScoreData && (
+          <section className="mt-8">
+            <div className="rounded-2xl border border-cyan-700/50 bg-slate-900/70 p-6 shadow-lg">
+              <p className="text-cyan-300 text-sm">In-App Credit Score</p>
+              <div className="mt-2 flex items-end gap-3">
+                <span className="text-4xl font-bold text-white">
+                  {creditScoreData.score}
+                </span>
+                <span className="text-gray-300 text-sm pb-1">/ 900</span>
+              </div>
+              <p className="mt-2 text-gray-200">
+                Rating: <span className="font-semibold">{creditScoreData.rating}</span>
+              </p>
+              <p className="mt-2 text-xs text-gray-400">{creditScoreData.source}</p>
+            </div>
+          </section>
+        )}
 
         {/* Active Challenges Section */}
         <div className="mt-8">

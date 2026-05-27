@@ -1,5 +1,6 @@
 export const FEATURE_KEYS = [
   'financeFeaturesEnabled',
+  'creditScoreEnabled',
   'androidAppEnabled',
   'onlineTransferEnabled',
   'quizzesEnabled',
@@ -12,6 +13,7 @@ export type UserFeatures = Record<FeatureKey, boolean>;
 
 export const DEFAULT_USER_FEATURES: UserFeatures = {
   financeFeaturesEnabled: false,
+  creditScoreEnabled: false,
   androidAppEnabled: false,
   onlineTransferEnabled: false,
   quizzesEnabled: false,

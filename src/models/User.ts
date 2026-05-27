@@ -10,6 +10,7 @@ export interface ICustomInterestRate {
 
 export interface IUserFeatures {
   financeFeaturesEnabled: boolean;
+  creditScoreEnabled: boolean;
   androidAppEnabled: boolean;
   onlineTransferEnabled: boolean;
   quizzesEnabled: boolean;
@@ -120,6 +121,7 @@ const UserSchema: Schema<IUser> = new Schema({
   features: {
     type: {
       financeFeaturesEnabled: { type: Boolean, default: false },
+      creditScoreEnabled: { type: Boolean, default: false },
       androidAppEnabled: { type: Boolean, default: false },
       onlineTransferEnabled: { type: Boolean, default: false },
       quizzesEnabled: { type: Boolean, default: false },
