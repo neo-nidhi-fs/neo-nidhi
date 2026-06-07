@@ -30,15 +30,23 @@ export default function HomePage() {
     fetchSchemes();
   }, []);
 
+  // Only allow super-admin (admin) to login from this page
   useEffect(() => {
     async function checkSession() {
       const session = await getSession();
       if (session?.user?.id) {
         const userRole = session.user.role;
-        if (userRole === 'admin' || userRole === 'privileged') {
+        const userName = session.user.name;
+        // Only allow user with role 'admin' and name 'Admin' (super-admin)
+        if (userRole === 'admin' && userName === 'Admin') {
           router.push('/admin/dashboard');
         } else {
-          router.push('/user/dashboard');
+          // Show message and sign out if not super-admin
+          alert('Only super-admin can access this page.');
+          if (typeof window !== 'undefined') {
+            const { signOut } = await import('next-auth/react');
+            signOut();
+          }
         }
       }
     }
@@ -73,10 +81,17 @@ export default function HomePage() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
+            {/* Only show login button for super-admin */}
             <Link href="/login">
               <Button
                 size="lg"
                 className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white border-0 px-8 py-6 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
+                aria-disabled="true"
+                tabIndex={-1}
+                onClick={(e) => {
+                  e.preventDefault();
+                  alert('Only super-admin can login from this page.');
+                }}
               >
                 {content.home.ctaPrimary}
                 <ArrowRight size={20} />
@@ -156,7 +171,10 @@ export default function HomePage() {
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-4">
               <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
-                {content.home.featuresHeading.replace('{appName}', content.app.name)}
+                {content.home.featuresHeading.replace(
+                  '{appName}',
+                  content.app.name
+                )}
               </span>
             </h2>
             <p className="text-gray-400 text-lg max-w-2xl mx-auto">
@@ -249,5 +267,3 @@ export default function HomePage() {
     </main>
   );
 }
-
-

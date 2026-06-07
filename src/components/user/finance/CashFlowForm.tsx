@@ -320,7 +320,7 @@ export default function CashFlowForm({
               }
               className="w-full px-3 py-2 border border-slate-600 rounded-md bg-slate-700/50 text-white focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
               placeholder="Optional note"
-              rows={2}
+              rows={4}
             />
           </div>
         </form>
@@ -345,4 +345,3 @@ export default function CashFlowForm({
     </div>
   );
 }
-
