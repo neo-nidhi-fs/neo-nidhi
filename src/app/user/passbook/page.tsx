@@ -35,6 +35,7 @@ export default function PassbookPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
   const [isAdminViewingAnotherUser, setIsAdminViewingAnotherUser] =
     useState(false);
   const ITEMS_PER_PAGE = 10;
@@ -42,6 +43,7 @@ export default function PassbookPage() {
   useEffect(() => {
     async function fetchTransactions() {
       if (!session?.user?.id) return;
+      setLoading(true);
       try {
         const viewUserId = new URLSearchParams(window.location.search).get(
           'viewUserId'
@@ -51,19 +53,20 @@ export default function PassbookPage() {
         const targetUserId =
           isAdminLike && viewUserId ? viewUserId : session.user.id;
         setIsAdminViewingAnotherUser(
-          Boolean(
-            isAdminLike && viewUserId && viewUserId !== session.user.id
-          )
+          Boolean(isAdminLike && viewUserId && viewUserId !== session.user.id)
         );
-        const res = await fetch(`/api/users/${targetUserId}/transactions`);
+        const res = await fetch(
+          `/api/users/${targetUserId}/transactions?page=${page}&limit=${ITEMS_PER_PAGE}`
+        );
         const data = await res.json();
         setTransactions(data.data || []);
+        setTotalCount(data.total ?? 0);
       } finally {
         setLoading(false);
       }
     }
     fetchTransactions();
-  }, [session]);
+  }, [session, page]);
 
   if (loading) {
     return (
@@ -103,9 +106,7 @@ export default function PassbookPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-4xl font-bold text-green-900">
-              {transactions.length}
-            </p>
+            <p className="text-4xl font-bold text-green-900">{totalCount}</p>
             <p className="text-gray-200 text-sm mt-2">
               Transaction records on file
             </p>
@@ -124,6 +125,7 @@ export default function PassbookPage() {
               transactions={transactions}
               page={page}
               itemsPerPage={ITEMS_PER_PAGE}
+              totalCount={totalCount}
               onPageChange={setPage}
             />
           </CardContent>

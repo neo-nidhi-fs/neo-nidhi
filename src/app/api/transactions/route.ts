@@ -170,13 +170,19 @@ export async function POST(req: Request) {
   }
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
     await dbConnect();
     const accessResult = await requireAdminLikeAccess();
     if (!accessResult.ok) {
       return accessResult.response;
     }
+
+    const url = new URL(req.url);
+    const pageParam = Number(url.searchParams.get('page') ?? '1');
+    const limitParam = Number(url.searchParams.get('limit') ?? '10');
+    const page = Math.max(1, pageParam);
+    const limit = Math.max(1, Math.min(limitParam, 100));
 
     const userFilter = getManagedUsersFilter(accessResult.context);
     const users = await User.find(userFilter).select('_id');
@@ -194,15 +200,28 @@ export async function GET() {
       visibleUsers
     );
 
-    const transactions = [...transactionsAsc].reverse().map((tx) => {
+    const allTransactions = [...transactionsAsc].reverse().map((tx) => {
       const txObject = tx.toObject();
       return {
         ...txObject,
-        userBalanceAfterTransaction: snapshotsByTxId.get(String(tx._id)) ?? null,
+        userBalanceAfterTransaction:
+          snapshotsByTxId.get(String(tx._id)) ?? null,
       };
     });
 
-    return NextResponse.json({ success: true, data: transactions });
+    const total = allTransactions.length;
+    const totalAmount = allTransactions.reduce((sum, tx) => sum + tx.amount, 0);
+    const paginated = allTransactions.slice((page - 1) * limit, page * limit);
+
+    return NextResponse.json({
+      success: true,
+      data: paginated,
+      total,
+      totalAmount,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error);
     return NextResponse.json({ success: false, error: msg }, { status: 500 });

@@ -55,6 +55,8 @@ export default function AdminTransactionsPage() {
   const [message, setMessage] = useState('');
   const [transactionDialogOpen, setTransactionDialogOpen] = useState(false);
   const [txPage, setTxPage] = useState(1);
+  const [totalTransactionCount, setTotalTransactionCount] = useState(0);
+  const [totalTransactionVolume, setTotalTransactionVolume] = useState(0);
   const ITEMS_PER_PAGE = 10;
 
   useEffect(() => {
@@ -62,15 +64,26 @@ export default function AdminTransactionsPage() {
       const usersRes = await fetch('/api/users');
       const usersData = await usersRes.json();
       setUsers(usersData.data);
-
-      const txRes = await fetch('/api/transactions');
-      const txData = await txRes.json();
-      setTransactions(txData.data);
-
-      setLoading(false);
+      await fetchTransactions(1);
     }
     fetchData();
   }, []);
+
+  async function fetchTransactions(page = 1) {
+    setLoading(true);
+    try {
+      const res = await fetch(
+        `/api/transactions?page=${page}&limit=${ITEMS_PER_PAGE}`
+      );
+      const data = await res.json();
+      setTransactions(data.data || []);
+      setTotalTransactionCount(data.total ?? 0);
+      setTotalTransactionVolume(data.totalAmount ?? 0);
+      setTxPage(page);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function handleAddTransaction(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -89,9 +102,8 @@ export default function AdminTransactionsPage() {
 
       const data = await res.json();
       if (res.ok) {
-        setTransactions((prev) => [data.data, ...prev]);
         setMessage('✅ Transaction added successfully!');
-
+        await fetchTransactions(1);
         setTimeout(() => setTransactionDialogOpen(false), 1500);
       } else {
         setMessage(`❌ Error: ${data.error}`);
@@ -191,10 +203,10 @@ export default function AdminTransactionsPage() {
           </CardHeader>
           <CardContent>
             <p className="text-4xl font-bold text-green-900">
-              ₹{totalTransactions.toFixed(2)}
+              ₹{totalTransactionVolume.toFixed(2)}
             </p>
             <p className="text-gray-200 text-sm mt-2">
-              Across {transactions.length} transactions
+              Across {totalTransactionCount} transactions
             </p>
           </CardContent>
         </Card>
@@ -323,64 +335,68 @@ export default function AdminTransactionsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {transactions
-                  .slice((txPage - 1) * ITEMS_PER_PAGE, txPage * ITEMS_PER_PAGE)
-                  .map((tx) => {
-                    const user = users.find((u) => u._id === tx.userId);
-                    return (
-                      <TableRow key={tx._id}>
-                        <TableCell className="text-gray-200">
-                          {new Date(tx.date).toLocaleDateString('en-IN')}
-                        </TableCell>
-                        <TableCell className="text-gray-200">
-                          {user?.name || 'Unknown'}
-                        </TableCell>
-                        <TableCell
-                          className={`capitalize font-semibold ${getTransactionColor(
-                            tx.type
-                          )}`}
-                        >
-                          <span className="sm:hidden">
-                            {getShortTransactionType(tx.type)}
-                          </span>
-                          <span className="hidden sm:inline">{tx.type}</span>
-                        </TableCell>
-                        <TableCell className="font-semibold text-gray-200">
-                          ₹{tx.amount.toFixed(2)}
-                        </TableCell>
-                        <TableCell className="text-xs text-gray-200 min-w-[240px]">
-                          {tx.userBalanceAfterTransaction ? (
-                            <div>
-                              S ₹
-                              {tx.userBalanceAfterTransaction.savingsBalance.toFixed(
-                                2
-                              )}{' '}
-                              | FD ₹
-                              {tx.userBalanceAfterTransaction.fdBalance.toFixed(2)} |
-                              RD ₹
-                              {tx.userBalanceAfterTransaction.rdBalance.toFixed(2)} |
-                              L ₹
-                              {tx.userBalanceAfterTransaction.loanBalance.toFixed(2)}
-                            </div>
-                          ) : (
-                            '-'
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
+                {transactions.map((tx) => {
+                  const user = users.find((u) => u._id === tx.userId);
+                  return (
+                    <TableRow key={tx._id}>
+                      <TableCell className="text-gray-200">
+                        {new Date(tx.date).toLocaleDateString('en-IN')}
+                      </TableCell>
+                      <TableCell className="text-gray-200">
+                        {user?.name || 'Unknown'}
+                      </TableCell>
+                      <TableCell
+                        className={`capitalize font-semibold ${getTransactionColor(
+                          tx.type
+                        )}`}
+                      >
+                        <span className="sm:hidden">
+                          {getShortTransactionType(tx.type)}
+                        </span>
+                        <span className="hidden sm:inline">{tx.type}</span>
+                      </TableCell>
+                      <TableCell className="font-semibold text-gray-200">
+                        ₹{tx.amount.toFixed(2)}
+                      </TableCell>
+                      <TableCell className="text-xs text-gray-200 min-w-[240px]">
+                        {tx.userBalanceAfterTransaction ? (
+                          <div>
+                            S ₹
+                            {tx.userBalanceAfterTransaction.savingsBalance.toFixed(
+                              2
+                            )}{' '}
+                            | FD ₹
+                            {tx.userBalanceAfterTransaction.fdBalance.toFixed(
+                              2
+                            )}{' '}
+                            | RD ₹
+                            {tx.userBalanceAfterTransaction.rdBalance.toFixed(
+                              2
+                            )}{' '}
+                            | L ₹
+                            {tx.userBalanceAfterTransaction.loanBalance.toFixed(
+                              2
+                            )}
+                          </div>
+                        ) : (
+                          '-'
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
-            {transactions.length > ITEMS_PER_PAGE && (
+            {totalTransactionCount > ITEMS_PER_PAGE && (
               <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm text-gray-400">
                   Showing {(txPage - 1) * ITEMS_PER_PAGE + 1} to{' '}
-                  {Math.min(txPage * ITEMS_PER_PAGE, transactions.length)} of{' '}
-                  {transactions.length} transactions
+                  {Math.min(txPage * ITEMS_PER_PAGE, totalTransactionCount)} of{' '}
+                  {totalTransactionCount} transactions
                 </p>
                 <div className="flex flex-wrap items-center gap-2 justify-center sm:justify-end">
                   <Button
-                    onClick={() => setTxPage((p) => Math.max(1, p - 1))}
+                    onClick={() => fetchTransactions(Math.max(1, txPage - 1))}
                     disabled={txPage === 1}
                     className="bg-slate-700 hover:bg-slate-600 text-white disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                   >
@@ -389,7 +405,7 @@ export default function AdminTransactionsPage() {
                   <div className="hidden sm:flex items-center gap-2">
                     {(() => {
                       const totalPages = Math.ceil(
-                        transactions.length / ITEMS_PER_PAGE
+                        totalTransactionCount / ITEMS_PER_PAGE
                       );
                       const maxPagesToShow = 5;
                       let startPage = Math.max(
@@ -412,7 +428,7 @@ export default function AdminTransactionsPage() {
                         return (
                           <Button
                             key={pageNum}
-                            onClick={() => setTxPage(pageNum)}
+                            onClick={() => fetchTransactions(pageNum)}
                             className={`w-10 h-10 text-sm ${
                               txPage === pageNum
                                 ? 'bg-blue-600 text-white'
@@ -430,15 +446,16 @@ export default function AdminTransactionsPage() {
                   </div>
                   <Button
                     onClick={() =>
-                      setTxPage((p) =>
+                      fetchTransactions(
                         Math.min(
-                          Math.ceil(transactions.length / ITEMS_PER_PAGE),
-                          p + 1
+                          Math.ceil(totalTransactionCount / ITEMS_PER_PAGE),
+                          txPage + 1
                         )
                       )
                     }
                     disabled={
-                      txPage === Math.ceil(transactions.length / ITEMS_PER_PAGE)
+                      txPage ===
+                      Math.ceil(totalTransactionCount / ITEMS_PER_PAGE)
                     }
                     className="bg-slate-700 hover:bg-slate-600 text-white disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                   >
@@ -453,4 +470,3 @@ export default function AdminTransactionsPage() {
     </main>
   );
 }
-

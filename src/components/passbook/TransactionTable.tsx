@@ -29,6 +29,7 @@ interface TransactionTableProps {
   transactions: Transaction[];
   page: number;
   itemsPerPage: number;
+  totalCount?: number;
   onPageChange: (page: number) => void;
 }
 
@@ -36,6 +37,7 @@ export function TransactionTable({
   transactions,
   page,
   itemsPerPage,
+  totalCount,
   onPageChange,
 }: TransactionTableProps) {
   const getTransactionColor = (type: string) => {
@@ -68,10 +70,10 @@ export function TransactionTable({
     return typeMap[type] || type;
   };
 
-  const totalPages = Math.ceil(transactions.length / itemsPerPage);
+  const totalItems = totalCount ?? transactions.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
   const startIdx = (page - 1) * itemsPerPage;
-  const endIdx = startIdx + itemsPerPage;
-  const paginatedTransactions = transactions.slice(startIdx, endIdx);
+  const endIdx = startIdx + transactions.length;
 
   return (
     <div className="space-y-4">
@@ -86,8 +88,8 @@ export function TransactionTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {paginatedTransactions.length > 0 ? (
-              paginatedTransactions.map((tx) => (
+            {transactions.length > 0 ? (
+              transactions.map((tx) => (
                 <TableRow key={tx._id}>
                   <TableCell className="text-gray-200">
                     {new Date(tx.date).toLocaleDateString('en-IN')}
@@ -95,7 +97,9 @@ export function TransactionTable({
                   <TableCell
                     className={`capitalize font-semibold ${getTransactionColor(tx.type)}`}
                   >
-                    <span className="sm:hidden">{getShortTransactionType(tx.type)}</span>
+                    <span className="sm:hidden">
+                      {getShortTransactionType(tx.type)}
+                    </span>
                     <span className="hidden sm:inline">{tx.type}</span>
                   </TableCell>
                   <TableCell className="font-semibold text-gray-200">
@@ -104,9 +108,15 @@ export function TransactionTable({
                   <TableCell className="text-xs text-gray-200 min-w-[240px]">
                     {tx.userBalanceAfterTransaction ? (
                       <div>
-                        S ₹{tx.userBalanceAfterTransaction.savingsBalance.toFixed(2)} | FD ₹
-                        {tx.userBalanceAfterTransaction.fdBalance.toFixed(2)} | RD ₹
-                        {tx.userBalanceAfterTransaction.rdBalance.toFixed(2)} | L ₹
+                        S ₹
+                        {tx.userBalanceAfterTransaction.savingsBalance.toFixed(
+                          2
+                        )}{' '}
+                        | FD ₹
+                        {tx.userBalanceAfterTransaction.fdBalance.toFixed(2)} |
+                        RD ₹
+                        {tx.userBalanceAfterTransaction.rdBalance.toFixed(2)} |
+                        L ₹
                         {tx.userBalanceAfterTransaction.loanBalance.toFixed(2)}
                       </div>
                     ) : (
@@ -117,7 +127,10 @@ export function TransactionTable({
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={4} className="text-center text-gray-400 py-8">
+                <TableCell
+                  colSpan={4}
+                  className="text-center text-gray-400 py-8"
+                >
                   No transactions found
                 </TableCell>
               </TableRow>
@@ -126,11 +139,11 @@ export function TransactionTable({
         </Table>
       </div>
 
-      {transactions.length > itemsPerPage && (
+      {totalItems > itemsPerPage && (
         <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-gray-400">
-            Showing {startIdx + 1} to {Math.min(endIdx, transactions.length)} of{' '}
-            {transactions.length} transactions
+            Showing {startIdx + 1} to {Math.min(endIdx, totalItems)} of{' '}
+            {totalItems} transactions
           </p>
           <div className="flex flex-wrap items-center gap-2 justify-center sm:justify-end">
             <Button
@@ -169,4 +182,3 @@ export function TransactionTable({
     </div>
   );
 }
-

@@ -10,29 +10,59 @@ export async function GET(
 ) {
   try {
     await dbConnect();
+    const url = new URL(req.url);
+    const pageParam = Number(url.searchParams.get('page') ?? '1');
+    const limitParam = Number(url.searchParams.get('limit') ?? '10');
+    const page = Math.max(1, pageParam);
+    const limit = Math.max(1, Math.min(limitParam, 100));
     const { id } = await context.params;
 
-    const allUsers = await User.find({}).select(
+    const user = await User.findById(id).select(
       '_id name savingsBalance fd rd loanBalance'
     );
-    const allTransactionsAsc = await Transaction.find({}).sort({ date: 1 });
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'User not found' },
+        { status: 404 }
+      );
+    }
+
+    const userTransactionsAsc = await Transaction.find({ userId: id }).sort({
+      date: 1,
+    });
     const snapshotsByTxId = buildTransactionBalanceSnapshots(
-      allTransactionsAsc,
-      allUsers
+      userTransactionsAsc,
+      [user]
     );
 
-    const userTransactions = allTransactionsAsc
-      .filter((tx) => String(tx.userId) === id)
-      .reverse()
-      .map((tx) => {
-        const txObject = tx.toObject();
-        return {
-          ...txObject,
-          userBalanceAfterTransaction: snapshotsByTxId.get(String(tx._id)) ?? null,
-        };
-      });
+    const mappedTransactions = [...userTransactionsAsc].reverse().map((tx) => {
+      const txObject = tx.toObject();
+      return {
+        ...txObject,
+        userBalanceAfterTransaction:
+          snapshotsByTxId.get(String(tx._id)) ?? null,
+      };
+    });
 
-    return NextResponse.json({ success: true, data: userTransactions });
+    const total = mappedTransactions.length;
+    const totalAmount = mappedTransactions.reduce(
+      (sum, tx) => sum + tx.amount,
+      0
+    );
+    const paginatedTransactions = mappedTransactions.slice(
+      (page - 1) * limit,
+      page * limit
+    );
+
+    return NextResponse.json({
+      success: true,
+      data: paginatedTransactions,
+      total,
+      totalAmount,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    });
   } catch (error: unknown) {
     return NextResponse.json(
       { success: false, error: (error as Error).message },
