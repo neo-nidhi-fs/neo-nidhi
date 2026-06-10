@@ -4,11 +4,21 @@ import '@testing-library/jest-dom';
 // Individual tests should stub `fetch` when they need specific responses.
 const _originalFetch = globalThis.fetch;
 
-globalThis.fetch = async (input: RequestInfo, init?: RequestInit) => {
+function customFetch(input: RequestInfo, init?: RequestInit): Promise<Response>;
+function customFetch(input: URL, init?: RequestInit): Promise<Response>;
+async function customFetch(input: RequestInfo | URL, init?: RequestInit) {
   try {
-    let urlStr = typeof input === 'string' ? input : (input as Request).url;
+    let urlStr: string;
+    if (typeof input === 'string') {
+      urlStr = input;
+    } else if (input instanceof URL) {
+      urlStr = input.toString();
+    } else {
+      urlStr = input.url;
+    }
+
     // Treat relative paths or localhost targets as test-only and return empty JSON by default.
-    if (typeof urlStr === 'string' && (urlStr.startsWith('/') || urlStr.includes('localhost'))) {
+    if (urlStr.startsWith('/') || urlStr.includes('localhost')) {
       return new Response(JSON.stringify({}), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
@@ -18,9 +28,8 @@ globalThis.fetch = async (input: RequestInfo, init?: RequestInit) => {
     // fallthrough to original fetch
   }
 
-  // Fallback to original fetch if available, otherwise return empty JSON.
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
   if (_originalFetch) return _originalFetch(input as any, init as any);
   return new Response(JSON.stringify({}), { status: 200, headers: { 'Content-Type': 'application/json' } });
-};
+}
+
+globalThis.fetch = customFetch as typeof globalThis.fetch;
