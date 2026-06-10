@@ -36,17 +36,10 @@ export default function HomePage() {
       const session = await getSession();
       if (session?.user?.id) {
         const userRole = session.user.role;
-        const userName = session.user.name;
-        // Only allow user with role 'admin' and name 'Admin' (super-admin)
-        if (userRole === 'admin' && userName === 'Admin') {
+        if (userRole === 'admin' || userRole === 'privileged') {
           router.push('/admin/dashboard');
         } else {
-          // Show message and sign out if not super-admin
-          alert('Only super-admin can access this page.');
-          if (typeof window !== 'undefined') {
-            const { signOut } = await import('next-auth/react');
-            signOut();
-          }
+          router.push('/user/dashboard');
         }
       }
     }
