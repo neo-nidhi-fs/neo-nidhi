@@ -28,16 +28,15 @@ export function ChangePasswordDialog({
 
   async function handleChangePassword(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    console.log('formData ==> ', formData);
+    const form = e.currentTarget;
+    const formData = new FormData(form);
     const oldPassword = formData.get('oldPassword')?.toString() || '';
     const newPassword = formData.get('newPassword')?.toString() || '';
 
     const result = await changePassword(oldPassword, newPassword);
-    console.log('result ==> ', result);
 
     if (result) {
-      e.currentTarget.reset();
+      form.reset();
       setTimeout(() => {
         setOpen(false);
         onPasswordChanged?.();
