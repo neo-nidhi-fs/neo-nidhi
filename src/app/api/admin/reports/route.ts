@@ -7,93 +7,67 @@ export async function GET() {
   try {
     await dbConnect();
 
-    // Fetch all users
-    const users = await User.find({});
-    const transactions = await Transaction.find({});
-    const schemes = await Scheme.find({});
+    const [users, transactions, schemes] = await Promise.all([
+      User.find({})
+        .select(
+          'role savingsBalance fd rd loanBalance accruedSavingInterest accruedFdInterest accruedRdInterest accruedLoanInterest'
+        )
+        .lean(),
+      Transaction.find({}).select('type amount date').lean(),
+      Scheme.find({}).select('name').lean(),
+    ]);
 
-    // Calculate key metrics
     const totalUsers = users.length;
-    const totalAdmins = users.filter((u) => u.role === 'admin').length;
+    let totalAdmins = 0;
+    let totalSavingsBalance = 0;
+    let totalFdBalance = 0;
+    let totalRdBalance = 0;
+    let totalLoanBalance = 0;
+    let totalAccruedSavingInterest = 0;
+    let totalAccruedFdInterest = 0;
+    let totalAccruedRdInterest = 0;
+    let totalAccruedLoanInterest = 0;
+
+    for (const user of users) {
+      if (user.role === 'admin') totalAdmins++;
+      totalSavingsBalance += user.savingsBalance || 0;
+      totalFdBalance += user.fd || 0;
+      totalRdBalance += user.rd || 0;
+      totalLoanBalance += user.loanBalance || 0;
+      totalAccruedSavingInterest += user.accruedSavingInterest || 0;
+      totalAccruedFdInterest += user.accruedFdInterest || 0;
+      totalAccruedRdInterest += user.accruedRdInterest || 0;
+      totalAccruedLoanInterest += user.accruedLoanInterest || 0;
+    }
+
     const totalNormalUsers = totalUsers - totalAdmins;
 
-    const totalSavingsBalance = users.reduce(
-      (sum, u) => sum + u.savingsBalance,
-      0
-    );
-    const totalFdBalance = users.reduce((sum, u) => sum + u.fd, 0);
-    const totalRdBalance = users.reduce((sum, u) => sum + (u.rd || 0), 0);
-    const totalLoanBalance = users.reduce((sum, u) => sum + u.loanBalance, 0);
-    const totalAccruedSavingInterest = users.reduce(
-      (sum, u) => sum + u.accruedSavingInterest,
-      0
-    );
-    const totalAccruedFdInterest = users.reduce(
-      (sum, u) => sum + u.accruedFdInterest,
-      0
-    );
-    const totalAccruedRdInterest = users.reduce(
-      (sum, u) => sum + (u.accruedRdInterest || 0),
-      0
-    );
-    const totalAccruedLoanInterest = users.reduce(
-      (sum, u) => sum + u.accruedLoanInterest,
-      0
-    );
-
-    // Transaction analysis
     const transactionsByType = {
-      deposit: transactions.filter((t) => t.type === 'deposit').length,
-      withdrawal: transactions.filter((t) => t.type === 'withdrawal').length,
-      loan: transactions.filter((t) => t.type === 'loan').length,
-      repayment: transactions.filter((t) => t.type === 'repayment').length,
-      fd: transactions.filter((t) => t.type === 'fd').length,
-      rd: transactions.filter((t) => t.type === 'rd').length,
-      withdrawal_fd: transactions.filter((t) => t.type === 'withdrawal_fd')
-        .length,
-      interest_deposit: transactions.filter(
-        (t) => t.type === 'interest_deposit'
-      ).length,
-      interest_fd: transactions.filter((t) => t.type === 'interest_fd').length,
-      interest_rd: transactions.filter((t) => t.type === 'interest_rd').length,
-      interest_loan: transactions.filter((t) => t.type === 'interest_loan')
-        .length,
+      deposit: 0,
+      withdrawal: 0,
+      loan: 0,
+      repayment: 0,
+      fd: 0,
+      rd: 0,
+      withdrawal_fd: 0,
+      interest_deposit: 0,
+      interest_fd: 0,
+      interest_rd: 0,
+      interest_loan: 0,
     };
 
     const transactionsByTypeAmount = {
-      deposit: transactions
-        .filter((t) => t.type === 'deposit')
-        .reduce((sum, t) => sum + t.amount, 0),
-      withdrawal: transactions
-        .filter((t) => t.type === 'withdrawal')
-        .reduce((sum, t) => sum + t.amount, 0),
-      loan: transactions
-        .filter((t) => t.type === 'loan')
-        .reduce((sum, t) => sum + t.amount, 0),
-      repayment: transactions
-        .filter((t) => t.type === 'repayment')
-        .reduce((sum, t) => sum + t.amount, 0),
-      fd: transactions
-        .filter((t) => t.type === 'fd')
-        .reduce((sum, t) => sum + t.amount, 0),
-      rd: transactions
-        .filter((t) => t.type === 'rd')
-        .reduce((sum, t) => sum + t.amount, 0),
-      withdrawal_fd: transactions
-        .filter((t) => t.type === 'withdrawal_fd')
-        .reduce((sum, t) => sum + t.amount, 0),
-      interest_deposit: transactions
-        .filter((t) => t.type === 'interest_deposit')
-        .reduce((sum, t) => sum + t.amount, 0),
-      interest_fd: transactions
-        .filter((t) => t.type === 'interest_fd')
-        .reduce((sum, t) => sum + t.amount, 0),
-      interest_rd: transactions
-        .filter((t) => t.type === 'interest_rd')
-        .reduce((sum, t) => sum + t.amount, 0),
-      interest_loan: transactions
-        .filter((t) => t.type === 'interest_loan')
-        .reduce((sum, t) => sum + t.amount, 0),
+      deposit: 0,
+      withdrawal: 0,
+      loan: 0,
+      repayment: 0,
+      fd: 0,
+      rd: 0,
+      withdrawal_fd: 0,
+      interest_deposit: 0,
+      interest_fd: 0,
+      interest_rd: 0,
+      interest_loan: 0,
     };
 
     // Scheme-wise user distribution
@@ -108,7 +82,6 @@ export async function GET() {
       return { scheme: scheme.name, count };
     });
 
-    // Monthly transaction trends (last 12 months)
     const monthlyTrends: { [key: string]: number } = {};
     const today = new Date();
     for (let i = 11; i >= 0; i--) {
@@ -120,8 +93,9 @@ export async function GET() {
       monthlyTrends[monthKey] = 0;
     }
 
-    transactions.forEach((t) => {
-      const date = new Date(t.date);
+    for (const transaction of transactions) {
+      const amount = transaction.amount || 0;
+      const date = new Date(transaction.date);
       const monthKey = date.toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'short',
@@ -129,9 +103,16 @@ export async function GET() {
       if (monthKey in monthlyTrends) {
         monthlyTrends[monthKey]++;
       }
-    });
+      if (transaction.type in transactionsByType) {
+        transactionsByType[transaction.type as keyof typeof transactionsByType]++;
+      }
+      if (transaction.type in transactionsByTypeAmount) {
+        transactionsByTypeAmount[
+          transaction.type as keyof typeof transactionsByTypeAmount
+        ] += amount;
+      }
+    }
 
-    // User balance distribution
     const balanceRanges = {
       '0-10k': users.filter(
         (u) =>

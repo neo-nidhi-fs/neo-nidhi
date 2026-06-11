@@ -16,5 +16,7 @@ const SchemeSchema = new Schema({
   createdAt: { type: Date, default: Date.now },
 });
 
+SchemeSchema.index({ name: 1 }, { unique: true });
+
 export const Scheme: Model<IScheme> =
   mongoose.models.Scheme || mongoose.model('Scheme', SchemeSchema);

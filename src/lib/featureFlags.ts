@@ -1,8 +1,13 @@
-import { IUser } from '@/models/User';
+import type { IUserFeatures } from '@/models/User';
 import { NextResponse } from 'next/server';
 import { isFeatureEnabled } from '@/lib/userFeatures';
 
-export function enforceFinanceFeatureEnabled(user: IUser) {
+type FeatureUserLike = {
+  features?: Partial<IUserFeatures> | null;
+  financeFeaturesEnabled?: boolean;
+};
+
+export function enforceFinanceFeatureEnabled(user: FeatureUserLike) {
   if (!isFeatureEnabled(user, 'financeFeaturesEnabled')) {
     return NextResponse.json(
       { success: false, error: 'Finance features are disabled for this user' },

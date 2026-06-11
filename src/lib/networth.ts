@@ -1,5 +1,48 @@
-import { IUser, IAsset, ILiability } from '@/models/User';
+import { IAsset, ILiability, IUserFeatures } from '@/models/User';
 import { ICashFlow } from '@/models/CashFlow';
+
+type NetWorthAssetLike = Pick<
+  IAsset,
+  | '_id'
+  | 'type'
+  | 'category'
+  | 'amount'
+  | 'quantity'
+  | 'purchaseValue'
+  | 'marketValue'
+>;
+
+type NetWorthLiabilityLike = Pick<
+  ILiability,
+  | '_id'
+  | 'type'
+  | 'amount'
+  | 'interestRate'
+  | 'startDate'
+  | 'dueDate'
+  | 'status'
+  | 'metadata'
+>;
+
+type NetWorthCashFlowLike = Pick<
+  ICashFlow,
+  'date' | 'type' | 'category' | 'amount' | 'source'
+>;
+
+type NetWorthUserLike = {
+  savingsBalance?: number;
+  fd?: number;
+  rd?: number;
+  loanBalance?: number;
+  accruedSavingInterest?: number;
+  accruedFdInterest?: number;
+  accruedRdInterest?: number;
+  accruedLoanInterest?: number;
+  assetPortfolio?: NetWorthAssetLike[];
+  liabilities?: NetWorthLiabilityLike[];
+  features?: Partial<IUserFeatures> | null;
+  financeFeaturesEnabled?: boolean;
+};
 
 export interface ILoanProjection {
   outstanding: number;
@@ -65,7 +108,7 @@ export interface ICashFlowSummary {
 /**
  * Calculate total market value for one asset entry
  */
-export function calculateAssetValue(asset: IAsset): number {
+export function calculateAssetValue(asset: NetWorthAssetLike): number {
   if (asset.quantity && asset.quantity > 0 && asset.marketValue >= 0) {
     // marketValue is per unit price for quantity-based assets
     return asset.marketValue * asset.quantity;
@@ -91,11 +134,11 @@ export function calculateAssetValue(asset: IAsset): number {
 /**
  * Calculate total assets from user data
  */
-export function calculateTotalAssets(user: IUser): number {
+export function calculateTotalAssets(user: NetWorthUserLike): number {
   const legacyAssets =
     (user.savingsBalance || 0) + (user.fd || 0) + (user.rd || 0);
   const portfolioAssets = (user.assetPortfolio || []).reduce(
-    (sum: number, asset: IAsset) => sum + calculateAssetValue(asset),
+    (sum: number, asset: NetWorthAssetLike) => sum + calculateAssetValue(asset),
     0
   );
   return legacyAssets + portfolioAssets;
@@ -104,10 +147,11 @@ export function calculateTotalAssets(user: IUser): number {
 /**
  * Calculate total liabilities from user data
  */
-export function calculateTotalLiabilities(user: IUser): number {
-  const legacyLiabilities = user.loanBalance;
+export function calculateTotalLiabilities(user: NetWorthUserLike): number {
+  const legacyLiabilities = user.loanBalance || 0;
   const portfolioLiabilities = (user.liabilities || []).reduce(
-    (sum: number, liability: ILiability) => sum + (liability.amount || 0),
+    (sum: number, liability: NetWorthLiabilityLike) =>
+      sum + (liability.amount || 0),
     0
   );
   return legacyLiabilities + portfolioLiabilities;
@@ -126,17 +170,17 @@ export function calculateNetWorth(
 /**
  * Get asset breakdown by category and type
  */
-export function getAssetBreakdown(user: IUser): IAssetBreakdown {
+export function getAssetBreakdown(user: NetWorthUserLike): IAssetBreakdown {
   return {
     savings: user.savingsBalance || 0,
     fd: user.fd || 0,
     rd: user.rd || 0,
     portfolio: (user.assetPortfolio || []).reduce(
-      (sum: number, asset: IAsset) => sum + calculateAssetValue(asset),
+      (sum: number, asset: NetWorthAssetLike) => sum + calculateAssetValue(asset),
       0
     ),
     byType: (user.assetPortfolio || []).reduce(
-      (acc: Record<string, number>, asset: IAsset) => {
+      (acc: Record<string, number>, asset: NetWorthAssetLike) => {
         const value = calculateAssetValue(asset);
         if (!acc[asset.type]) {
           acc[asset.type] = 0;
@@ -152,15 +196,16 @@ export function getAssetBreakdown(user: IUser): IAssetBreakdown {
 /**
  * Get liability breakdown by type
  */
-export function getLiabilityBreakdown(user: IUser): ILiabilityBreakdown {
+export function getLiabilityBreakdown(user: NetWorthUserLike): ILiabilityBreakdown {
   return {
-    loans: user.loanBalance,
+    loans: user.loanBalance || 0,
     portfolio: (user.liabilities || []).reduce(
-      (sum: number, liability: ILiability) => sum + (liability.amount || 0),
+      (sum: number, liability: NetWorthLiabilityLike) =>
+        sum + (liability.amount || 0),
       0
     ),
     byType: (user.liabilities || []).reduce(
-      (acc: Record<string, number>, liability: ILiability) => {
+      (acc: Record<string, number>, liability: NetWorthLiabilityLike) => {
         if (!acc[liability.type]) {
           acc[liability.type] = 0;
         }
@@ -175,7 +220,7 @@ export function getLiabilityBreakdown(user: IUser): ILiabilityBreakdown {
 /**
  * Calculate monthly income and expenses for current month
  */
-export function calculateCurrentCashFlows(cashFlows: ICashFlow[]): {
+export function calculateCurrentCashFlows(cashFlows: NetWorthCashFlowLike[]): {
   income: number;
   expenses: number;
   savings: number;
@@ -185,7 +230,7 @@ export function calculateCurrentCashFlows(cashFlows: ICashFlow[]): {
   const currentYear = now.getFullYear();
 
   const income = (cashFlows || [])
-    .filter((cf: ICashFlow) => {
+      .filter((cf: NetWorthCashFlowLike) => {
       const cfDate = new Date(cf.date);
       return (
         cf.type === 'income' &&
@@ -193,10 +238,10 @@ export function calculateCurrentCashFlows(cashFlows: ICashFlow[]): {
         cfDate.getFullYear() === currentYear
       );
     })
-    .reduce((sum: number, cf: ICashFlow) => sum + (cf.amount || 0), 0);
+    .reduce((sum: number, cf: NetWorthCashFlowLike) => sum + (cf.amount || 0), 0);
 
   const expenses = (cashFlows || [])
-    .filter((cf: ICashFlow) => {
+      .filter((cf: NetWorthCashFlowLike) => {
       const cfDate = new Date(cf.date);
       return (
         cf.type === 'expense' &&
@@ -204,7 +249,7 @@ export function calculateCurrentCashFlows(cashFlows: ICashFlow[]): {
         cfDate.getFullYear() === currentYear
       );
     })
-    .reduce((sum: number, cf: ICashFlow) => sum + (cf.amount || 0), 0);
+    .reduce((sum: number, cf: NetWorthCashFlowLike) => sum + (cf.amount || 0), 0);
 
   return {
     income,
@@ -217,7 +262,7 @@ export function calculateCurrentCashFlows(cashFlows: ICashFlow[]): {
  * Calculate cashflow summary with monthly breakdown
  */
 export function calculateCashFlowSummary(
-  cashFlows: ICashFlow[]
+  cashFlows: NetWorthCashFlowLike[]
 ): ICashFlowSummary {
   const monthlyData: {
     [month: string]: {
@@ -226,7 +271,7 @@ export function calculateCashFlowSummary(
     };
   } = {};
 
-  (cashFlows || []).forEach((cf: ICashFlow) => {
+  (cashFlows || []).forEach((cf: NetWorthCashFlowLike) => {
     const date = new Date(cf.date);
     const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 
@@ -257,12 +302,12 @@ export function calculateCashFlowSummary(
   });
 
   const totalIncome = (cashFlows || [])
-    .filter((cf: ICashFlow) => cf.type === 'income')
-    .reduce((sum: number, cf: ICashFlow) => sum + (cf.amount || 0), 0);
+    .filter((cf: NetWorthCashFlowLike) => cf.type === 'income')
+    .reduce((sum: number, cf: NetWorthCashFlowLike) => sum + (cf.amount || 0), 0);
 
   const totalExpenses = (cashFlows || [])
-    .filter((cf: ICashFlow) => cf.type === 'expense')
-    .reduce((sum: number, cf: ICashFlow) => sum + (cf.amount || 0), 0);
+    .filter((cf: NetWorthCashFlowLike) => cf.type === 'expense')
+    .reduce((sum: number, cf: NetWorthCashFlowLike) => sum + (cf.amount || 0), 0);
 
   return {
     income: totalIncome,
@@ -295,7 +340,7 @@ export function monthsBetween(start: Date, end: Date): number {
 }
 
 export function calculateLoanProjection(
-  liability: ILiability
+  liability: NetWorthLiabilityLike
 ): ILoanProjection {
   if (!liability || liability.status !== 'active' || liability.amount <= 0) {
     return {
@@ -407,7 +452,7 @@ export function calculateLoanProjection(
 }
 
 export function calculateDebtFreeDate(
-  liabilities: ILiability[],
+  liabilities: NetWorthLiabilityLike[],
   monthlySavings: number
 ): string | null {
   const activeLiabilities = (liabilities || []).filter(
@@ -450,7 +495,7 @@ export function calculateDebtFreeDate(
 }
 
 export function calculateFIRECorpus(
-  cashFlows: ICashFlow[],
+  cashFlows: NetWorthCashFlowLike[],
   monthsToUse = 6,
   inflationRate = 0.07,
   safeWithdrawalRate = 0.04
@@ -517,8 +562,8 @@ export function calculateFIRECorpus(
  * Get complete net worth summary
  */
 export function getNetWorthSummary(
-  user: IUser,
-  cashFlows: ICashFlow[]
+  user: NetWorthUserLike,
+  cashFlows: NetWorthCashFlowLike[]
 ): INetWorthSummary {
   const totalAssets = calculateTotalAssets(user);
   const totalLiabilities = calculateTotalLiabilities(user);
@@ -527,7 +572,7 @@ export function getNetWorthSummary(
   const cashFlowStats = calculateCurrentCashFlows(cashFlows);
 
   const loanProjections = (user.liabilities || []).reduce(
-    (acc: Record<string, ILoanProjection>, liability: ILiability) => {
+    (acc: Record<string, ILoanProjection>, liability: NetWorthLiabilityLike) => {
       acc[
         liability._id?.toString() ||
           liability.type ||
@@ -557,10 +602,10 @@ export function getNetWorthSummary(
     monthlyExpenses: cashFlowStats.expenses,
     monthlySavings: cashFlowStats.savings,
     totalInterestEarned:
-      user.accruedSavingInterest +
-      user.accruedFdInterest +
+      (user.accruedSavingInterest || 0) +
+      (user.accruedFdInterest || 0) +
       (user.accruedRdInterest || 0),
-    totalInterestAccrued: user.accruedLoanInterest,
+    totalInterestAccrued: user.accruedLoanInterest || 0,
     totalOutstandingLoans,
     debtFreeDate,
     fireCorpus: fireScore.fireCorpus,
@@ -573,7 +618,7 @@ export function getNetWorthSummary(
 /**
  * Calculate unrealized gains/losses for equity/MF holdings
  */
-export function calculateUnrealizedGains(user: IUser): {
+export function calculateUnrealizedGains(user: NetWorthUserLike): {
   [assetId: string]: {
     gain: number;
     gainPercent: number;
@@ -586,7 +631,7 @@ export function calculateUnrealizedGains(user: IUser): {
     };
   } = {};
 
-  user.assetPortfolio.forEach((asset: IAsset) => {
+  (user.assetPortfolio || []).forEach((asset: NetWorthAssetLike) => {
     if (
       (asset.type === 'equity' || asset.type === 'mutual_fund') &&
       asset.purchaseValue

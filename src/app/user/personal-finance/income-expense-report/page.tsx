@@ -1,9 +1,8 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import Highcharts from 'highcharts';
-import HighchartsReact from 'highcharts-react-official';
+import { LazyHighchartsChart } from '@/components/charts/LazyHighchartsChart';
 import { ArrowLeft, BarChart3, CalendarDays, Loader, TrendingUp } from 'lucide-react';
 import { useUser } from '@/hooks/useServices';
 import { CashFlow, useUserFinance } from '@/hooks/useUserFinance';
@@ -612,34 +611,31 @@ export default function IncomeExpenseReportPage() {
         {!loading && !error && monthlyEntries.length > 0 && mounted && (
           <div className="space-y-6">
             <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-4">
-              <HighchartsReact highcharts={Highcharts} options={monthlyChartOptions} />
+              <LazyHighchartsChart options={monthlyChartOptions} />
             </div>
             <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-4">
-              <HighchartsReact highcharts={Highcharts} options={yearlyChartOptions} />
+              <LazyHighchartsChart options={yearlyChartOptions} />
             </div>
             <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-4">
-              <HighchartsReact highcharts={Highcharts} options={expenseCategoryOptions} />
+              <LazyHighchartsChart options={expenseCategoryOptions} />
             </div>
             <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-4">
-              <HighchartsReact highcharts={Highcharts} options={quarterlyChartOptions} />
+              <LazyHighchartsChart options={quarterlyChartOptions} />
             </div>
             <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-4">
-              <HighchartsReact highcharts={Highcharts} options={cumulativeSavingsOptions} />
+              <LazyHighchartsChart options={cumulativeSavingsOptions} />
             </div>
             <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-4">
-              <HighchartsReact highcharts={Highcharts} options={monthlySavingsRateOptions} />
+              <LazyHighchartsChart options={monthlySavingsRateOptions} />
             </div>
             {monthlyExpenseCategoryEntries.length > 0 && (
               <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-4">
-                <HighchartsReact
-                  highcharts={Highcharts}
-                  options={monthlyExpenseCategoryBarOptions}
-                />
+                <LazyHighchartsChart options={monthlyExpenseCategoryBarOptions} />
               </div>
             )}
             {paymentSourceEntries.length > 0 && (
               <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-4">
-                <HighchartsReact highcharts={Highcharts} options={paymentSourceOptions} />
+                <LazyHighchartsChart options={paymentSourceOptions} />
               </div>
             )}
           </div>
@@ -648,3 +644,6 @@ export default function IncomeExpenseReportPage() {
     </main>
   );
 }
+
+
+

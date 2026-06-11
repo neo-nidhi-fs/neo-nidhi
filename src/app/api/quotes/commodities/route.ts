@@ -76,7 +76,15 @@ export async function GET(req: Request) {
             }
           });
 
-          return NextResponse.json({ success: true, data: quotes });
+          return NextResponse.json(
+            { success: true, data: quotes },
+            {
+              headers: {
+                'Cache-Control':
+                  'public, max-age=60, stale-while-revalidate=300',
+              },
+            }
+          );
         } catch {
           // Continue to fallback
         }
@@ -95,7 +103,14 @@ export async function GET(req: Request) {
       };
     }
 
-    return NextResponse.json({ success: true, data: quotes });
+    return NextResponse.json(
+      { success: true, data: quotes },
+      {
+        headers: {
+          'Cache-Control': 'public, max-age=60, stale-while-revalidate=300',
+        },
+      }
+    );
   } catch (error: unknown) {
     return NextResponse.json(
       { success: false, error: (error as Error).message },

@@ -180,6 +180,9 @@ const UserSchema: Schema<IUser> = new Schema({
   ],
 });
 
+UserSchema.index({ role: 1 });
+UserSchema.index({ managedUserIds: 1 });
+
 // Hash password before saving
 UserSchema.pre('save', async function () {
   if (!this.isModified('password') && !this.isModified('mpin')) return;

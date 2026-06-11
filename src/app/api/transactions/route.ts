@@ -185,25 +185,30 @@ export async function GET(req: Request) {
     const limit = Math.max(1, Math.min(limitParam, 100));
 
     const userFilter = getManagedUsersFilter(accessResult.context);
-    const users = await User.find(userFilter).select('_id');
+    const users = await User.find(userFilter).select('_id').lean();
     const userIds = users.map((user) => user._id);
 
     const transactionsAsc = accessResult.context.isAdmin
-      ? await Transaction.find({}).sort({ date: 1 })
-      : await Transaction.find({ userId: { $in: userIds } }).sort({ date: 1 });
+      ? await Transaction.find({})
+          .select('userId type amount date relatedUserId relatedUserName metadata')
+          .sort({ date: 1 })
+          .lean()
+      : await Transaction.find({ userId: { $in: userIds } })
+          .select('userId type amount date relatedUserId relatedUserName metadata')
+          .sort({ date: 1 })
+          .lean();
 
     const visibleUsers = await User.find(userFilter).select(
       '_id name savingsBalance fd rd loanBalance'
-    );
+    ).lean();
     const snapshotsByTxId = buildTransactionBalanceSnapshots(
       transactionsAsc,
       visibleUsers
     );
 
     const allTransactions = [...transactionsAsc].reverse().map((tx) => {
-      const txObject = tx.toObject();
       return {
-        ...txObject,
+        ...tx,
         userBalanceAfterTransaction:
           snapshotsByTxId.get(String(tx._id)) ?? null,
       };

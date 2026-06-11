@@ -6,8 +6,15 @@ import { Scheme } from '@/models/Scheme';
 export async function GET() {
   try {
     await dbConnect();
-    const schemes = await Scheme.find({});
-    return NextResponse.json({ success: true, data: schemes });
+    const schemes = await Scheme.find({}).lean();
+    return NextResponse.json(
+      { success: true, data: schemes },
+      {
+        headers: {
+          'Cache-Control': 'public, max-age=300, stale-while-revalidate=3600',
+        },
+      }
+    );
   } catch (error: unknown) {
     return NextResponse.json(
       { success: false, error: (error as Error).message },

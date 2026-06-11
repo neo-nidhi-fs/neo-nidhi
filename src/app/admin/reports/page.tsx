@@ -1,8 +1,7 @@
 ﻿'use client';
 
 import { useState, useEffect } from 'react';
-import HighchartsReact from 'highcharts-react-official';
-import Highcharts from 'highcharts';
+import { LazyHighchartsChart } from '@/components/charts/LazyHighchartsChart';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import {
   Loader,
@@ -365,10 +364,7 @@ export default function AdminReports() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-4">
-                  <HighchartsReact
-                    highcharts={Highcharts}
-                    options={interestChartOptions}
-                  />
+                  <LazyHighchartsChart options={interestChartOptions} />
                 </CardContent>
               </Card>
 
@@ -381,10 +377,7 @@ export default function AdminReports() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-4">
-                  <HighchartsReact
-                    highcharts={Highcharts}
-                    options={transactionTypesPie}
-                  />
+                  <LazyHighchartsChart options={transactionTypesPie} />
                 </CardContent>
               </Card>
 
@@ -397,10 +390,7 @@ export default function AdminReports() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-4">
-                  <HighchartsReact
-                    highcharts={Highcharts}
-                    options={schemeDistributionChart}
-                  />
+                  <LazyHighchartsChart options={schemeDistributionChart} />
                 </CardContent>
               </Card>
 
@@ -413,10 +403,7 @@ export default function AdminReports() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-4">
-                  <HighchartsReact
-                    highcharts={Highcharts}
-                    options={balanceDistributionChart}
-                  />
+                  <LazyHighchartsChart options={balanceDistributionChart} />
                 </CardContent>
               </Card>
             </div>
@@ -431,10 +418,7 @@ export default function AdminReports() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-4">
-                  <HighchartsReact
-                    highcharts={Highcharts}
-                    options={monthlyTrendsChart}
-                  />
+                  <LazyHighchartsChart options={monthlyTrendsChart} />
                 </CardContent>
               </Card>
 
@@ -447,10 +431,7 @@ export default function AdminReports() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-4">
-                  <HighchartsReact
-                    highcharts={Highcharts}
-                    options={transactionAmountChart}
-                  />
+                  <LazyHighchartsChart options={transactionAmountChart} />
                 </CardContent>
               </Card>
             </div>
@@ -460,3 +441,5 @@ export default function AdminReports() {
     </main>
   );
 }
+
+

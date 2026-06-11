@@ -1,13 +1,53 @@
-'use client';
+﻿'use client';
 
+import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useState } from 'react';
 import { Loader } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { DashboardStats } from '@/components/user/DashboardStats';
 import { ActiveChallengesSection } from '@/components/user/ActiveChallengesSection';
-import { ChangePasswordDialog } from '@/components/user/ChangePasswordDialog';
-import SetMPINDialog from '@/components/SetMPINDialog';
-import QRCodeDisplay from '@/components/QRCodeDisplay';
+
+const ChangePasswordDialog = dynamic(
+  () =>
+    import('@/components/user/ChangePasswordDialog').then(
+      (module) => module.ChangePasswordDialog
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <button
+        type="button"
+        className="px-4 py-2 rounded-md border border-slate-600 text-gray-300 bg-slate-800/60"
+      >
+        Loading password form...
+      </button>
+    ),
+  }
+);
+
+const SetMPINDialog = dynamic(() => import('@/components/SetMPINDialog'), {
+  ssr: false,
+  loading: () => (
+    <button
+      type="button"
+      className="px-4 py-2 rounded-md border border-slate-600 text-gray-300 bg-slate-800/60"
+    >
+      Loading MPIN form...
+    </button>
+  ),
+});
+
+const QRCodeDisplay = dynamic(() => import('@/components/QRCodeDisplay'), {
+  ssr: false,
+  loading: () => (
+    <button
+      type="button"
+      className="px-4 py-2 rounded-md border border-slate-600 text-gray-300 bg-slate-800/60"
+    >
+      Loading QR code...
+    </button>
+  ),
+});
 import { useUser, useChallenges } from '@/hooks/useServices';
 import { useUserFinance } from '@/hooks/useUserFinance';
 import { getUserFeatures } from '@/lib/userFeatures';
@@ -275,3 +315,4 @@ export default function UserDashboard() {
     </main>
   );
 }
+

@@ -17,9 +17,9 @@ export async function GET(
     const limit = Math.max(1, Math.min(limitParam, 100));
     const { id } = await context.params;
 
-    const user = await User.findById(id).select(
-      '_id name savingsBalance fd rd loanBalance'
-    );
+    const user = await User.findById(id)
+      .select('_id name savingsBalance fd rd loanBalance')
+      .lean();
     if (!user) {
       return NextResponse.json(
         { success: false, error: 'User not found' },
@@ -27,22 +27,20 @@ export async function GET(
       );
     }
 
-    const userTransactionsAsc = await Transaction.find({ userId: id }).sort({
-      date: 1,
-    });
+    const userTransactionsAsc = await Transaction.find({ userId: id })
+      .select('userId type amount date relatedUserId relatedUserName metadata')
+      .sort({ date: 1 })
+      .lean();
     const snapshotsByTxId = buildTransactionBalanceSnapshots(
       userTransactionsAsc,
       [user]
     );
 
-    const mappedTransactions = [...userTransactionsAsc].reverse().map((tx) => {
-      const txObject = tx.toObject();
-      return {
-        ...txObject,
-        userBalanceAfterTransaction:
-          snapshotsByTxId.get(String(tx._id)) ?? null,
-      };
-    });
+    const mappedTransactions = [...userTransactionsAsc].reverse().map((tx) => ({
+      ...tx,
+      userBalanceAfterTransaction:
+        snapshotsByTxId.get(String(tx._id)) ?? null,
+    }));
 
     const total = mappedTransactions.length;
     const totalAmount = mappedTransactions.reduce(

@@ -11,8 +11,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import Highcharts from 'highcharts';
-import HighchartsReact from 'highcharts-react-official';
+import { LazyHighchartsChart } from '@/components/charts/LazyHighchartsChart';
 
 interface UserReportData {
   user: {
@@ -393,10 +392,7 @@ export default function UserReports() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-4">
-                  <HighchartsReact
-                    highcharts={Highcharts}
-                    options={transactionSummaryChart}
-                  />
+                  <LazyHighchartsChart options={transactionSummaryChart} />
                 </CardContent>
               </Card>
 
@@ -408,10 +404,7 @@ export default function UserReports() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-4">
-                  <HighchartsReact
-                    highcharts={Highcharts}
-                    options={transactionTypesPie}
-                  />
+                  <LazyHighchartsChart options={transactionTypesPie} />
                 </CardContent>
               </Card>
 
@@ -423,10 +416,7 @@ export default function UserReports() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-4">
-                  <HighchartsReact
-                    highcharts={Highcharts}
-                    options={interestChart}
-                  />
+                  <LazyHighchartsChart options={interestChart} />
                 </CardContent>
               </Card>
 
@@ -438,10 +428,7 @@ export default function UserReports() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-4">
-                  <HighchartsReact
-                    highcharts={Highcharts}
-                    options={monthlySavingsChart}
-                  />
+                  <LazyHighchartsChart options={monthlySavingsChart} />
                 </CardContent>
               </Card>
             </div>
@@ -455,10 +442,7 @@ export default function UserReports() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-4">
-                  <HighchartsReact
-                    highcharts={Highcharts}
-                    options={monthlyTransactionsChart}
-                  />
+                  <LazyHighchartsChart options={monthlyTransactionsChart} />
                 </CardContent>
               </Card>
             </div>
@@ -468,3 +452,5 @@ export default function UserReports() {
     </main>
   );
 }
+
+

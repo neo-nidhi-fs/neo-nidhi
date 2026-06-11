@@ -29,7 +29,9 @@ export async function GET(req: Request) {
       );
     }
 
-    const user = await User.findById(session.user.id);
+    const user = await User.findById(session.user.id)
+      .select('_id features financeFeaturesEnabled')
+      .lean();
     if (!user) {
       return NextResponse.json(
         { success: false, error: 'User not found' },
@@ -50,7 +52,9 @@ export async function GET(req: Request) {
     const budgets = await Budget.find({
       user: user._id,
       ...monthFilter,
-    }).sort({ month: -1, category: 1 });
+    })
+      .sort({ month: -1, category: 1 })
+      .lean();
 
     const userObjectId = new mongoose.Types.ObjectId(String(user._id));
     const expenseAgg = await CashFlow.aggregate<{
@@ -79,15 +83,13 @@ export async function GET(req: Request) {
     });
 
     const enrichedBudgets = budgets.map((budget) => {
-      const budgetObj = budget.toObject();
-      const spent =
-        spentMap.get(`${budgetObj.month}::${budgetObj.category}`) || 0;
-      const remaining = budgetObj.amount - spent;
+      const spent = spentMap.get(`${budget.month}::${budget.category}`) || 0;
+      const remaining = budget.amount - spent;
       const usagePercent =
-        budgetObj.amount > 0 ? (spent / budgetObj.amount) * 100 : 0;
+        budget.amount > 0 ? (spent / budget.amount) * 100 : 0;
 
       return {
-        ...budgetObj,
+        ...budget,
         spent,
         remaining,
         usagePercent,

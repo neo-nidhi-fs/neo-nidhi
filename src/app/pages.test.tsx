@@ -1,9 +1,12 @@
-import { act } from 'react';
+﻿import { act } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 
 vi.mock('highcharts', () => ({ default: {} }));
 vi.mock('highcharts-react-official', () => ({ default: () => null }));
+vi.mock('@/components/charts/LazyHighchartsChart', () => ({
+  LazyHighchartsChart: () => null,
+}));
 
 import HomePage from './page';
 import LoginPage from './login/page';
@@ -208,3 +211,4 @@ describe('Application page render tests', () => {
     );
   });
 });
+

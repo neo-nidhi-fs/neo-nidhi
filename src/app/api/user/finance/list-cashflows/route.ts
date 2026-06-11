@@ -18,7 +18,9 @@ export async function GET() {
       );
     }
 
-    const user = await User.findById(session.user.id);
+    const user = await User.findById(session.user.id)
+      .select('_id features financeFeaturesEnabled')
+      .lean();
     if (!user) {
       return NextResponse.json(
         { success: false, error: 'User not found' },
@@ -31,15 +33,17 @@ export async function GET() {
       return featureFlagError;
     }
 
-    const cashFlows = await CashFlow.find({ user: user._id }).sort({
-      date: -1,
-    });
+    const cashFlows = await CashFlow.find({ user: user._id })
+      .select(
+        'user date type category amount source liabilityId paymentSource note smsFingerprint smsDeviceTimeMs smsReferenceKeys createdAt updatedAt'
+      )
+      .sort({ date: -1 })
+      .lean();
 
     const normalizedCashFlows = cashFlows.map((cashFlow) => {
-      const doc = cashFlow.toObject();
-      const source = doc.paymentSource;
+      const source = cashFlow.paymentSource;
       return {
-        ...doc,
+        ...cashFlow,
         paymentSource:
           source === 'credit_card'
             ? 'card'

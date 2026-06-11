@@ -65,6 +65,9 @@ CashFlowSchema.index(
   }
 );
 
+CashFlowSchema.index({ user: 1, date: -1 });
+CashFlowSchema.index({ user: 1, type: 1, date: -1 });
+
 export const CashFlow: Model<ICashFlow> =
   mongoose.models.CashFlow ||
   mongoose.model<ICashFlow>('CashFlow', CashFlowSchema);

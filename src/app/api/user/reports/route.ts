@@ -16,7 +16,11 @@ export async function GET() {
       );
     }
 
-    const user = await User.findById(session.user.id);
+    const user = await User.findById(session.user.id)
+      .select(
+        'name savingsBalance fd rd loanBalance accruedSavingInterest accruedFdInterest accruedRdInterest accruedLoanInterest'
+      )
+      .lean();
     if (!user) {
       return Response.json(
         { success: false, error: 'User not found' },
@@ -24,57 +28,12 @@ export async function GET() {
       );
     }
 
-    // Fetch user transactions
-    const transactions = await Transaction.find({ userId: user._id });
+    const transactions = await Transaction.find({ userId: user._id })
+      .select('type amount date')
+      .lean();
 
-    // Calculate key metrics
-    const totalDeposits = transactions
-      .filter((t) => t.type === 'deposit')
-      .reduce((sum, t) => sum + t.amount, 0);
-
-    const totalWithdrawals = transactions
-      .filter((t) => t.type === 'withdrawal')
-      .reduce((sum, t) => sum + t.amount, 0);
-
-    const totalLoans = transactions
-      .filter((t) => t.type === 'loan')
-      .reduce((sum, t) => sum + t.amount, 0);
-
-    const totalRepayments = transactions
-      .filter((t) => t.type === 'repayment')
-      .reduce((sum, t) => sum + t.amount, 0);
-
-    const totalFdDeposits = transactions
-      .filter((t) => t.type === 'fd')
-      .reduce((sum, t) => sum + t.amount, 0);
-    const totalRdDeposits = transactions
-      .filter((t) => t.type === 'rd')
-      .reduce((sum, t) => sum + t.amount, 0);
-
-    const totalFdWithdrawals = transactions
-      .filter((t) => t.type === 'withdrawal_fd')
-      .reduce((sum, t) => sum + t.amount, 0);
-
-    const totalInterestEarned =
-      user.accruedSavingInterest +
-      user.accruedFdInterest +
-      (user.accruedRdInterest || 0);
-    const totalInterestAccrued = user.accruedLoanInterest;
-
-    // Transaction breakdown
-    const transactionsByType = {
-      deposit: transactions.filter((t) => t.type === 'deposit').length,
-      withdrawal: transactions.filter((t) => t.type === 'withdrawal').length,
-      loan: transactions.filter((t) => t.type === 'loan').length,
-      repayment: transactions.filter((t) => t.type === 'repayment').length,
-      fd: transactions.filter((t) => t.type === 'fd').length,
-      rd: transactions.filter((t) => t.type === 'rd').length,
-      withdrawal_fd: transactions.filter((t) => t.type === 'withdrawal_fd')
-        .length,
-    };
-
-    // Monthly transaction trends (last 12 months)
     const monthlyTrends: { [key: string]: number } = {};
+    const monthlySavings: { [key: string]: number } = {};
     const today = new Date();
     for (let i = 11; i >= 0; i--) {
       const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
@@ -83,61 +42,93 @@ export async function GET() {
         month: 'short',
       });
       monthlyTrends[monthKey] = 0;
-    }
-
-    transactions.forEach((t) => {
-      const date = new Date(t.date);
-      const monthKey = date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-      });
-      if (monthKey in monthlyTrends) {
-        monthlyTrends[monthKey]++;
-      }
-    });
-
-    // Monthly savings trends
-    const monthlySavings: { [key: string]: number } = {};
-    for (let i = 11; i >= 0; i--) {
-      const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
-      const monthKey = date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-      });
       monthlySavings[monthKey] = 0;
     }
 
-    transactions
-      .filter((t) => ['deposit', 'withdrawal'].includes(t.type))
-      .forEach((t) => {
-        const date = new Date(t.date);
-        const monthKey = date.toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'short',
-        });
-        if (monthKey in monthlySavings) {
-          if (t.type === 'deposit') {
-            monthlySavings[monthKey] += t.amount;
-          } else {
-            monthlySavings[monthKey] -= t.amount;
-          }
-        }
+    const transactionsByType = {
+      deposit: 0,
+      withdrawal: 0,
+      loan: 0,
+      repayment: 0,
+      fd: 0,
+      rd: 0,
+      withdrawal_fd: 0,
+    };
+
+    let totalDeposits = 0;
+    let totalWithdrawals = 0;
+    let totalLoans = 0;
+    let totalRepayments = 0;
+    let totalFdDeposits = 0;
+    let totalRdDeposits = 0;
+    let totalFdWithdrawals = 0;
+    let recentTransactionCount = 0;
+
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+    for (const transaction of transactions) {
+      const amount = transaction.amount || 0;
+      const date = new Date(transaction.date);
+      const monthKey = date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
       });
+
+      if (monthKey in monthlyTrends) {
+        monthlyTrends[monthKey]++;
+      }
+      if (date >= sixMonthsAgo) {
+        recentTransactionCount++;
+      }
+
+      switch (transaction.type) {
+        case 'deposit':
+          totalDeposits += amount;
+          transactionsByType.deposit++;
+          monthlySavings[monthKey] += amount;
+          break;
+        case 'withdrawal':
+          totalWithdrawals += amount;
+          transactionsByType.withdrawal++;
+          monthlySavings[monthKey] -= amount;
+          break;
+        case 'loan':
+          totalLoans += amount;
+          transactionsByType.loan++;
+          break;
+        case 'repayment':
+          totalRepayments += amount;
+          transactionsByType.repayment++;
+          break;
+        case 'fd':
+          totalFdDeposits += amount;
+          transactionsByType.fd++;
+          break;
+        case 'rd':
+          totalRdDeposits += amount;
+          transactionsByType.rd++;
+          break;
+        case 'withdrawal_fd':
+          totalFdWithdrawals += amount;
+          transactionsByType.withdrawal_fd++;
+          break;
+      }
+    }
 
     // Interest breakdown
     const interestBreakdown = {
-      savingsInterest: user.accruedSavingInterest,
-      fdInterest: user.accruedFdInterest,
+      savingsInterest: user.accruedSavingInterest || 0,
+      fdInterest: user.accruedFdInterest || 0,
       rdInterest: user.accruedRdInterest || 0,
-      loanInterest: user.accruedLoanInterest,
+      loanInterest: user.accruedLoanInterest || 0,
     };
 
-    // Recent transactions (last 6 months)
-    const sixMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-    const recentTransactionCount = transactions.filter(
-      (t) => new Date(t.date) >= sixMonthsAgo
-    ).length;
+    const totalInterestEarned =
+      (user.accruedSavingInterest || 0) +
+      (user.accruedFdInterest || 0) +
+      (user.accruedRdInterest || 0);
+    const totalInterestAccrued = user.accruedLoanInterest || 0;
 
     return Response.json({
       success: true,

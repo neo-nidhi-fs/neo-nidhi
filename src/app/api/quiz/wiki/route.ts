@@ -15,7 +15,6 @@ export async function GET(req: Request) {
     const response = await fetch(
       `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query as string)}`
     );
-    console.log('response ==> ', response);
 
     if (!response.ok) {
       return NextResponse.json(
@@ -25,14 +24,20 @@ export async function GET(req: Request) {
     }
 
     const data = await response.json();
-    return NextResponse.json({
-      title: data.title,
-      summary: data.extract || 'No summary available',
-      thumbnail: data.thumbnail?.source || null,
-      url: data.content_urls?.desktop?.page || null,
-    });
+    return NextResponse.json(
+      {
+        title: data.title,
+        summary: data.extract || 'No summary available',
+        thumbnail: data.thumbnail?.source || null,
+        url: data.content_urls?.desktop?.page || null,
+      },
+      {
+        headers: {
+          'Cache-Control': 'public, max-age=86400, stale-while-revalidate=86400',
+        },
+      }
+    );
   } catch (error: unknown) {
-    console.log('error ==> ', error);
     return NextResponse.json(
       { success: false, error: (error as Error).message },
       { status: 500 }

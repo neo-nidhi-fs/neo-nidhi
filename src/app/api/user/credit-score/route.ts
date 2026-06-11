@@ -18,7 +18,9 @@ export async function GET() {
       );
     }
 
-    const user = await User.findById(session.user.id).select('features financeFeaturesEnabled');
+    const user = await User.findById(session.user.id)
+      .select('features financeFeaturesEnabled')
+      .lean();
     if (!user) {
       return Response.json(
         { success: false, error: 'User not found' },
@@ -36,7 +38,9 @@ export async function GET() {
     const transactions = await Transaction.find({
       userId: session.user.id,
       type: { $in: ['loan', 'repayment'] },
-    }).select('type amount date');
+    })
+      .select('type amount date')
+      .lean();
 
     const scoreData = calculateInAppCreditScore(transactions);
 
@@ -58,4 +62,3 @@ export async function GET() {
     );
   }
 }
-

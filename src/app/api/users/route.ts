@@ -13,7 +13,8 @@ export async function GET() {
     }
 
     const users = await User.find(getManagedUsersFilter(accessResult.context))
-      .select('-password -mpin');
+      .select('-password -mpin')
+      .lean();
     return NextResponse.json({ success: true, data: users });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error);
@@ -69,7 +70,9 @@ export async function POST(req: Request) {
     if (managedUserIds.length > 0) {
       const managedUsers = await User.find({
         _id: { $in: managedUserIds },
-      }).select('_id role');
+      })
+        .select('_id role')
+        .lean();
 
       if (managedUsers.length !== managedUserIds.length) {
         return NextResponse.json(
@@ -118,7 +121,9 @@ export async function POST(req: Request) {
       }
     }
 
-    const createdUser = await User.findById(newUser._id).select('-password -mpin');
+    const createdUser = await User.findById(newUser._id)
+      .select('-password -mpin')
+      .lean();
     return NextResponse.json(
       { success: true, data: createdUser },
       { status: 201 }
