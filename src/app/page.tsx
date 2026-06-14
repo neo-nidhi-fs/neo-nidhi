@@ -81,10 +81,6 @@ export default function HomePage() {
                 className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white border-0 px-8 py-6 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
                 aria-disabled="true"
                 tabIndex={-1}
-                onClick={(e) => {
-                  e.preventDefault();
-                  alert('Only super-admin can login from this page.');
-                }}
               >
                 {content.home.ctaPrimary}
                 <ArrowRight size={20} />
