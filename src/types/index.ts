@@ -17,6 +17,12 @@ export interface ITransferRequest {
   mpin?: string;
 }
 
+export interface IRecurringDepositRequest {
+  userId: string;
+  monthlyAmount: number;
+  tenureMonths: number;
+}
+
 export interface ITransferResponse {
   success: boolean;
   message: string;

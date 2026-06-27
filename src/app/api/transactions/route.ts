@@ -99,32 +99,36 @@ export async function POST(req: Request) {
 
     let metadata: Record<string, unknown> | undefined;
     if (type === 'rd') {
-      const rdScheme = await Scheme.findOne({ name: 'rd' });
-      if (!rdScheme) {
+      if (user.savingsBalance < amount) {
         return NextResponse.json(
-          { success: false, error: 'RD scheme is not configured' },
-          { status: 400 }
-        );
-      }
-      if (
-        rdScheme.amount !== null &&
-        rdScheme.amount !== undefined &&
-        Math.abs(amount - rdScheme.amount) > 0.0001
-      ) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: `RD amount must be exactly ?${rdScheme.amount.toFixed(2)}`,
-          },
+          { success: false, error: 'Insufficient savings balance' },
           { status: 400 }
         );
       }
 
-      if (rdScheme.tenureMonths) {
+      const tenureMonths =
+        body.tenureMonths === undefined || body.tenureMonths === ''
+          ? undefined
+          : Number(body.tenureMonths);
+      if (
+        tenureMonths !== undefined &&
+        (!Number.isInteger(tenureMonths) || tenureMonths <= 0)
+      ) {
+        return NextResponse.json(
+          { success: false, error: 'RD tenure must be greater than 0 months' },
+          { status: 400 }
+        );
+      }
+
+      const rdScheme = await Scheme.findOne({ name: 'rd' });
+
+      const selectedTenureMonths = tenureMonths ?? rdScheme?.tenureMonths;
+      if (selectedTenureMonths) {
         const maturityDate = new Date();
-        maturityDate.setMonth(maturityDate.getMonth() + rdScheme.tenureMonths);
+        maturityDate.setMonth(maturityDate.getMonth() + selectedTenureMonths);
         metadata = {
-          tenureMonths: rdScheme.tenureMonths,
+          monthlyAmount: amount,
+          tenureMonths: selectedTenureMonths,
           maturityDate: maturityDate.toISOString(),
         };
       }
@@ -190,17 +194,21 @@ export async function GET(req: Request) {
 
     const transactionsAsc = accessResult.context.isAdmin
       ? await Transaction.find({})
-          .select('userId type amount date relatedUserId relatedUserName metadata')
+          .select(
+            'userId type amount date relatedUserId relatedUserName metadata'
+          )
           .sort({ date: 1 })
           .lean()
       : await Transaction.find({ userId: { $in: userIds } })
-          .select('userId type amount date relatedUserId relatedUserName metadata')
+          .select(
+            'userId type amount date relatedUserId relatedUserName metadata'
+          )
           .sort({ date: 1 })
           .lean();
 
-    const visibleUsers = await User.find(userFilter).select(
-      '_id name savingsBalance fd rd loanBalance'
-    ).lean();
+    const visibleUsers = await User.find(userFilter)
+      .select('_id name savingsBalance fd rd loanBalance')
+      .lean();
     const snapshotsByTxId = buildTransactionBalanceSnapshots(
       transactionsAsc,
       visibleUsers

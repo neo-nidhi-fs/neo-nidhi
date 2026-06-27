@@ -36,6 +36,11 @@ export default function PassbookPage() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+  const [balanceColumns, setBalanceColumns] = useState({
+    fd: false,
+    rd: false,
+    loan: false,
+  });
   const [isAdminViewingAnotherUser, setIsAdminViewingAnotherUser] =
     useState(false);
   const ITEMS_PER_PAGE = 10;
@@ -61,6 +66,9 @@ export default function PassbookPage() {
         const data = await res.json();
         setTransactions(data.data || []);
         setTotalCount(data.total ?? 0);
+        setBalanceColumns(
+          data.balanceColumns ?? { fd: false, rd: false, loan: false }
+        );
       } finally {
         setLoading(false);
       }
@@ -126,6 +134,7 @@ export default function PassbookPage() {
               page={page}
               itemsPerPage={ITEMS_PER_PAGE}
               totalCount={totalCount}
+              balanceColumns={balanceColumns}
               onPageChange={setPage}
             />
           </CardContent>

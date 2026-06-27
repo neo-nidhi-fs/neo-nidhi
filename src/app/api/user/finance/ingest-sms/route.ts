@@ -72,6 +72,7 @@ function isTransferPromotionLikeText(payload: SmsPayload): boolean {
       lower.includes('promo') ||
       lower.includes('Apply') ||
       lower.includes('Eligible') ||
+      lower.includes('pre-approved') ||
       lower.includes('2 LOANS. 1 Processing Fee') ||
       lower.includes('promotion'))
   );

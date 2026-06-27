@@ -1,20 +1,22 @@
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { QrCode, Send, DollarSign, CreditCard } from 'lucide-react';
+import { QrCode, Send, DollarSign, CreditCard, PiggyBank } from 'lucide-react';
 
 interface QuickLinksProps {
   onDirectTransfer: () => void;
   onManageFD: () => void;
+  onManageRD: () => void;
   onPayLoan: () => void;
 }
 
 export function QuickLinks({
   onDirectTransfer,
   onManageFD,
+  onManageRD,
   onPayLoan,
 }: QuickLinksProps) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-12">
       <Link href="/user/qr-transfer">
         <Card className="bg-gradient-to-br from-green-900/30 to-emerald-900/30 border-green-400/30 hover:border-green-400/50 transition cursor-pointer h-full">
           <CardHeader>
@@ -53,6 +55,20 @@ export function QuickLinks({
         </CardHeader>
         <CardContent>
           <p className="text-gray-300 text-sm">Fixed Deposit options</p>
+        </CardContent>
+      </Card>
+
+      <Card
+        onClick={onManageRD}
+        className="bg-gradient-to-br from-cyan-900/30 to-sky-900/30 border-cyan-400/30 hover:border-cyan-400/50 transition cursor-pointer"
+      >
+        <CardHeader>
+          <CardTitle className="text-cyan-400 flex items-center gap-2">
+            <PiggyBank size={24} /> Manage RD
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-gray-300 text-sm">Recurring Deposit plan</p>
         </CardContent>
       </Card>
 

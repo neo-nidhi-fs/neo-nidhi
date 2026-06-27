@@ -55,6 +55,21 @@ export interface ILiability extends Document {
   updatedAt: Date;
 }
 
+export interface IRecurringDeposit extends Document {
+  _id: mongoose.Types.ObjectId;
+  monthlyAmount: number;
+  tenureMonths: number;
+  installmentsPaid: number;
+  startDate: Date;
+  nextDebitDate: Date;
+  maturityDate: Date;
+  status: 'active' | 'completed' | 'missed' | 'closed';
+  lastDebitDate?: Date | null;
+  missedInstallments: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface IUser extends Document {
   name: string;
   age: number;
@@ -81,6 +96,7 @@ export interface IUser extends Document {
   financeFeaturesEnabled?: boolean;
   assetPortfolio: IAsset[];
   liabilities: ILiability[];
+  recurringDeposits: IRecurringDeposit[];
   comparePassword(candidatePassword: string): Promise<boolean>;
   compareMPin(candidateMPin: string): Promise<boolean>;
 }
@@ -174,6 +190,25 @@ const UserSchema: Schema<IUser> = new Schema({
         default: 'active',
       },
       metadata: { type: Schema.Types.Mixed, default: {} },
+      createdAt: { type: Date, default: Date.now },
+      updatedAt: { type: Date, default: Date.now },
+    },
+  ],
+  recurringDeposits: [
+    {
+      monthlyAmount: { type: Number, required: true, min: 0 },
+      tenureMonths: { type: Number, required: true, min: 1 },
+      installmentsPaid: { type: Number, default: 0, min: 0 },
+      startDate: { type: Date, default: Date.now },
+      nextDebitDate: { type: Date, required: true },
+      maturityDate: { type: Date, required: true },
+      status: {
+        type: String,
+        enum: ['active', 'completed', 'missed', 'closed'],
+        default: 'active',
+      },
+      lastDebitDate: { type: Date, default: null },
+      missedInstallments: { type: Number, default: 0, min: 0 },
       createdAt: { type: Date, default: Date.now },
       updatedAt: { type: Date, default: Date.now },
     },

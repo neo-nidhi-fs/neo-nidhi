@@ -35,11 +35,27 @@ export async function GET(
       userTransactionsAsc,
       [user]
     );
+    const balanceColumns = {
+      fd:
+        (user.fd ?? 0) > 0 ||
+        userTransactionsAsc.some((tx) =>
+          ['fd', 'interest_fd', 'withdrawal_fd'].includes(tx.type)
+        ),
+      rd:
+        (user.rd ?? 0) > 0 ||
+        userTransactionsAsc.some((tx) =>
+          ['rd', 'interest_rd'].includes(tx.type)
+        ),
+      loan:
+        (user.loanBalance ?? 0) > 0 ||
+        userTransactionsAsc.some((tx) =>
+          ['loan', 'repayment', 'interest_loan'].includes(tx.type)
+        ),
+    };
 
     const mappedTransactions = [...userTransactionsAsc].reverse().map((tx) => ({
       ...tx,
-      userBalanceAfterTransaction:
-        snapshotsByTxId.get(String(tx._id)) ?? null,
+      userBalanceAfterTransaction: snapshotsByTxId.get(String(tx._id)) ?? null,
     }));
 
     const total = mappedTransactions.length;
@@ -60,6 +76,7 @@ export async function GET(
       page,
       limit,
       totalPages: Math.ceil(total / limit),
+      balanceColumns,
     });
   } catch (error: unknown) {
     return NextResponse.json(

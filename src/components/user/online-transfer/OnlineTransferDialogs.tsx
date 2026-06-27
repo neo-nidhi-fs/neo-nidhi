@@ -3,6 +3,7 @@ import MPINVerificationDialog from '@/components/MPINVerificationDialog';
 import { MoneyTransferForm } from '@/components/transfers/MoneyTransferForm';
 import { PayLoanDialog } from '@/components/transfers/PayLoanDialog';
 import { ManageFDDialog } from '@/components/transfers/ManageFDDialog';
+import { ManageRDDialog } from '@/components/transfers/ManageRDDialog';
 import { BalanceUser } from '@/components/user/online-transfer/AccountSummary';
 
 interface DialogsProps {
@@ -15,6 +16,8 @@ interface DialogsProps {
   setShowPayLoanDialog: React.Dispatch<React.SetStateAction<boolean>>;
   showManageFDDialog: boolean;
   setShowManageFDDialog: React.Dispatch<React.SetStateAction<boolean>>;
+  showManageRDDialog: boolean;
+  setShowManageRDDialog: React.Dispatch<React.SetStateAction<boolean>>;
   initialRecipient: string;
   setInitialRecipient: React.Dispatch<React.SetStateAction<string>>;
   actionLoading: boolean;
@@ -23,6 +26,10 @@ interface DialogsProps {
   handlePayLoan: (amount: number) => Promise<void>;
   handleTransferToFD: (amount: number) => Promise<void>;
   handleWithdrawFromFD: (amount: number) => Promise<void>;
+  handleCreateRD: (
+    monthlyAmount: number,
+    tenureMonths: number
+  ) => Promise<void>;
   transferMaxAmount: number;
 }
 
@@ -36,6 +43,8 @@ export function OnlineTransferDialogs({
   setShowPayLoanDialog,
   showManageFDDialog,
   setShowManageFDDialog,
+  showManageRDDialog,
+  setShowManageRDDialog,
   initialRecipient,
   setInitialRecipient,
   actionLoading,
@@ -44,6 +53,7 @@ export function OnlineTransferDialogs({
   handlePayLoan,
   handleTransferToFD,
   handleWithdrawFromFD,
+  handleCreateRD,
   transferMaxAmount,
 }: DialogsProps) {
   return (
@@ -90,6 +100,15 @@ export function OnlineTransferDialogs({
         onWithdrawFromFD={handleWithdrawFromFD}
         savingsBalance={user.savingsBalance || 0}
         fdBalance={user.fd || 0}
+      />
+
+      <ManageRDDialog
+        open={showManageRDDialog}
+        onOpenChange={setShowManageRDDialog}
+        loading={actionLoading}
+        onCreateRD={handleCreateRD}
+        savingsBalance={user.savingsBalance || 0}
+        rdBalance={user.rd || 0}
       />
     </>
   );

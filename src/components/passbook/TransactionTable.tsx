@@ -30,6 +30,11 @@ interface TransactionTableProps {
   page: number;
   itemsPerPage: number;
   totalCount?: number;
+  balanceColumns?: {
+    fd: boolean;
+    rd: boolean;
+    loan: boolean;
+  };
   onPageChange: (page: number) => void;
 }
 
@@ -38,6 +43,7 @@ export function TransactionTable({
   page,
   itemsPerPage,
   totalCount,
+  balanceColumns = { fd: true, rd: true, loan: true },
   onPageChange,
 }: TransactionTableProps) {
   const getTransactionColor = (type: string) => {
@@ -45,6 +51,8 @@ export function TransactionTable({
       case 'deposit':
       case 'fd':
         return 'text-green-400';
+      case 'rd':
+        return 'text-cyan-400';
       case 'loan':
         return 'text-orange-400';
       case 'repayment':
@@ -63,6 +71,8 @@ export function TransactionTable({
       withdrawal: 'wd',
       fd: 'fd',
       interest_fd: 'int_fd',
+      rd: 'rd',
+      interest_rd: 'int_rd',
       interest_loan: 'int_loan',
       withdrawal_fd: 'wd_fd',
       interest_deposit: 'int_dep',
@@ -74,6 +84,21 @@ export function TransactionTable({
   const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
   const startIdx = (page - 1) * itemsPerPage;
   const endIdx = startIdx + transactions.length;
+  const formatBalanceParts = (
+    balance: NonNullable<Transaction['userBalanceAfterTransaction']>
+  ) => {
+    const parts = [`S ₹${balance.savingsBalance.toFixed(2)}`];
+    if (balanceColumns.fd) {
+      parts.push(`FD ₹${balance.fdBalance.toFixed(2)}`);
+    }
+    if (balanceColumns.rd) {
+      parts.push(`RD ₹${balance.rdBalance.toFixed(2)}`);
+    }
+    if (balanceColumns.loan) {
+      parts.push(`L ₹${balance.loanBalance.toFixed(2)}`);
+    }
+    return parts.join(' | ');
+  };
 
   return (
     <div className="space-y-4">
@@ -108,16 +133,7 @@ export function TransactionTable({
                   <TableCell className="text-xs text-gray-200 min-w-[240px]">
                     {tx.userBalanceAfterTransaction ? (
                       <div>
-                        S ₹
-                        {tx.userBalanceAfterTransaction.savingsBalance.toFixed(
-                          2
-                        )}{' '}
-                        | FD ₹
-                        {tx.userBalanceAfterTransaction.fdBalance.toFixed(2)} |
-                        RD ₹
-                        {tx.userBalanceAfterTransaction.rdBalance.toFixed(2)} |
-                        L ₹
-                        {tx.userBalanceAfterTransaction.loanBalance.toFixed(2)}
+                        {formatBalanceParts(tx.userBalanceAfterTransaction)}
                       </div>
                     ) : (
                       '-'

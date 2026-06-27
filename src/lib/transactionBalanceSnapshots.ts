@@ -57,6 +57,9 @@ function undoTransaction(balance: RunningBalance, tx: TxLike) {
     case 'rd':
     case 'interest_rd':
       balance.rdBalance -= tx.amount;
+      if (tx.type === 'rd') {
+        balance.savingsBalance += tx.amount;
+      }
       break;
     case 'loan':
     case 'interest_loan':

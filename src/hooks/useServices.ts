@@ -149,11 +149,36 @@ export function useTransfer(fromUserId: string) {
     [fromUserId, transferService]
   );
 
+  const createRecurringDeposit = useCallback(
+    async (monthlyAmount: number, tenureMonths: number) => {
+      setLoading(true);
+      setError('');
+      setSuccess('');
+
+      const result = await transferService.createRecurringDeposit({
+        userId: fromUserId,
+        monthlyAmount,
+        tenureMonths,
+      });
+      setLoading(false);
+
+      if (result.success) {
+        setSuccess(result.message || 'RD created successfully');
+        return true;
+      } else {
+        setError(result.error || 'RD creation failed');
+        return false;
+      }
+    },
+    [fromUserId, transferService]
+  );
+
   return {
     transfer,
     transferToFD,
     withdrawFD,
     payLoan,
+    createRecurringDeposit,
     loading,
     error,
     success,
@@ -238,6 +263,14 @@ export function useUser(userId: string) {
     savingsBalance: number;
     fd: number;
     rd?: number;
+    recurringDeposits?: Array<{
+      monthlyAmount: number;
+      tenureMonths: number;
+      installmentsPaid: number;
+      nextDebitDate: string;
+      maturityDate: string;
+      status: string;
+    }>;
     loanBalance: number;
     accruedRdInterest?: number;
     mpin?: string | null;

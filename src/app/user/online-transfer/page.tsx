@@ -27,6 +27,7 @@ export default function OnlineTransferPage() {
     transferToFD,
     withdrawFD,
     payLoan,
+    createRecurringDeposit,
     loading: actionLoading,
     error: actionError,
     success: actionSuccess,
@@ -37,6 +38,7 @@ export default function OnlineTransferPage() {
   const [showTransferForm, setShowTransferForm] = useState(false);
   const [showPayLoanDialog, setShowPayLoanDialog] = useState(false);
   const [showManageFDDialog, setShowManageFDDialog] = useState(false);
+  const [showManageRDDialog, setShowManageRDDialog] = useState(false);
   const [pendingTransfer, setPendingTransfer] = useState<{
     toUserName: string;
     amount: number;
@@ -165,6 +167,17 @@ export default function OnlineTransferPage() {
     [fetchUser, withdrawFD]
   );
 
+  const handleCreateRD = useCallback(
+    async (monthlyAmount: number, tenureMonths: number) => {
+      const success = await createRecurringDeposit(monthlyAmount, tenureMonths);
+      if (success) {
+        await fetchUser();
+        setShowManageRDDialog(false);
+      }
+    },
+    [createRecurringDeposit, fetchUser]
+  );
+
   if (sessionLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-slate-950 via-blue-950 to-slate-950">
@@ -210,6 +223,7 @@ export default function OnlineTransferPage() {
             setShowTransferForm(true);
           }}
           onManageFD={() => setShowManageFDDialog(true)}
+          onManageRD={() => setShowManageRDDialog(true)}
           onPayLoan={() => setShowPayLoanDialog(true)}
         />
 
@@ -231,6 +245,8 @@ export default function OnlineTransferPage() {
           setShowPayLoanDialog={setShowPayLoanDialog}
           showManageFDDialog={showManageFDDialog}
           setShowManageFDDialog={setShowManageFDDialog}
+          showManageRDDialog={showManageRDDialog}
+          setShowManageRDDialog={setShowManageRDDialog}
           initialRecipient={initialRecipient}
           setInitialRecipient={setInitialRecipient}
           actionLoading={actionLoading}
@@ -239,6 +255,7 @@ export default function OnlineTransferPage() {
           handlePayLoan={handlePayLoan}
           handleTransferToFD={handleTransferToFD}
           handleWithdrawFromFD={handleWithdrawFromFD}
+          handleCreateRD={handleCreateRD}
           transferMaxAmount={user.savingsBalance}
         />
       </div>

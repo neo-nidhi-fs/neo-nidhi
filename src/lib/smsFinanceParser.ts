@@ -67,6 +67,7 @@ function detectType(text: string): FinanceTransactionType | null {
   const lower = text.toLowerCase();
   if (lower.includes('debited')) return FinanceTransactionType.Expense;
   if (lower.includes('credited')) return FinanceTransactionType.Income;
+  if (lower.includes('top up')) return FinanceTransactionType.Expense;
   if (CREDIT_KEYWORDS.some((word) => lower.includes(word)))
     return FinanceTransactionType.Income;
   if (DEBIT_KEYWORDS.some((word) => lower.includes(word)))
@@ -74,12 +75,32 @@ function detectType(text: string): FinanceTransactionType | null {
   return null;
 }
 
+function isGrowwInvestmentText(text: string): boolean {
+  const lower = text.toLowerCase();
+  return lower.includes('groww') && lower.includes('invest');
+}
+
+function extractPlaceName(text: string): string | null {
+  const match = text.match(
+    /\b(?:spent|paid|charged|purchased?|purchase|used|swiped)\s+(?:at|to)\s+([a-z0-9&.,'/-]+(?:\s+[a-z0-9&.,'/-]+){0,4})/i
+  );
+  if (!match?.[1]) return null;
+  const place = match[1].trim().replace(/[.,;:]+$/g, '');
+  return place || null;
+}
+
+function isFastagExpense(text: string): boolean {
+  const lower = text.toLowerCase();
+  return lower.includes('fastag') && !lower.includes('top up');
+}
+
 /**
  * Detects the category of the transaction from SMS text and type.
  */
 function detectCategory(text: string, type: FinanceTransactionType): string {
   const lower = text.toLowerCase();
-  if (lower.includes('groww invest tech pvt ltd')) return 'Investment';
+  if (isGrowwInvestmentText(text)) return 'Investment';
+  if (lower.includes('meal wallet')) return 'Dining';
   if (lower.includes('abhirami v m')) return 'Gift';
   if (lower.includes('upi'))
     return type === FinanceTransactionType.Income
@@ -129,16 +150,25 @@ function isMessageLikelyPromotional(text: string): boolean {
   return (
     lower.includes('offer') ||
     lower.includes('promo') ||
-    lower.includes('Eligible') ||
+    lower.includes('eligible') ||
     lower.includes('discount') ||
     lower.includes("don't miss") ||
-    lower.includes('2 LOANS. 1 Processing Fee') ||
+    lower.includes('2 loans. 1 processing fee') ||
     lower.includes('get instant') ||
     lower.includes('sale') ||
-    lower.includes('Apply') ||
+    lower.includes('apply') ||
     lower.includes('deal') ||
-    lower.includes('Minimum Amount Due')
+    lower.includes('minimum amount due')
   );
+}
+
+function detectSource(text: string, type: FinanceTransactionType): string {
+  if (isGrowwInvestmentText(text)) return 'Stock Purchase';
+  if (type === FinanceTransactionType.Expense) {
+    const placeName = extractPlaceName(text);
+    if (placeName) return placeName;
+  }
+  return 'sms_auto';
 }
 
 /**
@@ -169,6 +199,7 @@ export function parseFinanceSms(
     return null;
   }
   if (isMessageLikelyPromotional(normalized)) return null;
+  if (isFastagExpense(normalized)) return null;
   // Ignore reminder messages (e.g., bill due reminders)
   if (/is\s+due\s+on/i.test(normalized)) return null;
   const senderText = String(sender || '').trim();
@@ -182,13 +213,14 @@ export function parseFinanceSms(
 
   const category = detectCategory(combinedText, type);
   const paymentSource = detectPaymentSource(combinedText);
+  const source = detectSource(combinedText, type);
 
   return {
     type,
     amount,
     category,
     note: normalized.slice(0, 500),
-    source: 'sms_auto',
+    source,
     paymentSource,
   };
 }

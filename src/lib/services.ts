@@ -6,6 +6,7 @@ import { validators } from '@/lib/validators';
 import { UserFeatures } from '@/lib/userFeatures';
 import {
   IMPINCredentials,
+  IRecurringDepositRequest,
   ITransferRequest,
   ITransferResponse,
   IApiResponse,
@@ -130,6 +131,21 @@ export class TransferService {
       mpin,
     });
   }
+
+  async createRecurringDeposit(
+    request: IRecurringDepositRequest
+  ): Promise<IApiResponse<void>> {
+    const amountValidation = validators.validateAmount(request.monthlyAmount);
+    if (!amountValidation.valid) {
+      return { success: false, error: amountValidation.error };
+    }
+
+    if (!Number.isInteger(request.tenureMonths) || request.tenureMonths <= 0) {
+      return { success: false, error: 'Tenure must be greater than 0 months' };
+    }
+
+    return this.httpClient.post(`/api/transactions/recurring-deposit`, request);
+  }
 }
 
 // Service responsible only for Authentication operations
@@ -199,6 +215,14 @@ export class UserService {
       savingsBalance: number;
       fd: number;
       rd?: number;
+      recurringDeposits?: Array<{
+        monthlyAmount: number;
+        tenureMonths: number;
+        installmentsPaid: number;
+        nextDebitDate: string;
+        maturityDate: string;
+        status: string;
+      }>;
       loanBalance: number;
       accruedRdInterest?: number;
       mpin?: string | null;

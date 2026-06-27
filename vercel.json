@@ -7,6 +7,10 @@
     {
       "path": "/api/run-asset-revaluation",
       "schedule": "30 16 * * *"
+    },
+    {
+      "path": "/api/run-rd-debits",
+      "schedule": "0 9 * * *"
     }
   ]
 }

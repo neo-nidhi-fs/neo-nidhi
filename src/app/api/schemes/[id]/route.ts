@@ -11,7 +11,9 @@ export async function PUT(
     await dbConnect();
     const { id } = await context.params;
     const body = await req.json();
-    const name = String(body.name || '').trim().toLowerCase();
+    const name = String(body.name || '')
+      .trim()
+      .toLowerCase();
     const interestRate = Number(body.interestRate);
     const amount =
       body.amount === null || body.amount === undefined || body.amount === ''
@@ -32,16 +34,15 @@ export async function PUT(
     }
 
     if (name === 'rd') {
-      if (amount === null || Number.isNaN(amount) || amount <= 0) {
+      if (amount !== null && (Number.isNaN(amount) || amount <= 0)) {
         return NextResponse.json(
           { success: false, error: 'RD amount must be greater than 0' },
           { status: 400 }
         );
       }
       if (
-        tenureMonths === null ||
-        Number.isNaN(tenureMonths) ||
-        tenureMonths <= 0
+        tenureMonths !== null &&
+        (Number.isNaN(tenureMonths) || tenureMonths <= 0)
       ) {
         return NextResponse.json(
           { success: false, error: 'RD tenure must be greater than 0 months' },

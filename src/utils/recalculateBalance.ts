@@ -34,6 +34,7 @@ export async function recalculateBalances(
         fdBalance += tx.amount;
         break;
       case 'rd':
+        savingsBalance -= tx.amount;
         rdBalance += tx.amount;
         break;
       case 'loan':
