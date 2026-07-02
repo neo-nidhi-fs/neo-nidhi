@@ -66,6 +66,9 @@ export interface IRecurringDeposit extends Document {
   status: 'active' | 'completed' | 'missed' | 'closed';
   lastDebitDate?: Date | null;
   missedInstallments: number;
+  transferredToSavings: boolean;
+  maturityTransferredAmount: number;
+  maturityTransferredAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -209,6 +212,9 @@ const UserSchema: Schema<IUser> = new Schema({
       },
       lastDebitDate: { type: Date, default: null },
       missedInstallments: { type: Number, default: 0, min: 0 },
+      transferredToSavings: { type: Boolean, default: false },
+      maturityTransferredAmount: { type: Number, default: 0, min: 0 },
+      maturityTransferredAt: { type: Date, default: null },
       createdAt: { type: Date, default: Date.now },
       updatedAt: { type: Date, default: Date.now },
     },

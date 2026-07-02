@@ -1,0 +1,1 @@
+const text =  Sent Rs.3049.00\\nFrom HDFC Bank A/C *2211\\nTo INDmoney Credit Card Repa; const pattern = /\\b(?:at|to)\\s+(.+?)(?=\\s+(?:on\\b|\\d{1,2}[\\/\\-])|$|[.,;:])/i; const m = text.split(\\n).map(l=>({line:l,match:l.match(pattern);l.match(pattern)[1]})); console.log(JSON.stringify(m,null,2));

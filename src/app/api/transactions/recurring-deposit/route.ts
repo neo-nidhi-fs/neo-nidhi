@@ -5,6 +5,7 @@ import { dbConnect } from '@/lib/dbConnect';
 import { User } from '@/models/User';
 import { Transaction } from '@/models/Transaction';
 import { canManageUser, requireAdminLikeAccess } from '@/lib/adminAccess';
+import { buildRecurringDepositMaturityTransfer } from '@/jobs/recurringDepositCron';
 
 function addMonths(date: Date, months: number): Date {
   const next = new Date(date);
@@ -55,11 +56,25 @@ export async function POST(req: Request) {
     const startDate = new Date();
     const nextDebitDate = addMonths(startDate, 1);
     const maturityDate = addMonths(startDate, tenureMonths);
+    const maturityTransfer =
+      tenureMonths === 1
+        ? buildRecurringDepositMaturityTransfer(
+            {
+              monthlyAmount,
+              installmentsPaid: tenureMonths,
+              transferredToSavings: false,
+            },
+            startDate
+          )
+        : null;
 
     const updatedUser = await User.findOneAndUpdate(
       { _id: userId, savingsBalance: { $gte: monthlyAmount } },
       {
-        $inc: { savingsBalance: -monthlyAmount, rd: monthlyAmount },
+        $inc: {
+          savingsBalance: -monthlyAmount + (maturityTransfer?.transferAmount || 0),
+          rd: monthlyAmount - (maturityTransfer?.transferAmount || 0),
+        },
         $push: {
           recurringDeposits: {
             monthlyAmount,
@@ -71,6 +86,10 @@ export async function POST(req: Request) {
             status: tenureMonths === 1 ? 'completed' : 'active',
             lastDebitDate: startDate,
             missedInstallments: 0,
+            transferredToSavings: maturityTransfer?.transferredToSavings ?? false,
+            maturityTransferredAmount:
+              maturityTransfer?.maturityTransferredAmount ?? 0,
+            maturityTransferredAt: maturityTransfer?.maturityTransferredAt ?? null,
             createdAt: startDate,
             updatedAt: startDate,
           },
@@ -103,6 +122,23 @@ export async function POST(req: Request) {
         source: 'rd_creation',
       },
     });
+
+    if (maturityTransfer && maturityTransfer.transferAmount > 0) {
+      await Transaction.create({
+        userId,
+        type: 'deposit',
+        amount: maturityTransfer.transferAmount,
+        date: startDate,
+        metadata: {
+          recurringDepositId: rdPlan?._id?.toString(),
+          monthlyAmount,
+          tenureMonths,
+          installmentNumber: 1,
+          maturityTransferredAt: startDate.toISOString(),
+          source: 'rd_maturity_transfer',
+        },
+      });
+    }
 
     return NextResponse.json({
       success: true,

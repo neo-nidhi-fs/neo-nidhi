@@ -19,6 +19,33 @@ describe('parseFinanceSms', () => {
     expect(parsed?.source).toBe('Pizza Hut');
   });
 
+  it('extracts the destination payee after a To marker', () => {
+    const parsed = parseFinanceSms(
+      'Sent Rs.3049.00\nFrom HDFC Bank A/C *2211\nTo INDmoney Credit Card Repa'
+    );
+
+    expect(parsed).not.toBeNull();
+    expect(parsed?.source).toBe('INDmoney Credit Card Repa');
+  });
+
+  it('extracts a vendor name after To and before date metadata', () => {
+    const parsed = parseFinanceSms(
+      'Sent Rs.340.00\nFrom HDFC Bank A/C *2211\nTo NEW SUPER TRADERS\nOn 01/07/26'
+    );
+
+    expect(parsed).not.toBeNull();
+    expect(parsed?.source).toBe('NEW SUPER TRADERS');
+  });
+
+  it('extracts the place after an at marker in a complex meal wallet message', () => {
+    const parsed = parseFinanceSms(
+      'INR 1534 was spent on your MEAL WALLET ending XXXX 4366 on 26-JUN-26 09:42 AM at M S MVK GHATWAY RESTAURAN.'
+    );
+
+    expect(parsed).not.toBeNull();
+    expect(parsed?.source).toBe('M S MVK GHATWAY RESTAURAN');
+  });
+
   it('categorizes meal wallet spends as dining', () => {
     const parsed = parseFinanceSms('Rs. 300 paid via meal wallet');
 

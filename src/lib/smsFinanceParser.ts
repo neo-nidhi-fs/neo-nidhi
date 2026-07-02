@@ -63,14 +63,20 @@ function parseAmount(text: string): number | null {
 /**
  * Detects transaction type from SMS text.
  */
+function containsWholeWord(text: string, keyword: string): boolean {
+  return new RegExp(`\\b${escapeForRegex(keyword)}\\b`, 'i').test(text);
+}
+
 function detectType(text: string): FinanceTransactionType | null {
   const lower = text.toLowerCase();
-  if (lower.includes('debited')) return FinanceTransactionType.Expense;
-  if (lower.includes('credited')) return FinanceTransactionType.Income;
-  if (lower.includes('top up')) return FinanceTransactionType.Expense;
-  if (CREDIT_KEYWORDS.some((word) => lower.includes(word)))
+  if (containsWholeWord(lower, 'debited'))
+    return FinanceTransactionType.Expense;
+  if (containsWholeWord(lower, 'credited'))
     return FinanceTransactionType.Income;
-  if (DEBIT_KEYWORDS.some((word) => lower.includes(word)))
+  if (containsWholeWord(lower, 'top up')) return FinanceTransactionType.Expense;
+  if (CREDIT_KEYWORDS.some((word) => containsWholeWord(lower, word)))
+    return FinanceTransactionType.Income;
+  if (DEBIT_KEYWORDS.some((word) => containsWholeWord(lower, word)))
     return FinanceTransactionType.Expense;
   return null;
 }
@@ -80,13 +86,34 @@ function isGrowwInvestmentText(text: string): boolean {
   return lower.includes('groww') && lower.includes('invest');
 }
 
-function extractPlaceName(text: string): string | null {
-  const match = text.match(
-    /\b(?:spent|paid|charged|purchased?|purchase|used|swiped)\s+(?:at|to)\s+([a-z0-9&.,'/-]+(?:\s+[a-z0-9&.,'/-]+){0,4})/i
-  );
-  if (!match?.[1]) return null;
-  const place = match[1].trim().replace(/[.,;:]+$/g, '');
-  return place || null;
+function escapeForRegex(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function extractSourceName(text: string): string | null {
+  const normalized = text.replace(/\r/g, '');
+  const lines = normalized.split('\n').map((line) => line.trim());
+
+  for (const line of lines) {
+    const match = line.match(/\b(?:at|to)\s+(.+)/i);
+    if (!match?.[1]) continue;
+
+    let source = match[1].trim().replace(/[.,;:]+$/g, '');
+    source = source.replace(/\s+on\s+.*$/i, '').trim();
+    if (!source || /^(?:a\/c|account|your|from)\b/i.test(source)) continue;
+    return source;
+  }
+
+  const fallbackMatch = normalized.match(/\b(?:at|to)\s+(.+)/i);
+  if (fallbackMatch?.[1]) {
+    let source = fallbackMatch[1].trim().replace(/[.,;:]+$/g, '');
+    source = source.replace(/\s+on\s+.*$/i, '').trim();
+    if (source && !/^(?:a\/c|account|your|from)\b/i.test(source)) {
+      return source;
+    }
+  }
+
+  return null;
 }
 
 function isFastagExpense(text: string): boolean {
@@ -165,8 +192,8 @@ function isMessageLikelyPromotional(text: string): boolean {
 function detectSource(text: string, type: FinanceTransactionType): string {
   if (isGrowwInvestmentText(text)) return 'Stock Purchase';
   if (type === FinanceTransactionType.Expense) {
-    const placeName = extractPlaceName(text);
-    if (placeName) return placeName;
+    const sourceName = extractSourceName(text);
+    if (sourceName) return sourceName;
   }
   return 'sms_auto';
 }
@@ -210,7 +237,6 @@ export function parseFinanceSms(
 
   const type = detectType(combinedText);
   if (!type) return null;
-
   const category = detectCategory(combinedText, type);
   const paymentSource = detectPaymentSource(combinedText);
   const source = detectSource(combinedText, type);

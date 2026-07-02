@@ -8,6 +8,27 @@ function addMonths(date: Date, months: number): Date {
   return next;
 }
 
+export function buildRecurringDepositMaturityTransfer(
+  rdPlan: {
+    monthlyAmount: number;
+    installmentsPaid: number;
+    transferredToSavings?: boolean;
+  },
+  referenceDate: Date
+) {
+  const transferAmount = Math.max(
+    0,
+    (rdPlan.monthlyAmount || 0) * Math.max(0, rdPlan.installmentsPaid || 0)
+  );
+
+  return {
+    transferAmount,
+    maturityTransferredAmount: transferAmount,
+    maturityTransferredAt: referenceDate,
+    transferredToSavings: true,
+  };
+}
+
 export async function processRecurringDepositDebits(
   referenceDate = new Date()
 ) {
@@ -37,6 +58,18 @@ export async function processRecurringDepositDebits(
       const nextStatus =
         installmentNumber >= rdPlan.tenureMonths ? 'completed' : 'active';
 
+      const maturityTransfer =
+        nextStatus === 'completed' && !rdPlan.transferredToSavings
+          ? buildRecurringDepositMaturityTransfer(
+              {
+                monthlyAmount: rdPlan.monthlyAmount,
+                installmentsPaid: installmentNumber,
+                transferredToSavings: false,
+              },
+              referenceDate
+            )
+          : null;
+
       const updatedUser = await User.findOneAndUpdate(
         {
           _id: user._id,
@@ -46,14 +79,20 @@ export async function processRecurringDepositDebits(
         },
         {
           $inc: {
-            savingsBalance: -rdPlan.monthlyAmount,
-            rd: rdPlan.monthlyAmount,
+            savingsBalance: -rdPlan.monthlyAmount + (maturityTransfer?.transferAmount || 0),
+            rd: rdPlan.monthlyAmount - (maturityTransfer?.transferAmount || 0),
             'recurringDeposits.$.installmentsPaid': 1,
           },
           $set: {
             'recurringDeposits.$.nextDebitDate': nextDebitDate,
             'recurringDeposits.$.lastDebitDate': referenceDate,
             'recurringDeposits.$.status': nextStatus,
+            'recurringDeposits.$.transferredToSavings':
+              maturityTransfer?.transferredToSavings ?? false,
+            'recurringDeposits.$.maturityTransferredAmount':
+              maturityTransfer?.maturityTransferredAmount ?? 0,
+            'recurringDeposits.$.maturityTransferredAt':
+              maturityTransfer?.maturityTransferredAt ?? null,
             'recurringDeposits.$.updatedAt': referenceDate,
           },
         },
@@ -90,6 +129,23 @@ export async function processRecurringDepositDebits(
           source: 'rd_cron',
         },
       });
+
+      if (maturityTransfer && maturityTransfer.transferAmount > 0) {
+        await Transaction.create({
+          userId: user._id,
+          type: 'deposit',
+          amount: maturityTransfer.transferAmount,
+          date: referenceDate,
+          metadata: {
+            recurringDepositId: rdPlan._id.toString(),
+            monthlyAmount: rdPlan.monthlyAmount,
+            tenureMonths: rdPlan.tenureMonths,
+            installmentNumber,
+            maturityTransferredAt: referenceDate.toISOString(),
+            source: 'rd_maturity_transfer',
+          },
+        });
+      }
 
       processed += 1;
       if (nextStatus === 'completed') {
