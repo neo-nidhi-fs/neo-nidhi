@@ -6,7 +6,9 @@ export const INCOME_CATEGORIES = [
   'Investment Returns',
   'Interest',
   'Dividends',
+  'UPI Credit',
   'Rental Income',
+  'EMI contribution',
   'Other Income',
 ] as const;
 
@@ -18,6 +20,8 @@ export const EXPENSE_CATEGORIES = [
   'Healthcare',
   'Entertainment',
   'Dining',
+  'UPI Payment',
+  'Personal',
   'Credit Card Payments',
   'Gifts/Donations',
   'part payment of loan',

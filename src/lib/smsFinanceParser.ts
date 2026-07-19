@@ -128,24 +128,28 @@ function detectCategory(text: string, type: FinanceTransactionType): string {
   const lower = text.toLowerCase();
   if (isGrowwInvestmentText(text)) return 'Investment';
   if (lower.includes('meal wallet')) return 'Dining';
-  if (lower.includes('abhirami v m')) return 'Gift';
+  if (lower.includes('abhirami')) return 'Personal';
+  if (lower.includes('electricity')) return 'Utilities';
   if (lower.includes('upi'))
     return type === FinanceTransactionType.Income
       ? 'UPI Credit'
       : 'UPI Payment';
   if (lower.includes('atm')) return 'ATM';
+  if (lower.includes('lulu') || lower.includes('amazon')) return 'Shopping';
   if (lower.includes('imps'))
     return type === FinanceTransactionType.Income
-      ? 'IMPS Credit'
-      : 'IMPS Transfer';
+      ? 'Other Income'
+      : 'Other Expense';
   if (lower.includes('neft'))
     return type === FinanceTransactionType.Income
-      ? 'NEFT Credit'
-      : 'NEFT Transfer';
+      ? 'Other Income'
+      : 'Other Expense';
   if (lower.includes('salary')) return 'Salary';
+  if (lower.includes('restaurant')) return 'Dining';
   if (lower.includes('interest')) return 'Interest';
   if (lower.includes('refund')) return 'Refund';
   if (lower.includes('cashback')) return 'Cashback';
+  if (lower.includes('dividend')) return 'Dividends';
   if (lower.includes('card'))
     return type === FinanceTransactionType.Income
       ? 'Card Credit'

@@ -140,6 +140,21 @@ export async function POST(req: Request) {
       });
     }
 
+    //Your bill of Rs. 3352.0 has been generated
+
+    const isItABillGenerated = (payload: SmsPayload): boolean => {
+      const lower =
+        `${payload.sender || ''} ${payload.body || ''}`.toLowerCase();
+      return (
+        lower.includes('your bill') ||
+        lower.includes('bill generation') ||
+        lower.includes('has been generated') ||
+        lower.includes('clear your dues before') ||
+        lower.includes('ignore if already paid') ||
+        lower.includes('bill is generated')
+      );
+    };
+
     const skipIndexes = new Set<number>();
     const transferWindowMs = 60 * 60 * 1000;
     for (let i = 0; i < parsedMessages.length; i += 1) {
@@ -153,7 +168,8 @@ export async function POST(req: Request) {
         if (
           !right.parsed ||
           !isTransferLikeText(right.message) ||
-          !isTransferPromotionLikeText(right.message)
+          !isTransferPromotionLikeText(right.message) ||
+          !isItABillGenerated(right.message)
         )
           continue;
         if (left.parsed.amount !== right.parsed.amount) continue;
