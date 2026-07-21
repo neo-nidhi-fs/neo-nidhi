@@ -11,6 +11,10 @@
     {
       "path": "/api/run-rd-debits",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/run-rd-new-debits",
+      "schedule": "30 9 * * *"
     }
   ]
 }
