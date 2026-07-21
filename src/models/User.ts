@@ -15,6 +15,7 @@ export interface IUserFeatures {
   onlineTransferEnabled: boolean;
   quizzesEnabled: boolean;
   challengesEnabled: boolean;
+  rdNewEnabled: boolean;
 }
 
 export interface IAsset extends Document {
@@ -145,6 +146,7 @@ const UserSchema: Schema<IUser> = new Schema({
       onlineTransferEnabled: { type: Boolean, default: false },
       quizzesEnabled: { type: Boolean, default: false },
       challengesEnabled: { type: Boolean, default: false },
+      rdNewEnabled: { type: Boolean, default: false },
     },
     default: {},
   },
