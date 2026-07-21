@@ -104,7 +104,6 @@ export default function AdminTransactionsPage() {
       if (res.ok) {
         setMessage('✅ Transaction added successfully!');
         await fetchTransactions(1);
-        setTimeout(() => setTransactionDialogOpen(false), 1500);
       } else {
         setMessage(`❌ Error: ${data.error}`);
       }
