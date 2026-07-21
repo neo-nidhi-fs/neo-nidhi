@@ -118,6 +118,13 @@ export default function Navbar() {
                 {content.navigation.featureToggles}
               </Link>
             )}
+            <Link
+              href="/admin/rd-schemes"
+              onClick={closeMobileMenu}
+              className="text-gray-200 hover:text-blue-400 transition-colors duration-300 font-medium"
+            >
+              {content.navigation.rdSchemes}
+            </Link>
           </>
         )}
 
