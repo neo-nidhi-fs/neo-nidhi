@@ -5,6 +5,7 @@ export const FEATURE_KEYS = [
   'onlineTransferEnabled',
   'quizzesEnabled',
   'challengesEnabled',
+  'rdNewEnabled',
 ] as const;
 
 export type FeatureKey = (typeof FEATURE_KEYS)[number];
@@ -18,6 +19,7 @@ export const DEFAULT_USER_FEATURES: UserFeatures = {
   onlineTransferEnabled: false,
   quizzesEnabled: false,
   challengesEnabled: false,
+  rdNewEnabled: false,
 };
 
 type UserLike = {
