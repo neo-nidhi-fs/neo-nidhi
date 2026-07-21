@@ -13,6 +13,7 @@ import {
   IChallenge,
   IFDWithdrawInfo,
 } from '@/types';
+import { RDNewService } from '@/lib/services/rdNewService';
 
 // Service responsible only for MPIN operations
 export class MPINService {
@@ -333,5 +334,9 @@ export class ServiceLocator {
 
   static getChallengeService(): ChallengeService {
     return ServiceLocator.get<ChallengeService>('challenge');
+  }
+
+  static getRDNewService(): RDNewService {
+    return ServiceLocator.get<RDNewService>('rdNew');
   }
 }
