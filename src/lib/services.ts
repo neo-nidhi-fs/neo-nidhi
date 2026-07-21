@@ -288,17 +288,17 @@ export class ChallengeService {
 // Service Locator - provides centralized access to all services
 // This can be replaced with dependency injection in the future
 export class ServiceLocator {
-  private static services: Map<string, unknown> = new Map();
-
-  static {
-    // Initialize services with httpClient dependency
-    ServiceLocator.register('mpin', new MPINService(httpClient));
-    ServiceLocator.register('transfer', new TransferService(httpClient));
-    ServiceLocator.register('auth', new AuthService(httpClient));
-    ServiceLocator.register('qrCode', new QRCodeService(httpClient));
-    ServiceLocator.register('user', new UserService(httpClient));
-    ServiceLocator.register('challenge', new ChallengeService(httpClient));
-  }
+  private static services: Map<string, unknown> = (() => {
+    const map = new Map<string, unknown>();
+    map.set('mpin', new MPINService(httpClient));
+    map.set('transfer', new TransferService(httpClient));
+    map.set('auth', new AuthService(httpClient));
+    map.set('qrCode', new QRCodeService(httpClient));
+    map.set('user', new UserService(httpClient));
+    map.set('challenge', new ChallengeService(httpClient));
+    map.set('rdNew', new RDNewService(httpClient));
+    return map;
+  })();
 
   static register(name: string, service: unknown): void {
     ServiceLocator.services.set(name, service);
