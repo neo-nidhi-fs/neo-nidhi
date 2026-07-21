@@ -148,9 +148,9 @@ export default function AdminReports() {
       {
         name: 'Total Accrued Interest',
         data: [
-          reportData.metrics.totalAccruedSavingInterest,
-          reportData.metrics.totalAccruedFdInterest,
-          reportData.metrics.totalAccruedLoanInterest,
+          reportData.metrics.totalAccruedSavingInterest.toFixed(2),
+          reportData.metrics.totalAccruedFdInterest.toFixed(2),
+          reportData.metrics.totalAccruedLoanInterest.toFixed(2),
         ],
       },
     ],
