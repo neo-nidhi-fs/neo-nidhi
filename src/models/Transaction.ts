@@ -15,7 +15,9 @@ export interface ITransaction extends Document {
     | 'withdrawal_fd'
     | 'challenge_fee'
     | 'challenge_reward'
-    | 'interest_deposit';
+    | 'interest_deposit'
+    | 'rd_new'
+    | 'rd_new_maturity';
   amount: number;
   date: Date;
   relatedUserId?: mongoose.Types.ObjectId; // For user-to-user transfers
@@ -41,6 +43,8 @@ const TransactionSchema: Schema<ITransaction> = new Schema({
       'withdrawal_fd',
       'interest_loan',
       'interest_deposit',
+      'rd_new',
+      'rd_new_maturity',
     ],
     required: true,
   },
