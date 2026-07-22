@@ -10,6 +10,7 @@ import {
   ArrowLeftRight,
   CircleHelp,
   Trophy,
+  Landmark,
 } from 'lucide-react';
 import { FeatureKey, getUserFeatures } from '@/lib/userFeatures';
 
@@ -53,6 +54,12 @@ const FEATURES: Array<{
     key: 'challengesEnabled',
     label: 'Challenges',
     icon: Trophy,
+    bg: 'bg-[url(/feature-bg-finance.svg)] bg-cover bg-center',
+  },
+  {
+    key: 'rdNewEnabled',
+    label: 'RD Plans',
+    icon: Landmark,
     bg: 'bg-[url(/feature-bg-finance.svg)] bg-cover bg-center',
   },
 ];
