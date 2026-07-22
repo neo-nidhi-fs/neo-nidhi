@@ -20,7 +20,11 @@ function nextMandateDayAfter(fromDate: Date, mandateDay: number): Date {
   return d;
 }
 
-function addMonthsSameDay(date: Date, months: number, mandateDay: number): Date {
+function addMonthsSameDay(
+  date: Date,
+  months: number,
+  mandateDay: number
+): Date {
   const d = new Date(date);
   d.setMonth(d.getMonth() + months);
   d.setDate(mandateDay);
@@ -31,31 +35,63 @@ export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
     }
 
     await dbConnect();
     const { searchParams } = new URL(req.url);
-    const requestedUserId = searchParams.get('userId') || session.user.id;
+    const requestedUserId = searchParams.get('userId');
 
-    const isSelf = session.user.id === requestedUserId;
+    const isSelf = requestedUserId
+      ? session.user.id === requestedUserId
+      : false;
 
     if (!isSelf) {
       const accessResult = await requireAdminLikeAccess();
-      if (!accessResult.ok) return accessResult.response;
-      if (!canManageUser(accessResult.context, requestedUserId)) {
-        return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+      if (!accessResult.ok) {
+        // Not admin — fall back to own subscriptions only
+        if (!requestedUserId || requestedUserId === session.user.id) {
+          const ownSubscriptions = await RDSubscription.find({
+            userId: session.user.id,
+          })
+            .populate('schemeId', 'name interestRate tenureMonths')
+            .sort({ createdAt: -1 });
+          return NextResponse.json({ success: true, data: ownSubscriptions });
+        }
+        return accessResult.response;
+      }
+      if (
+        requestedUserId &&
+        !canManageUser(accessResult.context, requestedUserId)
+      ) {
+        return NextResponse.json(
+          { success: false, error: 'Forbidden' },
+          { status: 403 }
+        );
       }
     }
 
-    const subscriptions = await RDSubscription.find({ userId: requestedUserId })
+    // Admin with no userId filter → return all subscriptions
+    const filter = requestedUserId
+      ? { userId: requestedUserId }
+      : isSelf
+        ? { userId: session.user.id }
+        : {};
+
+    const subscriptions = await RDSubscription.find(filter)
       .populate('schemeId', 'name interestRate tenureMonths')
       .sort({ createdAt: -1 });
 
     return NextResponse.json({ success: true, data: subscriptions });
   } catch (err) {
     console.error('GET /api/rd-subscriptions error:', err);
-    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }
 
@@ -63,7 +99,10 @@ export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
     }
 
     await dbConnect();
@@ -84,7 +123,10 @@ export async function POST(req: Request) {
       mandateDay > 28
     ) {
       return NextResponse.json(
-        { success: false, error: 'Invalid subscription parameters. mandateDay must be 1–28.' },
+        {
+          success: false,
+          error: 'Invalid subscription parameters. mandateDay must be 1–28.',
+        },
         { status: 400 }
       );
     }
@@ -95,18 +137,26 @@ export async function POST(req: Request) {
       const accessResult = await requireAdminLikeAccess();
       if (!accessResult.ok) return accessResult.response;
       if (!canManageUser(accessResult.context, targetUserId)) {
-        return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+        return NextResponse.json(
+          { success: false, error: 'Forbidden' },
+          { status: 403 }
+        );
       }
     }
 
     // Fetch user and scheme
     const [user, scheme] = await Promise.all([
-      User.findById(targetUserId).select('features financeFeaturesEnabled name'),
+      User.findById(targetUserId).select(
+        'features financeFeaturesEnabled name'
+      ),
       RDScheme.findById(schemeId),
     ]);
 
     if (!user) {
-      return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 });
+      return NextResponse.json(
+        { success: false, error: 'User not found' },
+        { status: 404 }
+      );
     }
     if (!scheme || !scheme.isActive) {
       return NextResponse.json(
@@ -118,7 +168,10 @@ export async function POST(req: Request) {
     // Feature flag check — only enforced for self-subscribe; admin can subscribe any user
     if (isSelf && !isFeatureEnabled(user, 'rdNewEnabled')) {
       return NextResponse.json(
-        { success: false, error: 'RD Plans feature is not enabled for this user' },
+        {
+          success: false,
+          error: 'RD Plans feature is not enabled for this user',
+        },
         { status: 403 }
       );
     }
@@ -126,20 +179,33 @@ export async function POST(req: Request) {
     // Validate amount bounds
     if (monthlyAmount < scheme.minMonthlyAmount) {
       return NextResponse.json(
-        { success: false, error: `monthlyAmount must be at least ${scheme.minMonthlyAmount}` },
+        {
+          success: false,
+          error: `monthlyAmount must be at least ${scheme.minMonthlyAmount}`,
+        },
         { status: 400 }
       );
     }
-    if (scheme.maxMonthlyAmount != null && monthlyAmount > scheme.maxMonthlyAmount) {
+    if (
+      scheme.maxMonthlyAmount != null &&
+      monthlyAmount > scheme.maxMonthlyAmount
+    ) {
       return NextResponse.json(
-        { success: false, error: `monthlyAmount must not exceed ${scheme.maxMonthlyAmount}` },
+        {
+          success: false,
+          error: `monthlyAmount must not exceed ${scheme.maxMonthlyAmount}`,
+        },
         { status: 400 }
       );
     }
 
     const now = new Date();
     const nextDebitDate = nextMandateDayAfter(now, mandateDay);
-    const maturityDate = addMonthsSameDay(nextDebitDate, scheme.tenureMonths - 1, mandateDay);
+    const maturityDate = addMonthsSameDay(
+      nextDebitDate,
+      scheme.tenureMonths - 1,
+      mandateDay
+    );
 
     const subscription = await RDSubscription.create({
       userId: targetUserId,
@@ -162,6 +228,9 @@ export async function POST(req: Request) {
     );
   } catch (err) {
     console.error('POST /api/rd-subscriptions error:', err);
-    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }
