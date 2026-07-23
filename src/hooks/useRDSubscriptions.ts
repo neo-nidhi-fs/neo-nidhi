@@ -2,7 +2,10 @@
 
 import { useState, useCallback } from 'react';
 import { ServiceLocator } from '@/lib/services';
-import type { IRDSubscription, ICreateSubscriptionRequest } from '@/lib/services/rdNewService';
+import type {
+  IRDSubscription,
+  ICreateSubscriptionRequest,
+} from '@/lib/services/rdNewService';
 
 export function useRDSubscriptions(userId?: string) {
   const [subscriptions, setSubscriptions] = useState<IRDSubscription[]>([]);
@@ -49,5 +52,26 @@ export function useRDSubscriptions(userId?: string) {
     [service, fetchSubscriptions]
   );
 
-  return { subscriptions, loading, error, fetchSubscriptions, createSubscription, closeSubscription };
+  const deleteSubscription = useCallback(
+    async (subscriptionId: string): Promise<boolean> => {
+      const result = await service.deleteSubscription(subscriptionId);
+      if (result.success) {
+        await fetchSubscriptions();
+        return true;
+      }
+      setError(result.error || 'Failed to remove subscription');
+      return false;
+    },
+    [service, fetchSubscriptions]
+  );
+
+  return {
+    subscriptions,
+    loading,
+    error,
+    fetchSubscriptions,
+    createSubscription,
+    closeSubscription,
+    deleteSubscription,
+  };
 }
