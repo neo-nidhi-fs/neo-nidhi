@@ -1,8 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { UserPlus, X } from 'lucide-react';
-import type { IRDScheme, IRDSubscription, ICreateSubscriptionRequest } from '@/lib/services/rdNewService';
+import { UserPlus, X, Trash2 } from 'lucide-react';
+import type {
+  IRDScheme,
+  IRDSubscription,
+  ICreateSubscriptionRequest,
+} from '@/lib/services/rdNewService';
 import { useRDSubscriptions } from '@/hooks/useRDSubscriptions';
 import RDSubscribeDialog from './dialogs/RDSubscribeDialog';
 
@@ -31,8 +35,15 @@ function schemeName(sub: IRDSubscription): string {
 }
 
 export default function RDSubscriptionsSection({ schemes, users }: Props) {
-  const { subscriptions, loading, error, fetchSubscriptions, createSubscription, closeSubscription } =
-    useRDSubscriptions();
+  const {
+    subscriptions,
+    loading,
+    error,
+    fetchSubscriptions,
+    createSubscription,
+    closeSubscription,
+    deleteSubscription,
+  } = useRDSubscriptions();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [closeMsg, setCloseMsg] = useState('');
 
@@ -40,22 +51,50 @@ export default function RDSubscriptionsSection({ schemes, users }: Props) {
     fetchSubscriptions();
   }, [fetchSubscriptions]);
 
-  async function handleSubscribe(data: ICreateSubscriptionRequest): Promise<boolean> {
+  async function handleSubscribe(
+    data: ICreateSubscriptionRequest
+  ): Promise<boolean> {
     return createSubscription(data);
   }
 
   async function handleClose(sub: IRDSubscription) {
     setCloseMsg('');
-    const userName = users.find((u) => u._id === sub.userId)?.name ?? sub.userId;
-    if (!confirm(`Close subscription for ${userName} on "${schemeName(sub)}"? This will credit the maturity amount to their savings.`)) return;
+    const userName =
+      users.find((u) => u._id === sub.userId)?.name ?? sub.userId;
+    if (
+      !confirm(
+        `Close subscription for ${userName} on "${schemeName(sub)}"? This will credit the maturity amount to their savings.`
+      )
+    )
+      return;
     const ok = await closeSubscription(sub._id);
     if (ok) {
       setCloseMsg('Subscription closed successfully.');
     }
   }
 
+  async function handleRemove(sub: IRDSubscription) {
+    setCloseMsg('');
+    const userName =
+      users.find((u) => u._id === sub.userId)?.name ?? sub.userId;
+    if (
+      !confirm(
+        `Permanently remove the RD subscription for ${userName} on "${schemeName(sub)}"? This cannot be undone and will delete all related transactions.`
+      )
+    )
+      return;
+    const ok = await deleteSubscription(sub._id);
+    if (ok) {
+      setCloseMsg('Subscription removed successfully.');
+    }
+  }
+
   function formatDate(d: string) {
-    return new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    return new Date(d).toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
   }
 
   function userName(userId: string) {
@@ -65,7 +104,9 @@ export default function RDSubscriptionsSection({ schemes, users }: Props) {
   return (
     <section className="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-semibold text-cyan-400">RD Subscriptions</h2>
+        <h2 className="text-xl font-semibold text-cyan-400">
+          RD Subscriptions
+        </h2>
         <button
           onClick={() => setDialogOpen(true)}
           className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
@@ -102,14 +143,26 @@ export default function RDSubscriptionsSection({ schemes, users }: Props) {
               {subscriptions.map((sub) => {
                 const tenure =
                   typeof sub.schemeId === 'object' && sub.schemeId !== null
-                    ? (sub.schemeId as IRDScheme & { tenureMonths: number }).tenureMonths
+                    ? (sub.schemeId as IRDScheme & { tenureMonths: number })
+                        .tenureMonths
                     : '?';
                 return (
-                  <tr key={sub._id} className="border-b border-slate-700/50 hover:bg-slate-700/20">
-                    <td className="py-2 pr-3 text-white">{userName(sub.userId)}</td>
-                    <td className="py-2 pr-3 text-gray-300">{schemeName(sub)}</td>
-                    <td className="py-2 pr-3 text-gray-300">₹{sub.monthlyAmount}</td>
-                    <td className="py-2 pr-3 text-gray-300">{sub.mandateDay}</td>
+                  <tr
+                    key={sub._id}
+                    className="border-b border-slate-700/50 hover:bg-slate-700/20"
+                  >
+                    <td className="py-2 pr-3 text-white">
+                      {userName(sub.userId)}
+                    </td>
+                    <td className="py-2 pr-3 text-gray-300">
+                      {schemeName(sub)}
+                    </td>
+                    <td className="py-2 pr-3 text-gray-300">
+                      ₹{sub.monthlyAmount}
+                    </td>
+                    <td className="py-2 pr-3 text-gray-300">
+                      {sub.mandateDay}
+                    </td>
                     <td className="py-2 pr-3 text-gray-300">
                       {sub.installmentsPaid}/{tenure}
                     </td>
@@ -127,15 +180,24 @@ export default function RDSubscriptionsSection({ schemes, users }: Props) {
                       </span>
                     </td>
                     <td className="py-2">
-                      {['active', 'missed'].includes(sub.status) && (
+                      <div className="flex items-center gap-2">
+                        {['active', 'missed'].includes(sub.status) && (
+                          <button
+                            onClick={() => handleClose(sub)}
+                            title="Close subscription (credits maturity to savings)"
+                            className="text-red-400 hover:text-red-300 transition-colors"
+                          >
+                            <X size={16} />
+                          </button>
+                        )}
                         <button
-                          onClick={() => handleClose(sub)}
-                          title="Close subscription"
-                          className="text-red-400 hover:text-red-300 transition-colors"
+                          onClick={() => handleRemove(sub)}
+                          title="Remove subscription permanently"
+                          className="text-gray-500 hover:text-red-400 transition-colors"
                         >
-                          <X size={16} />
+                          <Trash2 size={16} />
                         </button>
-                      )}
+                      </div>
                     </td>
                   </tr>
                 );
