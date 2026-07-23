@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useState } from 'react';
@@ -54,6 +54,7 @@ import { getUserFeatures } from '@/lib/userFeatures';
 import { useAutoSmsFinanceSync } from '@/hooks/useAutoSmsFinanceSync';
 import { isNativeApp } from '@/lib/native';
 import { requestSmsReadPermission } from '@/lib/native/sms';
+import { useDashboardCache } from '@/hooks/useDashboardCache';
 
 export default function UserDashboard() {
   const { data: session, status } = useSession();
@@ -69,6 +70,7 @@ export default function UserDashboard() {
     rating: string;
     source: string;
   } | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [resolvedUser, setResolvedUser] = useState<{
     name?: string;
     savingsBalance: number;
@@ -87,6 +89,7 @@ export default function UserDashboard() {
   const [pageLoading, setPageLoading] = useState(true);
 
   const { user, fetchUser } = useUser(userId);
+  const { readCache, saveCache } = useDashboardCache(userId);
 
   const {
     activeChallenges,
@@ -98,7 +101,8 @@ export default function UserDashboard() {
     useUserFinance();
   useAutoSmsFinanceSync(financeFeatureEnabled);
 
-  async function fetchUserData() {
+  async function fetchUserData({ background = false } = {}) {
+    if (background) setIsRefreshing(true);
     try {
       let currentUser = await fetchUser();
       if (!currentUser && isAdminViewingAnotherUser) {
@@ -110,26 +114,49 @@ export default function UserDashboard() {
             null;
         }
       }
-      setResolvedUser(currentUser);
-      await fetchActiveChallenges();
 
-      if (!currentUser) return;
+      const challengesResult = await fetchActiveChallenges();
+
+      if (!currentUser) {
+        setResolvedUser(null);
+        return;
+      }
+
       const userFeatures = getUserFeatures(currentUser);
       const financeEnabled = userFeatures.financeFeaturesEnabled;
-      setFinanceFeatureEnabled(financeEnabled);
-      setCreditScoreFeatureEnabled(userFeatures.creditScoreEnabled);
 
+      let freshCreditScore: { score: number; rating: string; source: string } | null = null;
       if (userFeatures.creditScoreEnabled) {
         const creditScoreRes = await fetch('/api/user/credit-score');
         const creditScoreJson = await creditScoreRes.json();
         if (creditScoreRes.ok && creditScoreJson?.success) {
-          setCreditScoreData(creditScoreJson.data);
-        } else {
-          setCreditScoreData(null);
+          freshCreditScore = creditScoreJson.data;
+        }
+      }
+
+      // Compare with current state to avoid unnecessary re-renders when background-refreshing
+      if (background) {
+        const currentKey = JSON.stringify({ user: resolvedUser, activeChallenges, creditScoreData });
+        const freshKey = JSON.stringify({ user: currentUser, activeChallenges: challengesResult ?? activeChallenges, creditScoreData: freshCreditScore });
+        if (currentKey !== freshKey) {
+          setResolvedUser(currentUser);
+          setCreditScoreData(freshCreditScore);
+          setFinanceFeatureEnabled(financeEnabled);
+          setCreditScoreFeatureEnabled(userFeatures.creditScoreEnabled);
         }
       } else {
-        setCreditScoreData(null);
+        setResolvedUser(currentUser);
+        setCreditScoreData(freshCreditScore);
+        setFinanceFeatureEnabled(financeEnabled);
+        setCreditScoreFeatureEnabled(userFeatures.creditScoreEnabled);
       }
+
+      // Persist fresh snapshot to cache
+      saveCache({
+        user: currentUser,
+        activeChallenges: challengesResult ?? activeChallenges,
+        creditScoreData: freshCreditScore,
+      });
 
       if (financeEnabled) {
         await fetchNetWorth();
@@ -139,6 +166,8 @@ export default function UserDashboard() {
       }
     } catch (error) {
       console.error('Error fetching user data:', error);
+    } finally {
+      if (background) setIsRefreshing(false);
     }
   }
 
@@ -151,6 +180,10 @@ export default function UserDashboard() {
     fetchAssets,
     fetchLiabilities,
     fetchCashFlows,
+    saveCache,
+    resolvedUser,
+    activeChallenges,
+    creditScoreData,
   ]);
 
   const handleRequestSmsPermission = useCallback(async () => {
@@ -196,14 +229,30 @@ export default function UserDashboard() {
     }
   }, [session, status]);
 
-  // Fetch user data when userId changes
+  // Stale-while-revalidate: load cache instantly, then fetch fresh data in background
   useEffect(() => {
-    if (userId) {
+    if (!userId) return;
+
+    const cached = readCache();
+    if (cached) {
+      // Show cached data immediately so the page renders without waiting for network
+      setResolvedUser(cached.user);
+      setCreditScoreData(cached.creditScoreData);
+      if (cached.user) {
+        const features = getUserFeatures(cached.user);
+        setFinanceFeatureEnabled(features.financeFeaturesEnabled);
+        setCreditScoreFeatureEnabled(features.creditScoreEnabled);
+      }
+      // Fetch fresh data silently in the background
+      fetchUserDataMemo({ background: true });
+    } else {
+      // No cache — do a normal foreground fetch
       fetchUserDataMemo();
     }
-  }, [userId, fetchUserDataMemo]);
+  }, [userId, readCache, fetchUserDataMemo]);
 
-  if (pageLoading || status === 'loading') {
+  // Block full-page load only when there's no cached data to display yet
+  if ((pageLoading || status === 'loading') && !resolvedUser) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-slate-950 via-blue-950 to-slate-950">
         <Loader className="w-8 h-8 text-cyan-400 animate-spin" />
@@ -241,6 +290,11 @@ export default function UserDashboard() {
           {isAdminViewingAnotherUser && (
             <p className="text-cyan-300 text-sm mt-2">
               Admin view mode: showing selected user dashboard.
+            </p>
+          )}
+          {isRefreshing && (
+            <p className="text-gray-500 text-xs mt-1 flex items-center gap-1">
+              <Loader className="w-3 h-3 animate-spin" /> Refreshing…
             </p>
           )}
         </div>
