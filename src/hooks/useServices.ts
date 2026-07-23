@@ -386,6 +386,7 @@ export function useChallenges(userId: string) {
 
       setChallenges(allChallenges);
       setActiveChallenges(active);
+      return active;
     } catch (err) {
       setError((err as Error).message);
     } finally {
