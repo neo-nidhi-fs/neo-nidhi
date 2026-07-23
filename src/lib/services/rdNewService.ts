@@ -61,7 +61,9 @@ export class RDNewService {
     return this.httpClient.get<IRDScheme[]>('/api/admin/rd-schemes');
   }
 
-  async createScheme(data: ICreateSchemeRequest): Promise<IApiResponse<IRDScheme>> {
+  async createScheme(
+    data: ICreateSchemeRequest
+  ): Promise<IApiResponse<IRDScheme>> {
     if (!data.name?.trim()) {
       return { success: false, error: 'Scheme name is required' };
     }
@@ -72,7 +74,10 @@ export class RDNewService {
       return { success: false, error: 'Tenure must be at least 1 month' };
     }
     if (data.minMonthlyAmount < 1) {
-      return { success: false, error: 'Minimum monthly amount must be at least 1' };
+      return {
+        success: false,
+        error: 'Minimum monthly amount must be at least 1',
+      };
     }
     return this.httpClient.post<IRDScheme>('/api/admin/rd-schemes', data);
   }
@@ -81,22 +86,30 @@ export class RDNewService {
     schemeId: string,
     data: Partial<ICreateSchemeRequest>
   ): Promise<IApiResponse<IRDScheme>> {
-    return this.httpClient.put<IRDScheme>(`/api/admin/rd-schemes/${schemeId}`, data);
+    return this.httpClient.put<IRDScheme>(
+      `/api/admin/rd-schemes/${schemeId}`,
+      data
+    );
   }
 
   async deleteScheme(schemeId: string): Promise<IApiResponse<void>> {
     // Use a raw fetch for DELETE since httpClient doesn't expose delete
     try {
-      const res = await fetch(`/api/admin/rd-schemes/${schemeId}`, { method: 'DELETE' });
+      const res = await fetch(`/api/admin/rd-schemes/${schemeId}`, {
+        method: 'DELETE',
+      });
       const result = await res.json();
-      if (!res.ok) return { success: false, error: result.error || 'Delete failed' };
+      if (!res.ok)
+        return { success: false, error: result.error || 'Delete failed' };
       return { success: true, message: result.message };
     } catch (err) {
       return { success: false, error: (err as Error).message };
     }
   }
 
-  async fetchSubscriptions(userId?: string): Promise<IApiResponse<IRDSubscription[]>> {
+  async fetchSubscriptions(
+    userId?: string
+  ): Promise<IApiResponse<IRDSubscription[]>> {
     const qs = userId ? `?userId=${encodeURIComponent(userId)}` : '';
     return this.httpClient.get<IRDSubscription[]>(`/api/rd-subscriptions${qs}`);
   }
@@ -116,10 +129,30 @@ export class RDNewService {
     return this.httpClient.post<IRDSubscription>('/api/rd-subscriptions', data);
   }
 
-  async closeSubscription(subscriptionId: string): Promise<IApiResponse<{ maturityAmount: number; newSavingsBalance: number }>> {
-    return this.httpClient.post<{ maturityAmount: number; newSavingsBalance: number }>(
-      `/api/rd-subscriptions/${subscriptionId}/close`,
-      {}
-    );
+  async closeSubscription(
+    subscriptionId: string
+  ): Promise<
+    IApiResponse<{ maturityAmount: number; newSavingsBalance: number }>
+  > {
+    return this.httpClient.post<{
+      maturityAmount: number;
+      newSavingsBalance: number;
+    }>(`/api/rd-subscriptions/${subscriptionId}/close`, {});
+  }
+
+  async deleteSubscription(
+    subscriptionId: string
+  ): Promise<IApiResponse<void>> {
+    try {
+      const res = await fetch(`/api/rd-subscriptions/${subscriptionId}`, {
+        method: 'DELETE',
+      });
+      const result = await res.json();
+      if (!res.ok)
+        return { success: false, error: result.error || 'Delete failed' };
+      return { success: true, message: result.message };
+    } catch (err) {
+      return { success: false, error: (err as Error).message };
+    }
   }
 }
