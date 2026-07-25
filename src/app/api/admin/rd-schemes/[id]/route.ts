@@ -18,7 +18,8 @@ export async function PUT(
 
     const updates: Record<string, unknown> = {};
     if (body.name !== undefined) updates.name = String(body.name).trim();
-    if (body.description !== undefined) updates.description = String(body.description).trim();
+    if (body.description !== undefined)
+      updates.description = String(body.description).trim();
     if (body.interestRate !== undefined) {
       const r = Number(body.interestRate);
       if (Number.isNaN(r) || r < 0) {
@@ -50,9 +51,14 @@ export async function PUT(
       updates.minMonthlyAmount = m;
     }
     if (body.maxMonthlyAmount !== undefined) {
-      updates.maxMonthlyAmount = body.maxMonthlyAmount != null ? Number(body.maxMonthlyAmount) : null;
+      updates.maxMonthlyAmount =
+        body.maxMonthlyAmount != null ? Number(body.maxMonthlyAmount) : null;
     }
     if (body.isActive !== undefined) updates.isActive = Boolean(body.isActive);
+    if (body.allowAutoDebit !== undefined)
+      updates.allowAutoDebit = Boolean(body.allowAutoDebit);
+    if (body.allowOneTimeInvestment !== undefined)
+      updates.allowOneTimeInvestment = Boolean(body.allowOneTimeInvestment);
 
     const scheme = await RDScheme.findByIdAndUpdate(id, updates, { new: true });
     if (!scheme) {
@@ -62,7 +68,11 @@ export async function PUT(
       );
     }
 
-    return NextResponse.json({ success: true, data: scheme, message: 'Scheme updated' });
+    return NextResponse.json({
+      success: true,
+      data: scheme,
+      message: 'Scheme updated',
+    });
   } catch (err: unknown) {
     if (err && typeof err === 'object' && 'code' in err && err.code === 11000) {
       return NextResponse.json(
@@ -95,7 +105,10 @@ export async function DELETE(
     });
     if (activeCount > 0) {
       return NextResponse.json(
-        { success: false, error: `Cannot delete: ${activeCount} active subscription(s) reference this scheme` },
+        {
+          success: false,
+          error: `Cannot delete: ${activeCount} active subscription(s) reference this scheme`,
+        },
         { status: 409 }
       );
     }
