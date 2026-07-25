@@ -10,6 +10,8 @@ export interface IRDScheme {
   minMonthlyAmount: number;
   maxMonthlyAmount?: number | null;
   isActive: boolean;
+  allowAutoDebit: boolean;
+  allowOneTimeInvestment: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -18,8 +20,12 @@ export interface IRDSubscription {
   _id: string;
   userId: string;
   schemeId: IRDScheme | string;
+  investmentType: 'sip' | 'one-time';
+  debitFrequency: 'daily' | 'weekly' | 'monthly';
   monthlyAmount: number;
   mandateDay: number;
+  mandateDayOfWeek: number | null;
+  totalInstallments: number;
   startDate: string;
   nextDebitDate: string;
   maturityDate: string;
@@ -45,13 +51,18 @@ export interface ICreateSchemeRequest {
   minMonthlyAmount: number;
   maxMonthlyAmount?: number | null;
   isActive?: boolean;
+  allowAutoDebit?: boolean;
+  allowOneTimeInvestment?: boolean;
 }
 
 export interface ICreateSubscriptionRequest {
   userId: string;
   schemeId: string;
+  investmentType?: 'sip' | 'one-time';
+  debitFrequency?: 'daily' | 'weekly' | 'monthly';
   monthlyAmount: number;
   mandateDay: number;
+  mandateDayOfWeek?: number | null;
 }
 
 export class RDNewService {
@@ -81,7 +92,6 @@ export class RDNewService {
     }
     return this.httpClient.post<IRDScheme>('/api/admin/rd-schemes', data);
   }
-
   async updateScheme(
     schemeId: string,
     data: Partial<ICreateSchemeRequest>
@@ -123,8 +133,13 @@ export class RDNewService {
     if (data.monthlyAmount < 1) {
       return { success: false, error: 'Monthly amount must be at least 1' };
     }
-    if (data.mandateDay < 1 || data.mandateDay > 28) {
-      return { success: false, error: 'Mandate day must be between 1 and 28' };
+    const investmentType = data.investmentType ?? 'sip';
+    const debitFrequency = data.debitFrequency ?? 'monthly';
+    // For SIP monthly/weekly, validate mandateDay
+    if (investmentType === 'sip' && debitFrequency === 'monthly') {
+      if (data.mandateDay < 1 || data.mandateDay > 28) {
+        return { success: false, error: 'Mandate day must be between 1 and 28' };
+      }
     }
     return this.httpClient.post<IRDSubscription>('/api/rd-subscriptions', data);
   }
