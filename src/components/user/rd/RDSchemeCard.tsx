@@ -36,6 +36,18 @@ export default function RDSchemeCard({ scheme, userId, onSubscribe }: Props) {
                 {scheme.description}
               </p>
             )}
+            <div className="flex gap-1.5 mt-1.5 flex-wrap">
+              {scheme.allowAutoDebit && (
+                <span className="bg-blue-500/20 text-blue-400 text-xs font-medium px-2 py-0.5 rounded-full">
+                  SIP
+                </span>
+              )}
+              {scheme.allowOneTimeInvestment && (
+                <span className="bg-purple-500/20 text-purple-400 text-xs font-medium px-2 py-0.5 rounded-full">
+                  One-Time
+                </span>
+              )}
+            </div>
           </div>
           <span className="bg-green-500/20 text-green-400 text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap">
             {scheme.interestRate}% p.a.
@@ -71,7 +83,11 @@ export default function RDSchemeCard({ scheme, userId, onSubscribe }: Props) {
           onClick={() => setOpen(true)}
           className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg py-2 transition-colors"
         >
-          Subscribe
+          {scheme.allowAutoDebit && scheme.allowOneTimeInvestment
+            ? 'Invest / Subscribe'
+            : scheme.allowOneTimeInvestment
+              ? 'Invest Now'
+              : 'Start SIP'}
         </button>
       </div>
 
