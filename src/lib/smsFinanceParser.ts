@@ -176,6 +176,16 @@ function detectPaymentSource(text: string): PaymentSource {
   return PaymentSource.Account;
 }
 
+function isMessageANotification(text: string): boolean {
+  const lower = text.toLowerCase();
+  return (
+    lower.includes('convert your outstanding') ||
+    lower.includes('option to convert') ||
+    lower.includes('convert') ||
+    lower.includes('outstanding dues')
+  );
+}
+
 function isMessageLikelyPromotional(text: string): boolean {
   const lower = text.toLowerCase();
   return (
@@ -231,6 +241,7 @@ export function parseFinanceSms(
   }
   if (isMessageLikelyPromotional(normalized)) return null;
   if (isFastagExpense(normalized)) return null;
+  if (isMessageANotification(normalized)) return null;
   // Ignore reminder messages (e.g., bill due reminders)
   if (/is\s+due\s+on/i.test(normalized)) return null;
   const senderText = String(sender || '').trim();

@@ -203,7 +203,7 @@ export default function UserDashboard() {
       );
       setSmsPermissionStatus('error');
     }
-  }, [session]);
+  }, []);
 
   // Initialize user after auth status resolves (session can arrive after mount).
   useEffect(() => {
