@@ -1,7 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import type { IRDScheme, ICreateSchemeRequest } from '@/lib/services/rdNewService';
+import type {
+  IRDScheme,
+  ICreateSchemeRequest,
+} from '@/lib/services/rdNewService';
 import {
   Dialog,
   DialogContent,
@@ -16,16 +19,33 @@ interface Props {
   initial?: IRDScheme | null;
 }
 
-export default function RDSchemeDialog({ open, onClose, onSave, initial }: Props) {
+export default function RDSchemeDialog({
+  open,
+  onClose,
+  onSave,
+  initial,
+}: Props) {
   const [name, setName] = useState(initial?.name ?? '');
   const [description, setDescription] = useState(initial?.description ?? '');
-  const [interestRate, setInterestRate] = useState(String(initial?.interestRate ?? ''));
-  const [tenureMonths, setTenureMonths] = useState(String(initial?.tenureMonths ?? ''));
-  const [minMonthlyAmount, setMinMonthlyAmount] = useState(String(initial?.minMonthlyAmount ?? ''));
+  const [interestRate, setInterestRate] = useState(
+    String(initial?.interestRate ?? '')
+  );
+  const [tenureMonths, setTenureMonths] = useState(
+    String(initial?.tenureMonths ?? '')
+  );
+  const [minMonthlyAmount, setMinMonthlyAmount] = useState(
+    String(initial?.minMonthlyAmount ?? '')
+  );
   const [maxMonthlyAmount, setMaxMonthlyAmount] = useState(
     initial?.maxMonthlyAmount != null ? String(initial.maxMonthlyAmount) : ''
   );
   const [isActive, setIsActive] = useState(initial?.isActive ?? true);
+  const [allowAutoDebit, setAllowAutoDebit] = useState(
+    initial?.allowAutoDebit !== false
+  );
+  const [allowOneTimeInvestment, setAllowOneTimeInvestment] = useState(
+    initial?.allowOneTimeInvestment ?? false
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -39,8 +59,11 @@ export default function RDSchemeDialog({ open, onClose, onSave, initial }: Props
       interestRate: Number(interestRate),
       tenureMonths: Number(tenureMonths),
       minMonthlyAmount: Number(minMonthlyAmount),
-      maxMonthlyAmount: maxMonthlyAmount !== '' ? Number(maxMonthlyAmount) : null,
+      maxMonthlyAmount:
+        maxMonthlyAmount !== '' ? Number(maxMonthlyAmount) : null,
       isActive,
+      allowAutoDebit,
+      allowOneTimeInvestment,
     });
     setSaving(false);
     if (ok) {
@@ -65,7 +88,9 @@ export default function RDSchemeDialog({ open, onClose, onSave, initial }: Props
           {error && <p className="text-red-400 text-sm">{error}</p>}
 
           <div>
-            <label className="block text-sm text-gray-300 mb-1">Scheme Name *</label>
+            <label className="block text-sm text-gray-300 mb-1">
+              Scheme Name *
+            </label>
             <input
               className={inputCls}
               value={name}
@@ -76,7 +101,9 @@ export default function RDSchemeDialog({ open, onClose, onSave, initial }: Props
           </div>
 
           <div>
-            <label className="block text-sm text-gray-300 mb-1">Description</label>
+            <label className="block text-sm text-gray-300 mb-1">
+              Description
+            </label>
             <input
               className={inputCls}
               value={description}
@@ -87,7 +114,9 @@ export default function RDSchemeDialog({ open, onClose, onSave, initial }: Props
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm text-gray-300 mb-1">Interest Rate (% p.a.) *</label>
+              <label className="block text-sm text-gray-300 mb-1">
+                Interest Rate (% p.a.) *
+              </label>
               <input
                 className={inputCls}
                 type="number"
@@ -100,7 +129,9 @@ export default function RDSchemeDialog({ open, onClose, onSave, initial }: Props
               />
             </div>
             <div>
-              <label className="block text-sm text-gray-300 mb-1">Tenure (months) *</label>
+              <label className="block text-sm text-gray-300 mb-1">
+                Tenure (months) *
+              </label>
               <input
                 className={inputCls}
                 type="number"
@@ -116,7 +147,9 @@ export default function RDSchemeDialog({ open, onClose, onSave, initial }: Props
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm text-gray-300 mb-1">Min Monthly Amount (₹) *</label>
+              <label className="block text-sm text-gray-300 mb-1">
+                Min Monthly Amount (₹) *
+              </label>
               <input
                 className={inputCls}
                 type="number"
@@ -129,7 +162,9 @@ export default function RDSchemeDialog({ open, onClose, onSave, initial }: Props
               />
             </div>
             <div>
-              <label className="block text-sm text-gray-300 mb-1">Max Monthly Amount (₹)</label>
+              <label className="block text-sm text-gray-300 mb-1">
+                Max Monthly Amount (₹)
+              </label>
               <input
                 className={inputCls}
                 type="number"
@@ -150,7 +185,39 @@ export default function RDSchemeDialog({ open, onClose, onSave, initial }: Props
               onChange={(e) => setIsActive(e.target.checked)}
               className="w-4 h-4"
             />
-            <label htmlFor="isActive" className="text-sm text-gray-300">Active (visible to users)</label>
+            <label htmlFor="isActive" className="text-sm text-gray-300">
+              Active (visible to users)
+            </label>
+          </div>
+
+          <div className="border border-slate-600 rounded-lg p-3 space-y-2">
+            <p className="text-xs text-gray-400 font-medium uppercase tracking-wide">Investment Options</p>
+            <div className="flex items-center gap-2">
+              <input
+                id="allowAutoDebit"
+                type="checkbox"
+                checked={allowAutoDebit}
+                onChange={(e) => setAllowAutoDebit(e.target.checked)}
+                className="w-4 h-4"
+              />
+              <label htmlFor="allowAutoDebit" className="text-sm text-gray-300">
+                Allow Auto Debit / SIP
+                <span className="text-gray-500 ml-1 text-xs">(daily, weekly or monthly recurring)</span>
+              </label>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                id="allowOneTimeInvestment"
+                type="checkbox"
+                checked={allowOneTimeInvestment}
+                onChange={(e) => setAllowOneTimeInvestment(e.target.checked)}
+                className="w-4 h-4"
+              />
+              <label htmlFor="allowOneTimeInvestment" className="text-sm text-gray-300">
+                Allow One-Time Investment
+                <span className="text-gray-500 ml-1 text-xs">(lump-sum, debited immediately)</span>
+              </label>
+            </div>
           </div>
 
           <div className="flex gap-3 pt-2">
