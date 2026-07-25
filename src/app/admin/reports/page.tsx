@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect } from 'react';
 import { LazyHighchartsChart } from '@/components/charts/LazyHighchartsChart';
@@ -72,7 +72,7 @@ export default function AdminReports() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-slate-950 via-blue-950 to-slate-950">
+      <div className="flex items-center justify-center min-h-screen bg-linear-to-b from-slate-950 via-blue-950 to-slate-950">
         <Loader className="w-8 h-8 animate-spin text-blue-400" />
       </div>
     );
@@ -80,7 +80,7 @@ export default function AdminReports() {
 
   if (!reportData) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-slate-950 via-blue-950 to-slate-950">
+      <div className="flex items-center justify-center min-h-screen bg-linear-to-b from-slate-950 via-blue-950 to-slate-950">
         <p className="text-red-400">Failed to load reports data</p>
       </div>
     );
@@ -131,7 +131,14 @@ export default function AdminReports() {
       textColor: 'text-red-400',
     },
   ];
-
+  const seriesData = [
+    reportData.metrics.totalAccruedSavingInterest.toFixed(2),
+    reportData.metrics.totalAccruedFdInterest.toFixed(2),
+    reportData.metrics.totalAccruedLoanInterest.toFixed(2),
+  ];
+  //seriesData is a string array, we need to convert it to number array for Highcharts
+  const seriesDataNumbers = seriesData.map((value) => parseFloat(value));
+  console.log('seriesData:', seriesData); // Debugging line to check the structure of reportData
   // 2. Interest Analysis Chart
   const interestChartOptions = {
     chart: { type: 'column', backgroundColor: 'transparent' },
@@ -147,11 +154,7 @@ export default function AdminReports() {
     series: [
       {
         name: 'Total Accrued Interest',
-        data: [
-          reportData.metrics.totalAccruedSavingInterest.toFixed(2),
-          reportData.metrics.totalAccruedFdInterest.toFixed(2),
-          reportData.metrics.totalAccruedLoanInterest.toFixed(2),
-        ],
+        data: seriesDataNumbers,
       },
     ],
     plotOptions: {
@@ -318,12 +321,12 @@ export default function AdminReports() {
   };
 
   return (
-    <main className="bg-gradient-to-b from-slate-950 via-blue-950 to-slate-950 text-white min-h-screen py-12 px-6">
+    <main className="bg-linear-to-b from-slate-950 via-blue-950 to-slate-950 text-white min-h-screen py-12 px-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-12">
           <h1 className="text-5xl font-black mb-2">
-            <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+            <span className="bg-linear-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
               Reports & Analytics
             </span>
           </h1>
@@ -337,7 +340,7 @@ export default function AdminReports() {
           {metricsCards.map((card, idx) => (
             <Card
               key={idx}
-              className={`bg-gradient-to-br ${card.bgGradient} border-2 ${card.borderColor}`}
+              className={`bg-linear-to-br ${card.bgGradient} border-2 ${card.borderColor}`}
             >
               <CardHeader className="pb-3">
                 <CardTitle className={`text-lg ${card.textColor}`}>
@@ -356,7 +359,7 @@ export default function AdminReports() {
           <>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
               {/* Interest Analysis */}
-              <Card className="bg-gradient-to-br from-gray-900/50 to-slate-900/50 border-gray-700/30">
+              <Card className="bg-linear-to-br from-gray-900/50 to-slate-900/50 border-gray-700/30">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg text-gray-200 flex items-center gap-2">
                     <TrendingUp size={20} className="text-cyan-400" />
@@ -369,7 +372,7 @@ export default function AdminReports() {
               </Card>
 
               {/* Transaction Types Distribution */}
-              <Card className="bg-gradient-to-br from-gray-900/50 to-slate-900/50 border-gray-700/30">
+              <Card className="bg-linear-to-br from-gray-900/50 to-slate-900/50 border-gray-700/30">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg text-gray-200 flex items-center gap-2">
                     <PieChart size={20} className="text-purple-400" />
@@ -382,7 +385,7 @@ export default function AdminReports() {
               </Card>
 
               {/* Scheme Distribution */}
-              <Card className="bg-gradient-to-br from-gray-900/50 to-slate-900/50 border-gray-700/30">
+              <Card className="bg-linear-to-br from-gray-900/50 to-slate-900/50 border-gray-700/30">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg text-gray-200 flex items-center gap-2">
                     <BarChart3 size={20} className="text-amber-400" />
@@ -395,7 +398,7 @@ export default function AdminReports() {
               </Card>
 
               {/* User Balance Distribution */}
-              <Card className="bg-gradient-to-br from-gray-900/50 to-slate-900/50 border-gray-700/30">
+              <Card className="bg-linear-to-br from-gray-900/50 to-slate-900/50 border-gray-700/30">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg text-gray-200 flex items-center gap-2">
                     <UsersIcon size={20} className="text-green-400" />
@@ -410,7 +413,7 @@ export default function AdminReports() {
 
             <div className="grid grid-cols-1 gap-6">
               {/* Monthly Transaction Trends */}
-              <Card className="bg-gradient-to-br from-gray-900/50 to-slate-900/50 border-gray-700/30">
+              <Card className="bg-linear-to-br from-gray-900/50 to-slate-900/50 border-gray-700/30">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg text-gray-200 flex items-center gap-2">
                     <TrendingUp size={20} className="text-blue-400" />
@@ -423,7 +426,7 @@ export default function AdminReports() {
               </Card>
 
               {/* Transaction Amount by Type */}
-              <Card className="bg-gradient-to-br from-gray-900/50 to-slate-900/50 border-gray-700/30">
+              <Card className="bg-linear-to-br from-gray-900/50 to-slate-900/50 border-gray-700/30">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg text-gray-200 flex items-center gap-2">
                     <BarChart3 size={20} className="text-red-400" />
@@ -441,5 +444,3 @@ export default function AdminReports() {
     </main>
   );
 }
-
-
