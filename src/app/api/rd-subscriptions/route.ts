@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/authOptions';
 import { dbConnect } from '@/lib/dbConnect';
 import { RDScheme } from '@/models/RDScheme';
 import { RDSubscription } from '@/models/RDSubscription';
+import { Transaction } from '@/models/Transaction';
 import { requireAdminLikeAccess, canManageUser } from '@/lib/adminAccess';
 import { isFeatureEnabled } from '@/lib/userFeatures';
 import { User } from '@/models/User';
@@ -20,6 +21,16 @@ function nextMandateDayAfter(fromDate: Date, mandateDay: number): Date {
   return d;
 }
 
+/** Returns the next occurrence of `dayOfWeek` (0=Sun…6=Sat) strictly after `fromDate`. */
+function nextWeekdayAfter(fromDate: Date, dayOfWeek: number): Date {
+  const d = new Date(fromDate);
+  d.setDate(d.getDate() + 1); // at least tomorrow
+  while (d.getDay() !== dayOfWeek) {
+    d.setDate(d.getDate() + 1);
+  }
+  return d;
+}
+
 function addMonthsSameDay(
   date: Date,
   months: number,
@@ -29,6 +40,20 @@ function addMonthsSameDay(
   d.setMonth(d.getMonth() + months);
   d.setDate(mandateDay);
   return d;
+}
+
+/** Compute total installments based on frequency and tenure. */
+function computeTotalInstallments(
+  debitFrequency: string,
+  tenureMonths: number
+): number {
+  if (debitFrequency === 'daily') {
+    return Math.round(tenureMonths * 365 / 12);
+  }
+  if (debitFrequency === 'weekly') {
+    return Math.round(tenureMonths * 52 / 12);
+  }
+  return tenureMonths; // monthly
 }
 
 export async function GET(req: Request) {
@@ -111,21 +136,45 @@ export async function POST(req: Request) {
     const targetUserId = String(body.userId || '').trim();
     const schemeId = String(body.schemeId || '').trim();
     const monthlyAmount = Number(body.monthlyAmount);
-    const mandateDay = Number(body.mandateDay);
+    const investmentType: 'sip' | 'one-time' =
+      body.investmentType === 'one-time' ? 'one-time' : 'sip';
+    const debitFrequency: 'daily' | 'weekly' | 'monthly' =
+      ['daily', 'weekly', 'monthly'].includes(body.debitFrequency)
+        ? body.debitFrequency
+        : 'monthly';
+    const mandateDay = Number(body.mandateDay) || 1;
+    const mandateDayOfWeek =
+      body.mandateDayOfWeek != null ? Number(body.mandateDayOfWeek) : null;
 
+    if (!targetUserId || !schemeId || Number.isNaN(monthlyAmount) || monthlyAmount < 1) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid subscription parameters.' },
+        { status: 400 }
+      );
+    }
+
+    // Validate mandate day for monthly SIP
     if (
-      !targetUserId ||
-      !schemeId ||
-      Number.isNaN(monthlyAmount) ||
-      monthlyAmount < 1 ||
-      !Number.isInteger(mandateDay) ||
-      mandateDay < 1 ||
-      mandateDay > 28
+      investmentType === 'sip' &&
+      debitFrequency === 'monthly' &&
+      (!Number.isInteger(mandateDay) || mandateDay < 1 || mandateDay > 28)
+    ) {
+      return NextResponse.json(
+        { success: false, error: 'mandateDay must be 1–28 for monthly SIP.' },
+        { status: 400 }
+      );
+    }
+
+    // Validate day-of-week for weekly SIP
+    if (
+      investmentType === 'sip' &&
+      debitFrequency === 'weekly' &&
+      (mandateDayOfWeek === null || mandateDayOfWeek < 0 || mandateDayOfWeek > 6)
     ) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Invalid subscription parameters. mandateDay must be 1–28.',
+          error: 'mandateDayOfWeek must be 0–6 for weekly SIP.',
         },
         { status: 400 }
       );
@@ -165,6 +214,20 @@ export async function POST(req: Request) {
       );
     }
 
+    // Validate investment type is enabled on the scheme
+    if (investmentType === 'one-time' && !scheme.allowOneTimeInvestment) {
+      return NextResponse.json(
+        { success: false, error: 'One-time investment is not available for this scheme' },
+        { status: 400 }
+      );
+    }
+    if (investmentType === 'sip' && !scheme.allowAutoDebit) {
+      return NextResponse.json(
+        { success: false, error: 'Auto debit / SIP is not available for this scheme' },
+        { status: 400 }
+      );
+    }
+
     // Feature flag check — only enforced for self-subscribe; admin can subscribe any user
     if (isSelf && !isFeatureEnabled(user, 'rdNewEnabled')) {
       return NextResponse.json(
@@ -200,18 +263,97 @@ export async function POST(req: Request) {
     }
 
     const now = new Date();
-    const nextDebitDate = nextMandateDayAfter(now, mandateDay);
-    const maturityDate = addMonthsSameDay(
-      nextDebitDate,
-      scheme.tenureMonths - 1,
-      mandateDay
-    );
+
+    // Compute maturity date (always based on tenure months from now)
+    const maturityDate = new Date(now);
+    maturityDate.setMonth(maturityDate.getMonth() + scheme.tenureMonths);
+
+    let nextDebitDate: Date;
+    let totalInstallments: number;
+
+    if (investmentType === 'one-time') {
+      // Immediately fund; nextDebitDate = maturityDate so cron pays out at maturity
+      nextDebitDate = new Date(maturityDate);
+      totalInstallments = 1;
+
+      // Validate balance for immediate debit
+      if (user.savingsBalance < monthlyAmount) {
+        return NextResponse.json(
+          { success: false, error: 'Insufficient savings balance for one-time investment' },
+          { status: 400 }
+        );
+      }
+
+      // Immediately debit the amount
+      await User.findByIdAndUpdate(targetUserId, {
+        $inc: { savingsBalance: -monthlyAmount },
+      });
+
+      const subscription = await RDSubscription.create({
+        userId: targetUserId,
+        schemeId,
+        investmentType: 'one-time',
+        debitFrequency: 'monthly', // irrelevant for one-time
+        monthlyAmount,
+        mandateDay: 1,
+        mandateDayOfWeek: null,
+        totalInstallments: 1,
+        startDate: now,
+        nextDebitDate,
+        maturityDate,
+        installmentsPaid: 1,
+        totalDebited: monthlyAmount,
+        accruedInterest: 0,
+        status: 'active',
+        missedInstallments: 0,
+        lastDebitDate: now,
+      });
+
+      await Transaction.create({
+        userId: targetUserId,
+        type: 'rd_new',
+        amount: monthlyAmount,
+        date: now,
+        metadata: {
+          subscriptionId: subscription._id.toString(),
+          schemeId: schemeId,
+          installmentNumber: 1,
+          totalInstallments: 1,
+          totalDebited: monthlyAmount,
+          accruedInterest: 0,
+          investmentType: 'one-time',
+        },
+      });
+
+      return NextResponse.json(
+        { success: true, data: subscription, message: 'One-time investment created' },
+        { status: 201 }
+      );
+    }
+
+    // SIP subscription
+    if (debitFrequency === 'daily') {
+      nextDebitDate = new Date(now);
+      nextDebitDate.setDate(nextDebitDate.getDate() + 1);
+      totalInstallments = computeTotalInstallments('daily', scheme.tenureMonths);
+    } else if (debitFrequency === 'weekly') {
+      nextDebitDate = nextWeekdayAfter(now, mandateDayOfWeek ?? 1);
+      totalInstallments = computeTotalInstallments('weekly', scheme.tenureMonths);
+    } else {
+      // monthly
+      nextDebitDate = nextMandateDayAfter(now, mandateDay);
+      totalInstallments = scheme.tenureMonths;
+    }
 
     const subscription = await RDSubscription.create({
       userId: targetUserId,
       schemeId,
+      investmentType: 'sip',
+      debitFrequency,
       monthlyAmount,
       mandateDay,
+      mandateDayOfWeek: debitFrequency === 'weekly' ? (mandateDayOfWeek ?? 1) : null,
+      totalInstallments,
       startDate: now,
       nextDebitDate,
       maturityDate,
