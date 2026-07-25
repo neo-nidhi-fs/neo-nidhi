@@ -9,6 +9,8 @@ export interface IRDScheme extends Document {
   minMonthlyAmount: number;
   maxMonthlyAmount?: number | null;
   isActive: boolean;
+  allowAutoDebit: boolean; // SIP / recurring debit enabled
+  allowOneTimeInvestment: boolean; // Lump-sum one-time investment enabled
   createdAt: Date;
   updatedAt: Date;
 }
@@ -22,6 +24,8 @@ const RDSchemeSchema: Schema<IRDScheme> = new Schema(
     minMonthlyAmount: { type: Number, required: true, min: 1 },
     maxMonthlyAmount: { type: Number, default: null, min: 1 },
     isActive: { type: Boolean, default: true },
+    allowAutoDebit: { type: Boolean, default: true },
+    allowOneTimeInvestment: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
