@@ -1,7 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Loader } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { DashboardStats } from '@/components/user/DashboardStats';
@@ -49,7 +49,6 @@ const QRCodeDisplay = dynamic(() => import('@/components/QRCodeDisplay'), {
   ),
 });
 import { useUser, useChallenges } from '@/hooks/useServices';
-import { useUserFinance } from '@/hooks/useUserFinance';
 import { getUserFeatures } from '@/lib/userFeatures';
 import { useAutoSmsFinanceSync } from '@/hooks/useAutoSmsFinanceSync';
 import { isNativeApp } from '@/lib/native';
@@ -97,9 +96,15 @@ export default function UserDashboard() {
     loading: challengeLoading,
   } = useChallenges(userId);
 
-  const { fetchAssets, fetchLiabilities, fetchCashFlows, fetchNetWorth } =
-    useUserFinance();
   useAutoSmsFinanceSync(financeFeatureEnabled);
+
+  // Refs so the callback can read latest values without being in its dep array
+  const resolvedUserRef = useRef(resolvedUser);
+  const activeChallengesRef = useRef(activeChallenges);
+  const creditScoreDataRef = useRef(creditScoreData);
+  resolvedUserRef.current = resolvedUser;
+  activeChallengesRef.current = activeChallenges;
+  creditScoreDataRef.current = creditScoreData;
 
   async function fetchUserData({ background = false } = {}) {
     if (background) setIsRefreshing(true);
@@ -125,7 +130,11 @@ export default function UserDashboard() {
       const userFeatures = getUserFeatures(currentUser);
       const financeEnabled = userFeatures.financeFeaturesEnabled;
 
-      let freshCreditScore: { score: number; rating: string; source: string } | null = null;
+      let freshCreditScore: {
+        score: number;
+        rating: string;
+        source: string;
+      } | null = null;
       if (userFeatures.creditScoreEnabled) {
         const creditScoreRes = await fetch('/api/user/credit-score');
         const creditScoreJson = await creditScoreRes.json();
@@ -136,8 +145,16 @@ export default function UserDashboard() {
 
       // Compare with current state to avoid unnecessary re-renders when background-refreshing
       if (background) {
-        const currentKey = JSON.stringify({ user: resolvedUser, activeChallenges, creditScoreData });
-        const freshKey = JSON.stringify({ user: currentUser, activeChallenges: challengesResult ?? activeChallenges, creditScoreData: freshCreditScore });
+        const currentKey = JSON.stringify({
+          user: resolvedUserRef.current,
+          activeChallenges: activeChallengesRef.current,
+          creditScoreData: creditScoreDataRef.current,
+        });
+        const freshKey = JSON.stringify({
+          user: currentUser,
+          activeChallenges: challengesResult ?? activeChallengesRef.current,
+          creditScoreData: freshCreditScore,
+        });
         if (currentKey !== freshKey) {
           setResolvedUser(currentUser);
           setCreditScoreData(freshCreditScore);
@@ -154,16 +171,9 @@ export default function UserDashboard() {
       // Persist fresh snapshot to cache
       saveCache({
         user: currentUser,
-        activeChallenges: challengesResult ?? activeChallenges,
+        activeChallenges: challengesResult ?? activeChallengesRef.current,
         creditScoreData: freshCreditScore,
       });
-
-      if (financeEnabled) {
-        await fetchNetWorth();
-        await fetchAssets();
-        await fetchLiabilities();
-        await fetchCashFlows();
-      }
     } catch (error) {
       console.error('Error fetching user data:', error);
     } finally {
@@ -176,14 +186,9 @@ export default function UserDashboard() {
     isAdminViewingAnotherUser,
     userId,
     fetchActiveChallenges,
-    fetchNetWorth,
-    fetchAssets,
-    fetchLiabilities,
-    fetchCashFlows,
     saveCache,
-    resolvedUser,
-    activeChallenges,
-    creditScoreData,
+    // resolvedUser/activeChallenges/creditScoreData intentionally omitted —
+    // read via refs above to prevent re-creating this callback on every fetch.
   ]);
 
   const handleRequestSmsPermission = useCallback(async () => {
@@ -193,7 +198,9 @@ export default function UserDashboard() {
       setSmsPermissionStatus(granted ? 'granted' : 'denied');
     } catch (error) {
       console.error('Failed to request SMS permission:', error);
-      setSmsPermissionError(error instanceof Error ? error.message : String(error));
+      setSmsPermissionError(
+        error instanceof Error ? error.message : String(error)
+      );
       setSmsPermissionStatus('error');
     }
   }, [session]);
@@ -254,7 +261,7 @@ export default function UserDashboard() {
   // Block full-page load only when there's no cached data to display yet
   if ((pageLoading || status === 'loading') && !resolvedUser) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-slate-950 via-blue-950 to-slate-950">
+      <div className="flex items-center justify-center min-h-screen bg-linear-to-b from-slate-950 via-blue-950 to-slate-950">
         <Loader className="w-8 h-8 text-cyan-400 animate-spin" />
       </div>
     );
@@ -264,7 +271,7 @@ export default function UserDashboard() {
 
   if (!displayUser || !userId) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-slate-950 via-blue-950 to-slate-950">
+      <div className="flex items-center justify-center min-h-screen bg-linear-to-b from-slate-950 via-blue-950 to-slate-950">
         <p className="text-gray-100">
           {status === 'authenticated'
             ? 'User not found or access denied'
@@ -282,9 +289,7 @@ export default function UserDashboard() {
           <h1 className="text-3xl font-bold text-white mb-2">Dashboard</h1>
           <p className="text-gray-200">
             Welcome back,{' '}
-            {isAdminViewingAnotherUser
-              ? displayUser?.name || 'User'
-              : userName}
+            {isAdminViewingAnotherUser ? displayUser?.name || 'User' : userName}
             !
           </p>
           {isAdminViewingAnotherUser && (
@@ -313,9 +318,12 @@ export default function UserDashboard() {
                 <span className="text-gray-300 text-sm pb-1">/ 900</span>
               </div>
               <p className="mt-2 text-gray-200">
-                Rating: <span className="font-semibold">{creditScoreData.rating}</span>
+                Rating:{' '}
+                <span className="font-semibold">{creditScoreData.rating}</span>
               </p>
-              <p className="mt-2 text-xs text-gray-400">{creditScoreData.source}</p>
+              <p className="mt-2 text-xs text-gray-400">
+                {creditScoreData.source}
+              </p>
             </div>
           </section>
         )}
@@ -369,4 +377,3 @@ export default function UserDashboard() {
     </main>
   );
 }
-
