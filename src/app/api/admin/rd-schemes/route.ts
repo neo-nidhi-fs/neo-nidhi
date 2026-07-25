@@ -32,9 +32,12 @@ export async function POST(req: Request) {
     const interestRate = Number(body.interestRate);
     const tenureMonths = Number(body.tenureMonths);
     const minMonthlyAmount = Number(body.minMonthlyAmount);
-    const maxMonthlyAmount = body.maxMonthlyAmount != null ? Number(body.maxMonthlyAmount) : null;
+    const maxMonthlyAmount =
+      body.maxMonthlyAmount != null ? Number(body.maxMonthlyAmount) : null;
     const description = String(body.description || '').trim();
     const isActive = body.isActive !== false;
+    const allowAutoDebit = body.allowAutoDebit !== false;
+    const allowOneTimeInvestment = body.allowOneTimeInvestment === true;
 
     if (
       !name ||
@@ -53,7 +56,10 @@ export async function POST(req: Request) {
 
     if (maxMonthlyAmount !== null && maxMonthlyAmount < minMonthlyAmount) {
       return NextResponse.json(
-        { success: false, error: 'maxMonthlyAmount must be >= minMonthlyAmount' },
+        {
+          success: false,
+          error: 'maxMonthlyAmount must be >= minMonthlyAmount',
+        },
         { status: 400 }
       );
     }
@@ -66,6 +72,8 @@ export async function POST(req: Request) {
       minMonthlyAmount,
       maxMonthlyAmount,
       isActive,
+      allowAutoDebit,
+      allowOneTimeInvestment,
     });
 
     return NextResponse.json(
