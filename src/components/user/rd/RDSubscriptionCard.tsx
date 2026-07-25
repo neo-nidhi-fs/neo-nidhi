@@ -42,11 +42,27 @@ function formatDate(d: string) {
   });
 }
 
+const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+function formatDebitSchedule(sub: IRDSubscription): string {
+  if (sub.investmentType === 'one-time') return 'One-time investment';
+  const freq = sub.debitFrequency ?? 'monthly';
+  if (freq === 'daily') return 'Every day';
+  if (freq === 'weekly') {
+    const day = sub.mandateDayOfWeek != null ? DAY_NAMES[sub.mandateDayOfWeek] : 'weekly';
+    return `Every ${day}`;
+  }
+  const d = sub.mandateDay;
+  const suffix = d === 1 ? 'st' : d === 2 ? 'nd' : d === 3 ? 'rd' : 'th';
+  return `${d}${suffix} of month`;
+}
+
 export default function RDSubscriptionCard({ subscription: sub }: Props) {
   const tenure = schemeTenure(sub);
+  const totalInst = sub.totalInstallments ?? tenure;
   const progress =
-    tenure && tenure > 0
-      ? Math.min((sub.installmentsPaid / tenure) * 100, 100)
+    totalInst && totalInst > 0
+      ? Math.min((sub.installmentsPaid / totalInst) * 100, 100)
       : 0;
 
   return (
@@ -70,11 +86,11 @@ export default function RDSubscriptionCard({ subscription: sub }: Props) {
       </div>
 
       {/* Progress bar */}
-      {tenure != null && (
+      {totalInst != null && (
         <div>
           <div className="flex justify-between text-xs text-gray-400 mb-1">
             <span>
-              {sub.installmentsPaid} of {tenure} installments
+              {sub.installmentsPaid} of {totalInst} installments
             </span>
             <span>{Math.round(progress)}%</span>
           </div>
@@ -89,15 +105,14 @@ export default function RDSubscriptionCard({ subscription: sub }: Props) {
 
       <div className="grid grid-cols-2 gap-2 text-sm">
         <div>
-          <p className="text-gray-400 text-xs">Monthly Amount</p>
-          <p className="text-white">₹{sub.monthlyAmount}</p>
+          <p className="text-gray-400 text-xs">
+            {sub.investmentType === 'one-time' ? 'Invested Amount' : 'SIP Amount'}
+          </p>
+          <p className="text-white">₹{sub.monthlyAmount.toLocaleString('en-IN')}</p>
         </div>
         <div>
-          <p className="text-gray-400 text-xs">Mandate Day</p>
-          <p className="text-white">
-            {sub.mandateDay}
-            {['st', 'nd', 'rd'][sub.mandateDay - 1] ?? 'th'} of month
-          </p>
+          <p className="text-gray-400 text-xs">Debit Schedule</p>
+          <p className="text-white text-xs">{formatDebitSchedule(sub)}</p>
         </div>
         <div>
           <p className="text-gray-400 text-xs">Total Deposited</p>
