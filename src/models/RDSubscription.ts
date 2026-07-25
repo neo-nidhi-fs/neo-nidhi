@@ -4,8 +4,12 @@ export interface IRDSubscription extends Document {
   _id: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
   schemeId: mongoose.Types.ObjectId;
-  monthlyAmount: number;
-  mandateDay: number; // 1–28, day of month for auto-debit
+  investmentType: 'sip' | 'one-time'; // SIP recurring or lump-sum one-time
+  debitFrequency: 'daily' | 'weekly' | 'monthly'; // for SIP type
+  monthlyAmount: number; // installment/SIP amount (or principal for one-time)
+  mandateDay: number; // 1–28, day of month (for monthly SIP)
+  mandateDayOfWeek: number | null; // 0–6 Sun–Sat (for weekly SIP)
+  totalInstallments: number; // total expected installments
   startDate: Date;
   nextDebitDate: Date;
   maturityDate: Date;
@@ -25,10 +29,32 @@ export interface IRDSubscription extends Document {
 
 const RDSubscriptionSchema: Schema<IRDSubscription> = new Schema(
   {
-    userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
-    schemeId: { type: Schema.Types.ObjectId, ref: 'RDScheme', required: true, index: true },
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+      index: true,
+    },
+    schemeId: {
+      type: Schema.Types.ObjectId,
+      ref: 'RDScheme',
+      required: true,
+      index: true,
+    },
+    investmentType: {
+      type: String,
+      enum: ['sip', 'one-time'],
+      default: 'sip',
+    },
+    debitFrequency: {
+      type: String,
+      enum: ['daily', 'weekly', 'monthly'],
+      default: 'monthly',
+    },
     monthlyAmount: { type: Number, required: true, min: 1 },
     mandateDay: { type: Number, required: true, min: 1, max: 28 },
+    mandateDayOfWeek: { type: Number, default: null, min: 0, max: 6 },
+    totalInstallments: { type: Number, required: true, min: 1 },
     startDate: { type: Date, required: true },
     nextDebitDate: { type: Date, required: true },
     maturityDate: { type: Date, required: true },
