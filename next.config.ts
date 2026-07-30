@@ -11,6 +11,11 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  webpack: (config) => {
+    // pdf-parse / pdfjs-dist use canvas as an optional peer dep; stub it out
+    config.resolve.alias['canvas'] = false;
+    return config;
+  },
 };
 
 export default nextConfig;
