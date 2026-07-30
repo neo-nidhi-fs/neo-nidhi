@@ -1,13 +1,14 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   CashFlow,
   ExpensePaymentSource,
   Liability,
 } from '@/hooks/useUserFinance';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '@/lib/financeCategories';
-import { X } from 'lucide-react';
+import { Upload, X } from 'lucide-react';
 
 interface CashFlowFormData {
   date: string;
@@ -91,6 +92,8 @@ export default function CashFlowForm({
     String(initialFormData.amount || '')
   );
 
+  const router = useRouter();
+
   const categories =
     formData.type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
 
@@ -125,7 +128,7 @@ export default function CashFlowForm({
       role="presentation"
     >
       <div
-        className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-lg shadow-xl max-w-md w-full border border-slate-700 backdrop-blur-sm overflow-auto max-h-[95vh]"
+        className="bg-linear-to-br from-slate-800/80 to-slate-900/80 rounded-lg shadow-xl max-w-md w-full border border-slate-700 backdrop-blur-sm overflow-auto max-h-[95vh]"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
@@ -136,9 +139,20 @@ export default function CashFlowForm({
           <h2 id="cashflow-form-title" className="text-xl font-bold text-white">
             {cashflow ? 'Edit Entry' : 'Add Income/Expense'}
           </h2>
-          <button onClick={onCancel} className="text-gray-300 hover:text-white">
-            <X size={24} />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => router.push('/user/personal-finance/import-statement')}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-blue-300 hover:text-white hover:bg-blue-600 rounded-md transition-colors"
+              title="Import transactions from a bank statement"
+            >
+              <Upload size={14} />
+              Import Statement
+            </button>
+            <button onClick={onCancel} className="text-gray-300 hover:text-white">
+              <X size={24} />
+            </button>
+          </div>
         </div>
 
         {/* Form */}
