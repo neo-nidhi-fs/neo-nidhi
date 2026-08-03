@@ -92,15 +92,19 @@ function escapeForRegex(text: string): string {
 
 function extractSourceName(text: string): string | null {
   const normalized = text.replace(/\r/g, '');
+  // First priority: Extract VPA username
+  const vpaMatch = normalized.match(/\bfrom\s+VPA\s+([A-Za-z0-9._-]+)@/i);
+  if (vpaMatch?.[1]) {
+    return vpaMatch[1];
+  }
   const lines = normalized.split('\n').map((line) => line.trim());
 
   for (const line of lines) {
-    const match = line.match(/\b(?:at|to)\s+(.+)/i);
+    const match = line.match(/\b(?:at|to|from)\s+(.+)/i);
     if (!match?.[1]) continue;
 
     let source = match[1].trim().replace(/[.,;:]+$/g, '');
     source = source.replace(/\s+on\s+.*$/i, '').trim();
-    if (!source || /^(?:a\/c|account|your|from)\b/i.test(source)) continue;
     return source;
   }
 
@@ -135,7 +139,12 @@ function detectCategory(text: string, type: FinanceTransactionType): string {
       ? 'UPI Credit'
       : 'UPI Payment';
   if (lower.includes('atm')) return 'ATM';
-  if (lower.includes('lulu') || lower.includes('amazon')) return 'Shopping';
+  if (
+    lower.includes('lulu') ||
+    lower.includes('amazon') ||
+    lower.includes('meesho')
+  )
+    return type === FinanceTransactionType.Income ? 'refund' : 'Shopping';
   if (lower.includes('imps'))
     return type === FinanceTransactionType.Income
       ? 'Other Income'
@@ -182,6 +191,7 @@ function isMessageANotification(text: string): boolean {
     lower.includes('convert your outstanding') ||
     lower.includes('option to convert') ||
     lower.includes('convert') ||
+    lower.includes('Mandate') ||
     lower.includes('outstanding dues')
   );
 }

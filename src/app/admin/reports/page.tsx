@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { LazyHighchartsChart } from '@/components/charts/LazyHighchartsChart';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import {
@@ -29,6 +29,11 @@ interface ReportData {
   transactionsByTypeAmount: {
     [key: string]: number;
   };
+  transactions: Array<{
+    amount: number;
+    date: string;
+    type: string;
+  }>;
   schemeWiseDistribution: Array<{
     scheme: string;
     count: number;
@@ -41,10 +46,69 @@ interface ReportData {
   };
 }
 
+function getWeekStart(date: Date) {
+  const start = new Date(date);
+  const offset = (start.getDay() + 6) % 7;
+  start.setDate(start.getDate() - offset);
+  start.setHours(0, 0, 0, 0);
+  return start;
+}
+
+function getPeriodRange(mode: 'weekly' | 'monthly' | 'yearly', offset: number) {
+  const now = new Date();
+  const reference = new Date(now);
+
+  if (mode === 'weekly') {
+    reference.setDate(reference.getDate() + offset * 7);
+    const start = getWeekStart(reference);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    end.setHours(23, 59, 59, 999);
+    const startLabel = start.toLocaleDateString('en-IN', {
+      month: 'short',
+      day: 'numeric',
+    });
+    const endLabel = end.toLocaleDateString('en-IN', {
+      month: 'short',
+      day: 'numeric',
+    });
+    return {
+      start,
+      end,
+      title: `Week of ${startLabel} - ${endLabel}`,
+    };
+  }
+
+  if (mode === 'monthly') {
+    reference.setMonth(reference.getMonth() + offset);
+    const start = new Date(reference.getFullYear(), reference.getMonth(), 1);
+    const end = new Date(reference.getFullYear(), reference.getMonth() + 1, 0);
+    end.setHours(23, 59, 59, 999);
+    return {
+      start,
+      end,
+      title: reference.toLocaleDateString('en-IN', {
+        month: 'long',
+        year: 'numeric',
+      }),
+    };
+  }
+
+  const year = reference.getFullYear() + offset;
+  const start = new Date(year, 0, 1);
+  const end = new Date(year, 11, 31);
+  end.setHours(23, 59, 59, 999);
+  return { start, end, title: String(year) };
+}
+
 export default function AdminReports() {
   const [reportData, setReportData] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
+  const [transactionMode, setTransactionMode] = useState<
+    'weekly' | 'monthly' | 'yearly' | 'till_today'
+  >('till_today');
+  const [transactionPeriodOffset, setTransactionPeriodOffset] = useState(0);
 
   useEffect(() => {
     setMounted(true);
@@ -69,6 +133,126 @@ export default function AdminReports() {
       fetchReports();
     }
   }, [mounted]);
+
+  const periodTitle =
+    transactionMode === 'till_today'
+      ? 'Till today'
+      : getPeriodRange(transactionMode, transactionPeriodOffset).title;
+
+  const handleChangeMode = (
+    mode: 'weekly' | 'monthly' | 'yearly' | 'till_today'
+  ) => {
+    setTransactionMode(mode);
+    setTransactionPeriodOffset(0);
+  };
+
+  const handlePreviousPeriod = () => {
+    setTransactionPeriodOffset((offset) => offset - 1);
+  };
+
+  const handleNextPeriod = () => {
+    setTransactionPeriodOffset((offset) => Math.min(offset + 1, 0));
+  };
+
+  const transactionAmountChart = useMemo(() => {
+    if (!reportData) {
+      return {
+        chart: { type: 'column', height: 400, backgroundColor: 'transparent' },
+        title: {
+          text: 'Transaction Amounts',
+          style: { color: '#e5e7eb' },
+        },
+        xAxis: {
+          categories: [],
+          labels: { style: { color: '#9ca3af' } },
+        },
+        yAxis: {
+          title: { text: 'Amount (₹)', style: { color: '#9ca3af' } },
+          labels: { style: { color: '#9ca3af' } },
+        },
+        series: [
+          {
+            name: 'Amount',
+            data: [],
+            color: '#3b82f6',
+          },
+        ],
+        plotOptions: {
+          column: {
+            dataLabels: { enabled: false },
+          },
+        },
+      };
+    }
+
+    const typeKeys = Object.keys(reportData.transactionsByTypeAmount);
+    const filteredPeriodAmounts = typeKeys.reduce<Record<string, number>>(
+      (acc, type) => ({ ...acc, [type]: 0 }),
+      {}
+    );
+
+    if (transactionMode !== 'till_today') {
+      const { start, end } = getPeriodRange(transactionMode, transactionPeriodOffset);
+      reportData.transactions.forEach((transaction) => {
+        const amount = transaction.amount || 0;
+        const date = new Date(transaction.date);
+        if (Number.isNaN(date.getTime())) return;
+        if (date < start || date > end) return;
+        if (transaction.type in filteredPeriodAmounts) {
+          filteredPeriodAmounts[transaction.type] += amount;
+        }
+      });
+    }
+
+    const categories = typeKeys
+      .filter((key) => (transactionMode === 'till_today' ? reportData.transactionsByTypeAmount[key] : filteredPeriodAmounts[key]) > 0)
+      .map((key) => key.replace(/_/g, ' '));
+    const data = typeKeys
+      .filter((key) => (transactionMode === 'till_today' ? reportData.transactionsByTypeAmount[key] : filteredPeriodAmounts[key]) > 0)
+      .map((key) => (transactionMode === 'till_today' ? reportData.transactionsByTypeAmount[key] : filteredPeriodAmounts[key]));
+
+    return {
+      chart: { type: 'bar', height: 400, backgroundColor: 'transparent' },
+      title: {
+        text:
+          transactionMode === 'till_today'
+            ? 'Transaction Amount by Type'
+            : `Transaction Amount by Type — ${periodTitle}`,
+        style: { color: '#e5e7eb' },
+      },
+      xAxis: {
+        categories,
+        labels: { style: { color: '#9ca3af' } },
+      },
+      yAxis: {
+        title: { text: 'Amount (₹)', style: { color: '#9ca3af' } },
+        labels: { style: { color: '#9ca3af' } },
+      },
+      series: [
+        {
+          name: 'Amount',
+          data,
+          colorByPoint: true,
+        },
+      ],
+      plotOptions: {
+        bar: {
+          dataLabels: { enabled: true },
+        },
+      },
+      colors: [
+        '#3b82f6',
+        '#ef4444',
+        '#f59e0b',
+        '#10b981',
+        '#8b5cf6',
+        '#ec4899',
+        '#14b8a6',
+        '#f97316',
+        '#06b6d4',
+      ],
+    };
+  }, [reportData, transactionMode, transactionPeriodOffset, periodTitle]);
 
   if (loading) {
     return (
@@ -136,9 +320,8 @@ export default function AdminReports() {
     reportData.metrics.totalAccruedFdInterest.toFixed(2),
     reportData.metrics.totalAccruedLoanInterest.toFixed(2),
   ];
-  //seriesData is a string array, we need to convert it to number array for Highcharts
   const seriesDataNumbers = seriesData.map((value) => parseFloat(value));
-  console.log('seriesData:', seriesData); // Debugging line to check the structure of reportData
+
   // 2. Interest Analysis Chart
   const interestChartOptions = {
     chart: { type: 'column', backgroundColor: 'transparent' },
@@ -197,46 +380,6 @@ export default function AdminReports() {
   };
 
   // 4. Transaction Amount by Type (Bar Chart)
-  const transactionAmountChart = {
-    chart: { type: 'bar', height: 400, backgroundColor: 'transparent' },
-    title: { text: 'Transaction Amount by Type', style: { color: '#e5e7eb' } },
-    xAxis: {
-      categories: Object.keys(reportData.transactionsByTypeAmount)
-        .filter((key) => reportData.transactionsByTypeAmount[key] > 0)
-        .map((key) => key.replace(/_/g, ' ')),
-      labels: { style: { color: '#9ca3af' } },
-    },
-    yAxis: {
-      title: { text: 'Amount (₹)', style: { color: '#9ca3af' } },
-      labels: { style: { color: '#9ca3af' } },
-    },
-    series: [
-      {
-        name: 'Amount',
-        data: Object.entries(reportData.transactionsByTypeAmount)
-          .filter(([, amount]) => amount > 0)
-          .map(([, amount]) => amount),
-        colorByPoint: true,
-      },
-    ],
-    plotOptions: {
-      bar: {
-        dataLabels: { enabled: true },
-      },
-    },
-    colors: [
-      '#3b82f6',
-      '#ef4444',
-      '#f59e0b',
-      '#10b981',
-      '#8b5cf6',
-      '#ec4899',
-      '#14b8a6',
-      '#f97316',
-      '#06b6d4',
-    ],
-  };
-
   // 5. Scheme-wise User Distribution (Doughnut Chart)
   const schemeDistributionChart = {
     chart: { type: 'pie', backgroundColor: 'transparent' },
@@ -428,10 +571,51 @@ export default function AdminReports() {
               {/* Transaction Amount by Type */}
               <Card className="bg-linear-to-br from-gray-900/50 to-slate-900/50 border-gray-700/30">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-lg text-gray-200 flex items-center gap-2">
-                    <BarChart3 size={20} className="text-red-400" />
-                    Transaction Amounts
-                  </CardTitle>
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <CardTitle className="text-lg text-gray-200 flex items-center gap-2">
+                      <BarChart3 size={20} className="text-red-400" />
+                      Transaction Amounts
+                    </CardTitle>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                      <select
+                        value={transactionMode}
+                        onChange={(event) =>
+                          handleChangeMode(
+                            event.target.value as
+                              | 'weekly'
+                              | 'monthly'
+                              | 'yearly'
+                              | 'till_today'
+                          )
+                        }
+                        className="rounded border border-slate-700 bg-slate-950/80 px-3 py-2 text-sm text-white outline-none transition hover:border-slate-500"
+                      >
+                        <option value="weekly">Weekly</option>
+                        <option value="monthly">Monthly</option>
+                        <option value="yearly">Yearly</option>
+                        <option value="till_today">Till today</option>
+                      </select>
+                      {transactionMode !== 'till_today' && (
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={handlePreviousPeriod}
+                            className="rounded border border-slate-700 bg-slate-950/80 px-3 py-2 text-sm text-white transition hover:border-slate-500"
+                          >
+                            Previous
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleNextPeriod}
+                            disabled={transactionPeriodOffset >= 0}
+                            className="rounded border border-slate-700 bg-slate-950/80 px-3 py-2 text-sm text-white transition hover:border-slate-500 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            Next
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent className="p-4">
                   <LazyHighchartsChart options={transactionAmountChart} />

@@ -3,6 +3,7 @@ import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
+  serverExternalPackages: ['pdf-parse'],
   images: {
     remotePatterns: [
       {
@@ -11,10 +12,11 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  webpack: (config) => {
-    // pdf-parse / pdfjs-dist use canvas as an optional peer dep; stub it out
-    config.resolve.alias['canvas'] = false;
-    return config;
+  // Turbopack configuration equivalent to webpack alias stubbing
+  turbopack: {
+    resolveAlias: {
+      canvas: './empty.js',
+    },
   },
 };
 

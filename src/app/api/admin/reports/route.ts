@@ -104,7 +104,9 @@ export async function GET() {
         monthlyTrends[monthKey]++;
       }
       if (transaction.type in transactionsByType) {
-        transactionsByType[transaction.type as keyof typeof transactionsByType]++;
+        transactionsByType[
+          transaction.type as keyof typeof transactionsByType
+        ]++;
       }
       if (transaction.type in transactionsByTypeAmount) {
         transactionsByTypeAmount[
@@ -152,6 +154,7 @@ export async function GET() {
         },
         transactionsByType,
         transactionsByTypeAmount,
+        transactions,
         schemeWiseDistribution,
         monthlyTrends,
         balanceRanges,
