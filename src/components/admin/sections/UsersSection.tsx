@@ -52,6 +52,7 @@ interface UsersSectionProps {
   users: User[];
   userDialogOpen: boolean;
   onUserDialogOpenChange: (open: boolean) => void;
+  clickRecalculateBalances: (userId: string) => void;
   onAddUser: (
     name: string,
     dob: string,
@@ -160,6 +161,7 @@ export function UsersSection({
   onUpdateInterestRates,
   interestRateLoading,
   onUpdateManagedUsers,
+  clickRecalculateBalances,
   updateManagedUsersLoading,
   onUserAdded,
 }: UsersSectionProps) {
@@ -350,6 +352,14 @@ export function UsersSection({
                                     <RotateCcw size={14} />
                                   )}
                                   Reset password
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    clickRecalculateBalances(u._id);
+                                  }}
+                                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-white hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  Recalculate balance
                                 </button>
                                 <button
                                   onClick={() => {

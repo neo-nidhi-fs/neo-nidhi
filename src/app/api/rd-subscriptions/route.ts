@@ -48,10 +48,10 @@ function computeTotalInstallments(
   tenureMonths: number
 ): number {
   if (debitFrequency === 'daily') {
-    return Math.round(tenureMonths * 365 / 12);
+    return Math.round((tenureMonths * 365) / 12);
   }
   if (debitFrequency === 'weekly') {
-    return Math.round(tenureMonths * 52 / 12);
+    return Math.round((tenureMonths * 52) / 12);
   }
   return tenureMonths; // monthly
 }
@@ -138,15 +138,23 @@ export async function POST(req: Request) {
     const monthlyAmount = Number(body.monthlyAmount);
     const investmentType: 'sip' | 'one-time' =
       body.investmentType === 'one-time' ? 'one-time' : 'sip';
-    const debitFrequency: 'daily' | 'weekly' | 'monthly' =
-      ['daily', 'weekly', 'monthly'].includes(body.debitFrequency)
-        ? body.debitFrequency
-        : 'monthly';
+    const debitFrequency: 'daily' | 'weekly' | 'monthly' = [
+      'daily',
+      'weekly',
+      'monthly',
+    ].includes(body.debitFrequency)
+      ? body.debitFrequency
+      : 'monthly';
     const mandateDay = Number(body.mandateDay) || 1;
     const mandateDayOfWeek =
       body.mandateDayOfWeek != null ? Number(body.mandateDayOfWeek) : null;
 
-    if (!targetUserId || !schemeId || Number.isNaN(monthlyAmount) || monthlyAmount < 1) {
+    if (
+      !targetUserId ||
+      !schemeId ||
+      Number.isNaN(monthlyAmount) ||
+      monthlyAmount < 1
+    ) {
       return NextResponse.json(
         { success: false, error: 'Invalid subscription parameters.' },
         { status: 400 }
@@ -169,7 +177,9 @@ export async function POST(req: Request) {
     if (
       investmentType === 'sip' &&
       debitFrequency === 'weekly' &&
-      (mandateDayOfWeek === null || mandateDayOfWeek < 0 || mandateDayOfWeek > 6)
+      (mandateDayOfWeek === null ||
+        mandateDayOfWeek < 0 ||
+        mandateDayOfWeek > 6)
     ) {
       return NextResponse.json(
         {
@@ -217,13 +227,19 @@ export async function POST(req: Request) {
     // Validate investment type is enabled on the scheme
     if (investmentType === 'one-time' && !scheme.allowOneTimeInvestment) {
       return NextResponse.json(
-        { success: false, error: 'One-time investment is not available for this scheme' },
+        {
+          success: false,
+          error: 'One-time investment is not available for this scheme',
+        },
         { status: 400 }
       );
     }
     if (investmentType === 'sip' && !scheme.allowAutoDebit) {
       return NextResponse.json(
-        { success: false, error: 'Auto debit / SIP is not available for this scheme' },
+        {
+          success: false,
+          error: 'Auto debit / SIP is not available for this scheme',
+        },
         { status: 400 }
       );
     }
@@ -279,7 +295,10 @@ export async function POST(req: Request) {
       // Validate balance for immediate debit
       if (user.savingsBalance < monthlyAmount) {
         return NextResponse.json(
-          { success: false, error: 'Insufficient savings balance for one-time investment' },
+          {
+            success: false,
+            error: 'Insufficient savings balance for one-time investment',
+          },
           { status: 400 }
         );
       }
@@ -324,9 +343,19 @@ export async function POST(req: Request) {
           investmentType: 'one-time',
         },
       });
+      await Transaction.create({
+        userId: targetUserId,
+        type: 'withdrawal',
+        amount: monthlyAmount,
+        date: now,
+      });
 
       return NextResponse.json(
-        { success: true, data: subscription, message: 'One-time investment created' },
+        {
+          success: true,
+          data: subscription,
+          message: 'One-time investment created',
+        },
         { status: 201 }
       );
     }
@@ -335,10 +364,16 @@ export async function POST(req: Request) {
     if (debitFrequency === 'daily') {
       nextDebitDate = new Date(now);
       nextDebitDate.setDate(nextDebitDate.getDate() + 1);
-      totalInstallments = computeTotalInstallments('daily', scheme.tenureMonths);
+      totalInstallments = computeTotalInstallments(
+        'daily',
+        scheme.tenureMonths
+      );
     } else if (debitFrequency === 'weekly') {
       nextDebitDate = nextWeekdayAfter(now, mandateDayOfWeek ?? 1);
-      totalInstallments = computeTotalInstallments('weekly', scheme.tenureMonths);
+      totalInstallments = computeTotalInstallments(
+        'weekly',
+        scheme.tenureMonths
+      );
     } else {
       // monthly
       nextDebitDate = nextMandateDayAfter(now, mandateDay);
@@ -352,7 +387,8 @@ export async function POST(req: Request) {
       debitFrequency,
       monthlyAmount,
       mandateDay,
-      mandateDayOfWeek: debitFrequency === 'weekly' ? (mandateDayOfWeek ?? 1) : null,
+      mandateDayOfWeek:
+        debitFrequency === 'weekly' ? (mandateDayOfWeek ?? 1) : null,
       totalInstallments,
       startDate: now,
       nextDebitDate,

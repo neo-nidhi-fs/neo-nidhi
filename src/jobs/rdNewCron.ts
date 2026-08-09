@@ -55,7 +55,9 @@ export async function processRdNewDebits(referenceDate = new Date()) {
     if (investmentType === 'one-time') {
       // Interest = principal × rate/100 × tenureMonths/12 (simple monthly interest)
       const accruedInterest =
-        sub.totalDebited * (scheme.interestRate / 100 / 12) * scheme.tenureMonths;
+        sub.totalDebited *
+        (scheme.interestRate / 100 / 12) *
+        scheme.tenureMonths;
       const maturityAmount = sub.totalDebited + accruedInterest;
 
       await User.findByIdAndUpdate(sub.userId, {
@@ -162,6 +164,12 @@ export async function processRdNewDebits(referenceDate = new Date()) {
         accruedInterest: newAccruedInterest,
         debitFrequency,
       },
+    });
+    await Transaction.create({
+      userId: sub.userId,
+      type: 'withdrawal',
+      amount: sub.monthlyAmount,
+      date: now,
     });
 
     if (isLastInstallment) {

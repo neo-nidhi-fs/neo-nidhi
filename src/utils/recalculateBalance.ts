@@ -23,6 +23,10 @@ export async function recalculateBalances(
       case 'deposit':
         savingsBalance += tx.amount;
         break;
+      case 'rd_new_maturity':
+        savingsBalance += tx.amount;
+        rdBalance -= tx.amount; // Deduct from RD balance on maturity
+        break;
       case 'withdrawal':
         savingsBalance -= tx.amount;
         break;
@@ -36,6 +40,11 @@ export async function recalculateBalances(
       case 'rd':
         savingsBalance -= tx.amount;
         rdBalance += tx.amount;
+        break;
+      case 'rd_new':
+        console.log('rd_new transaction ==> ', tx, rdBalance);
+        rdBalance += tx.amount;
+        console.log('rd_new transaction ==> ', tx, rdBalance, tx.amount);
         break;
       case 'loan':
         loanBalance += tx.amount;

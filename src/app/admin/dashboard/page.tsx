@@ -279,6 +279,34 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleClickRecalculateBalances = async (userId: string) => {
+    if (
+      !confirm(
+        'Recalculate balances for all users? This will update all user balances based on their transaction history.'
+      )
+    ) {
+      return;
+    }
+    setAssetRevaluationLoading(true);
+    try {
+      const res = await fetch(`/api/admin/recalculate-balance/${userId}`, {
+        method: 'GET',
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMessage(data.message ?? 'Recalculated Balance.');
+      } else {
+        setMessage(data.error ?? 'Balance recalculation failed.');
+      }
+      setTimeout(() => setMessage(''), 4000);
+    } catch {
+      setMessage('Balance recalculation failed.');
+      setTimeout(() => setMessage(''), 3000);
+    } finally {
+      setAssetRevaluationLoading(false);
+    }
+  };
+
   const handleRunAssetRevaluation = async () => {
     setAssetRevaluationLoading(true);
     try {
@@ -289,7 +317,9 @@ export default function AdminDashboard() {
         const result = data?.result;
         const updated = result?.assetsUpdated ?? 0;
         const scanned = result?.assetsScanned ?? 0;
-        setMessage(`Asset revaluation completed. Updated ${updated}/${scanned}.`);
+        setMessage(
+          `Asset revaluation completed. Updated ${updated}/${scanned}.`
+        );
       } else {
         setMessage(data?.error ?? 'Asset revaluation failed.');
       }
@@ -366,6 +396,7 @@ export default function AdminDashboard() {
           onUpdateManagedUsers={handleUpdateManagedUsers}
           updateManagedUsersLoading={updateManagedUsersLoading}
           onUserAdded={refetchUsers}
+          clickRecalculateBalances={handleClickRecalculateBalances}
         />
 
         {/* Schemes Section */}
