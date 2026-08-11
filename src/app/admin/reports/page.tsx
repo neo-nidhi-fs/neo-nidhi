@@ -199,6 +199,9 @@ export default function AdminReports() {
         if (Number.isNaN(date.getTime())) return;
         if (date < start || date > end) return;
         if (transaction.type in filteredPeriodAmounts) {
+          if (transaction.type === "repayment" && filteredPeriodAmounts["deposit"]) {
+            filteredPeriodAmounts["deposit"] -= amount;
+          }
           filteredPeriodAmounts[transaction.type] += amount;
         }
       });
