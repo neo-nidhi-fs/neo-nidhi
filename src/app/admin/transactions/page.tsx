@@ -57,6 +57,10 @@ export default function AdminTransactionsPage() {
   const [txPage, setTxPage] = useState(1);
   const [totalTransactionCount, setTotalTransactionCount] = useState(0);
   const [totalTransactionVolume, setTotalTransactionVolume] = useState(0);
+  const [filterType, setFilterType] = useState('');
+  const [dateRange, setDateRange] = useState('all'); // 'all', 'weekly', 'monthly', 'yearly', 'custom'
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
   const ITEMS_PER_PAGE = 10;
 
   useEffect(() => {
@@ -67,14 +71,39 @@ export default function AdminTransactionsPage() {
       await fetchTransactions(1);
     }
     fetchData();
-  }, []);
-
+  }, [filterType, dateRange, customStartDate, customEndDate]);
   async function fetchTransactions(page = 1) {
     setLoading(true);
     try {
-      const res = await fetch(
-        `/api/transactions?page=${page}&limit=${ITEMS_PER_PAGE}`
-      );
+      let query = `/api/transactions?page=${page}&limit=${ITEMS_PER_PAGE}`;
+      if (filterType) query += `&type=${filterType}`;
+
+      // Date range logic
+      const now = new Date();
+      let startDate = '';
+      let endDate = '';
+
+      if (dateRange === 'weekly') {
+        const lastWeek = new Date();
+        lastWeek.setDate(now.getDate() - 7);
+        startDate = lastWeek.toISOString();
+      } else if (dateRange === 'monthly') {
+        const lastMonth = new Date();
+        lastMonth.setMonth(now.getMonth() - 1);
+        startDate = lastMonth.toISOString();
+      } else if (dateRange === 'yearly') {
+        const lastYear = new Date();
+        lastYear.setFullYear(now.getFullYear() - 1);
+        startDate = lastYear.toISOString();
+      } else if (dateRange === 'custom') {
+        startDate = customStartDate;
+        endDate = customEndDate;
+      }
+
+      if (startDate) query += `&startDate=${startDate}`;
+      if (endDate)
+        query += `&endDate=${new Date(new Date(endDate).getTime() + 86400000 - 1).toISOString()}`; // Set to end of the day
+      const res = await fetch(query);
       const data = await res.json();
       setTransactions(data.data || []);
       setTotalTransactionCount(data.total ?? 0);
@@ -92,7 +121,6 @@ export default function AdminTransactionsPage() {
     const userId = formData.get('userId') as string;
     const type = formData.get('type') as string;
     const amount = Number(formData.get('amount'));
-
     try {
       const res = await fetch('/api/transactions', {
         method: 'POST',
@@ -112,7 +140,7 @@ export default function AdminTransactionsPage() {
     }
   }
 
-  if (loading) {
+  if (loading && transactions.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-slate-950 via-blue-950 to-slate-950">
         <p className="text-gray-100">Loading dashboard...</p>
@@ -162,11 +190,6 @@ export default function AdminTransactionsPage() {
     return typeMap[type] || type;
   };
 
-  const totalTransactions = transactions.reduce(
-    (sum, tx) => sum + tx.amount,
-    0
-  );
-
   const transactionColumns = [
     { header: 'Date', accessor: 'date' },
     { header: 'User', accessor: 'name' },
@@ -174,7 +197,6 @@ export default function AdminTransactionsPage() {
     { header: 'Amount', accessor: 'amount' },
     { header: 'Balance After Tx', accessor: 'userBalanceAfterTransaction' },
   ];
-
   return (
     <main className="bg-gradient-to-b from-slate-950 via-blue-950 to-slate-950 text-white min-h-screen py-12 px-6">
       <div className="max-w-7xl mx-auto">
@@ -211,7 +233,7 @@ export default function AdminTransactionsPage() {
         </Card>
 
         {/* Add Transaction Button */}
-        <div className="mb-6">
+        <div className="mb-6 flex gap-4">
           <Dialog
             open={transactionDialogOpen}
             onOpenChange={setTransactionDialogOpen}
@@ -229,7 +251,6 @@ export default function AdminTransactionsPage() {
                 </DialogTitle>
               </DialogHeader>
               <form onSubmit={handleAddTransaction} className="space-y-4">
-                {/* Select User */}
                 <div>
                   <Label htmlFor="userId" className="text-gray-100">
                     User
@@ -250,7 +271,6 @@ export default function AdminTransactionsPage() {
                   </select>
                 </div>
 
-                {/* Transaction Type */}
                 <div>
                   <Label htmlFor="type" className="text-gray-100">
                     Type
@@ -271,7 +291,6 @@ export default function AdminTransactionsPage() {
                   </select>
                 </div>
 
-                {/* Amount */}
                 <div>
                   <Label htmlFor="amount" className="text-gray-100">
                     Amount
@@ -303,6 +322,51 @@ export default function AdminTransactionsPage() {
               </form>
             </DialogContent>
           </Dialog>
+
+          {/* Filters */}
+          <div className="flex gap-2 items-center flex-wrap">
+            <select
+              className="bg-slate-800 border border-slate-600 text-white rounded px-3 py-2 text-sm"
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+            >
+              <option value="">All Types</option>
+              {transactionTypes.map((t) => (
+                <option key={t.value} value={t.value}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
+
+            <select
+              className="bg-slate-800 border border-slate-600 text-white rounded px-3 py-2 text-sm"
+              value={dateRange}
+              onChange={(e) => setDateRange(e.target.value)}
+            >
+              <option value="all">All Time</option>
+              <option value="weekly">Last Week</option>
+              <option value="monthly">Last Month</option>
+              <option value="yearly">Last Year</option>
+              <option value="custom">Custom Date</option>
+            </select>
+
+            {dateRange === 'custom' && (
+              <>
+                <Input
+                  type="date"
+                  className="bg-slate-800 border-slate-600 text-white w-auto"
+                  value={customStartDate}
+                  onChange={(e) => setCustomStartDate(e.target.value)}
+                />
+                <Input
+                  type="date"
+                  className="bg-slate-800 border-slate-600 text-white w-auto"
+                  value={customEndDate}
+                  onChange={(e) => setCustomEndDate(e.target.value)}
+                />
+              </>
+            )}
+          </div>
         </div>
 
         {message && (

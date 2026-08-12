@@ -10,6 +10,16 @@ import {
   getManagedUsersFilter,
   requireAdminLikeAccess,
 } from '@/lib/adminAccess';
+import { Types } from 'mongoose';
+
+interface TransactionFilter {
+  userId?: { $in: Types.ObjectId[] }; // Adjust string[] if userIds is number[], etc.
+  type?: string;
+  date?: {
+    $gte?: Date;
+    $lte?: Date;
+  };
+}
 
 export async function POST(req: Request) {
   try {
@@ -153,7 +163,6 @@ export async function POST(req: Request) {
     user.rd = newBalances.rdBalance;
     user.loanBalance = newBalances.loanBalance;
     await user.save();
-
     return NextResponse.json(
       {
         success: true,
@@ -185,27 +194,32 @@ export async function GET(req: Request) {
     const url = new URL(req.url);
     const pageParam = Number(url.searchParams.get('page') ?? '1');
     const limitParam = Number(url.searchParams.get('limit') ?? '10');
+    const typeFilter = url.searchParams.get('type');
+    const startDate = url.searchParams.get('startDate');
+    const endDate = url.searchParams.get('endDate');
+
     const page = Math.max(1, pageParam);
     const limit = Math.max(1, Math.min(limitParam, 100));
 
     const userFilter = getManagedUsersFilter(accessResult.context);
     const users = await User.find(userFilter).select('_id').lean();
     const userIds = users.map((user) => user._id);
+    const filter: TransactionFilter = accessResult.context.isAdmin
+      ? {}
+      : { userId: { $in: userIds } };
+    if (typeFilter) {
+      filter.type = typeFilter; // Cast as it's a string from URL
+    }
+    if (startDate || endDate) {
+      filter.date = {};
+      if (startDate) filter.date.$gte = new Date(startDate);
+      if (endDate) filter.date.$lte = new Date(endDate);
+    }
 
-    const transactionsAsc = accessResult.context.isAdmin
-      ? await Transaction.find({})
-          .select(
-            'userId type amount date relatedUserId relatedUserName metadata'
-          )
-          .sort({ date: 1 })
-          .lean()
-      : await Transaction.find({ userId: { $in: userIds } })
-          .select(
-            'userId type amount date relatedUserId relatedUserName metadata'
-          )
-          .sort({ date: 1 })
-          .lean();
-
+    const transactionsAsc = await Transaction.find(filter)
+      .select('userId type amount date relatedUserId relatedUserName metadata')
+      .sort({ date: 1 })
+      .lean();
     const visibleUsers = await User.find(userFilter)
       .select('_id name savingsBalance fd rd loanBalance')
       .lean();
