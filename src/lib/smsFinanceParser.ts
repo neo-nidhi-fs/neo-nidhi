@@ -92,27 +92,38 @@ function escapeForRegex(text: string): string {
 
 function extractSourceName(text: string): string | null {
   const normalized = text.replace(/\r/g, '');
-  // First priority: Extract VPA username
-  const vpaMatch = normalized.match(/\bfrom\s+VPA\s+([A-Za-z0-9._-]+)@/i);
-  if (vpaMatch?.[1]) {
+
+  // Utilize your existing function to determine the transaction type
+  const transactionType = detectType(text);
+  const isIncome = transactionType === FinanceTransactionType.Income;
+  const isExpense = transactionType === FinanceTransactionType.Expense;
+
+  // Priority VPA check for incoming UPI payments
+  const vpaMatch = normalized.match(
+    /\bfrom\s+(?:VPA|UPI)\s+([A-Za-z0-9._-]+)@/i
+  );
+  if (vpaMatch?.[1] && isIncome) {
     return vpaMatch[1];
   }
+
   const lines = normalized.split('\n').map((line) => line.trim());
 
   for (const line of lines) {
-    const match = line.match(/\b(?:at|to|from)\s+(.+)/i);
+    // Dynamically choose prepositions based on transaction type
+    let regex = /\b(?:at|to|from)\s+(.+)/i;
+    if (isIncome && !isExpense) {
+      regex = /\bfrom\s+(.+)/i; // Income: look for sender
+    } else if (isExpense && !isIncome) {
+      regex = /\b(?:at|to)\s+(.+)/i; // Expense: look for merchant/recipient
+    }
+
+    const match = line.match(regex);
     if (!match?.[1]) continue;
 
     let source = match[1].trim().replace(/[.,;:]+$/g, '');
-    source = source.replace(/\s+on\s+.*$/i, '').trim();
-    return source;
-  }
+    source = source.replace(/\s+(?:on|at|ref|txn|via|for)\s+.*$/i, '').trim();
 
-  const fallbackMatch = normalized.match(/\b(?:at|to)\s+(.+)/i);
-  if (fallbackMatch?.[1]) {
-    let source = fallbackMatch[1].trim().replace(/[.,;:]+$/g, '');
-    source = source.replace(/\s+on\s+.*$/i, '').trim();
-    if (source && !/^(?:a\/c|account|your|from)\b/i.test(source)) {
+    if (source && !/^(?:a\/c|account|your|from|the|rs|inr)\b/i.test(source)) {
       return source;
     }
   }
