@@ -50,34 +50,36 @@ export function TransactionTable({
     switch (type) {
       case 'deposit':
       case 'fd':
+      case 'interest_fd':
+      case 'interest_deposit':
         return 'text-green-400';
       case 'rd':
+      case 'interest_rd':
         return 'text-cyan-400';
       case 'loan':
+      case 'interest_loan':
         return 'text-orange-400';
       case 'repayment':
       case 'withdrawal':
+      case 'withdrawal_fd':
         return 'text-blue-400';
       default:
         return 'text-gray-300';
     }
   };
 
-  const getShortTransactionType = (type: string) => {
-    const typeMap: Record<string, string> = {
-      deposit: 'dep',
-      loan: 'loan',
-      repayment: 'rep',
-      withdrawal: 'wd',
-      fd: 'fd',
-      interest_fd: 'int_fd',
-      rd: 'rd',
-      interest_rd: 'int_rd',
-      interest_loan: 'int_loan',
-      withdrawal_fd: 'wd_fd',
-      interest_deposit: 'int_dep',
-    };
-    return typeMap[type] || type;
+  const typeMap: Record<string, string> = {
+    deposit: 'Deposit',
+    loan: 'Loan',
+    repayment: 'Repayment',
+    withdrawal: 'Withdrawal',
+    fd: 'FD',
+    interest_fd: 'FD Int',
+    rd: 'RD',
+    interest_rd: 'RD Int',
+    interest_loan: 'Loan Int',
+    withdrawal_fd: 'FD Withdrawal',
+    interest_deposit: 'Deposit Int',
   };
 
   const totalItems = totalCount ?? transactions.length;
@@ -87,7 +89,7 @@ export function TransactionTable({
   const formatBalanceParts = (
     balance: NonNullable<Transaction['userBalanceAfterTransaction']>
   ) => {
-    const parts = [`S ₹${balance.savingsBalance.toFixed(2)}`];
+    const parts = [`Savings ₹${balance.savingsBalance.toFixed(2)}`];
     if (balanceColumns.fd) {
       parts.push(`FD ₹${balance.fdBalance.toFixed(2)}`);
     }
@@ -95,14 +97,54 @@ export function TransactionTable({
       parts.push(`RD ₹${balance.rdBalance.toFixed(2)}`);
     }
     if (balanceColumns.loan) {
-      parts.push(`L ₹${balance.loanBalance.toFixed(2)}`);
+      parts.push(`Loan ₹${balance.loanBalance.toFixed(2)}`);
     }
     return parts.join(' | ');
   };
 
   return (
     <div className="space-y-4">
-      <div className="overflow-x-auto">
+      {/* Mobile Grid View */}
+      <div className="md:hidden space-y-3">
+        {transactions.length > 0 ? (
+          transactions.map((tx) => (
+            <div
+              key={tx._id}
+              className="rounded-xl border border-slate-700 bg-slate-800/60 p-4 shadow-sm"
+            >
+              <div className="flex justify-between items-start mb-2">
+                <span className="text-gray-400 text-xs">
+                  {new Date(tx.date).toLocaleDateString('en-IN')}{' '}
+                  {new Date(tx.date).toLocaleTimeString('en-IN', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </span>
+                <span
+                  className={`capitalize font-semibold ${getTransactionColor(tx.type)}`}
+                >
+                  {typeMap[tx.type] || tx.type}
+                </span>
+              </div>
+              <div className="text-xl font-bold text-white mb-2">
+                ₹{tx.amount.toFixed(2)}
+              </div>
+              {tx.userBalanceAfterTransaction && (
+                <div className="text-xs text-gray-300 bg-slate-900/50 p-3 rounded">
+                  {formatBalanceParts(tx.userBalanceAfterTransaction)}
+                </div>
+              )}
+            </div>
+          ))
+        ) : (
+          <p className="text-center text-gray-400 py-8">
+            No transactions found
+          </p>
+        )}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden md:block overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -122,10 +164,7 @@ export function TransactionTable({
                   <TableCell
                     className={`capitalize font-semibold ${getTransactionColor(tx.type)}`}
                   >
-                    <span className="sm:hidden">
-                      {getShortTransactionType(tx.type)}
-                    </span>
-                    <span className="hidden sm:inline">{tx.type}</span>
+                    {tx.type}
                   </TableCell>
                   <TableCell className="font-semibold text-gray-200">
                     ₹{tx.amount.toFixed(2)}

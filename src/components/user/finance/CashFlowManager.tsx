@@ -3,7 +3,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CashFlow, ExpensePaymentSource } from '@/hooks/useUserFinance';
+import { CashFlow } from '@/hooks/useUserFinance';
+import { useLocalStorageArray } from '@/hooks/useLocalStorageArray';
+import {
+  formatCurrency,
+  labelPaymentSource,
+  normalizePaymentSource,
+  PAYMENT_MODES,
+} from '@/lib/utils/finance';
 import {
   Trash2,
   Edit2,
@@ -15,39 +22,8 @@ import {
   EyeOff,
   RotateCcw,
 } from 'lucide-react';
-
-const PAYMENT_MODES: Array<'account' | 'cash' | 'card' | 'wallet'> = [
-  'account',
-  'cash',
-  'card',
-  'wallet',
-];
-
-function normalizePaymentSource(
-  paymentSource?: ExpensePaymentSource
-): 'account' | 'cash' | 'card' | 'wallet' {
-  if (paymentSource === 'credit_card') return 'card';
-  if (
-    paymentSource === 'cash' ||
-    paymentSource === 'card' ||
-    paymentSource === 'wallet'
-  ) {
-    return paymentSource;
-  }
-  return 'account';
-}
-
-function labelPaymentSource(paymentSource?: ExpensePaymentSource): string {
-  const p = normalizePaymentSource(paymentSource);
-  const labels: Record<ExpensePaymentSource, string> = {
-    account: 'Account',
-    cash: 'Cash',
-    card: 'Card',
-    wallet: 'Wallet',
-    credit_card: 'Card',
-  };
-  return labels[p];
-}
+import { ActionMenu } from './ActionMenu';
+import { CashFlowTableRow } from './CashFlowTableRow';
 
 interface CashFlowManagerProps {
   cashflows: CashFlow[];
@@ -153,11 +129,15 @@ function CashFlowSummaryBar({
                 </button>
                 <p className="text-xs uppercase tracking-wide text-slate-400">
                   Income:{' '}
-                  <span className="text-emerald-400">{formatCurrency(income)}</span>
+                  <span className="text-emerald-400">
+                    {formatCurrency(income)}
+                  </span>
                 </p>
                 <p className="text-xs uppercase tracking-wide text-slate-400 mt-1">
                   Expense:{' '}
-                  <span className="text-red-400">{formatCurrency(expense)}</span>
+                  <span className="text-red-400">
+                    {formatCurrency(expense)}
+                  </span>
                 </p>
                 <p
                   className={`text-xs uppercase tracking-wide mt-1 ${remaining >= 0 ? 'text-emerald-400' : 'text-red-400'}`}
@@ -263,7 +243,9 @@ function CashflowMobileCard({
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-600/60 pt-3">
         <div>
-          <p className="text-xs uppercase tracking-wide text-slate-400">Amount</p>
+          <p className="text-xs uppercase tracking-wide text-slate-400">
+            Amount
+          </p>
           <p
             className={`text-lg font-bold tabular-nums ${cashflow.type === 'income' ? 'text-emerald-400' : 'text-red-400'}`}
           >
@@ -307,27 +289,18 @@ export default function CashFlowManager({
     'account' | 'cash' | 'card' | 'wallet' | null
   >(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [typeFilter, setTypeFilter] = useState<'all' | 'income' | 'expense'>('all');
-  const [ignoredCashflowIds, setIgnoredCashflowIds] = useState<string[]>([]);
-  const [openActionMenuFor, setOpenActionMenuFor] = useState<string | null>(null);
+  const [typeFilter, setTypeFilter] = useState<'all' | 'income' | 'expense'>(
+    'all'
+  );
+  const {
+    value: ignoredCashflowIds,
+    add: ignoreCashflow,
+    remove: unignoreCashflow,
+  } = useLocalStorageArray<string>('ignoredCashflowIds', []);
+  const [openActionMenuFor, setOpenActionMenuFor] = useState<string | null>(
+    null
+  );
   const actionMenuRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    const stored = localStorage.getItem('ignoredCashflowIds');
-    if (!stored) return;
-    try {
-      const parsed = JSON.parse(stored);
-      if (Array.isArray(parsed)) {
-        setIgnoredCashflowIds(parsed.filter((id) => typeof id === 'string'));
-      }
-    } catch {
-      // Ignore malformed localStorage value
-    }
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem('ignoredCashflowIds', JSON.stringify(ignoredCashflowIds));
-  }, [ignoredCashflowIds]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -344,15 +317,6 @@ export default function CashFlowManager({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [openActionMenuFor]);
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
-
   const monthLabel = (date: Date) =>
     date.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
 
@@ -367,7 +331,10 @@ export default function CashFlowManager({
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const matchesFilters = (cf: CashFlow) => {
-    if (selectedMode && normalizePaymentSource(cf.paymentSource) !== selectedMode) {
+    if (
+      selectedMode &&
+      normalizePaymentSource(cf.paymentSource) !== selectedMode
+    ) {
       return false;
     }
     if (typeFilter !== 'all' && cf.type !== typeFilter) {
@@ -377,7 +344,9 @@ export default function CashFlowManager({
     const query = searchQuery.trim().toLowerCase();
     if (!query) return true;
 
-    const dateLabel = new Date(cf.date).toLocaleDateString('en-IN').toLowerCase();
+    const dateLabel = new Date(cf.date)
+      .toLocaleDateString('en-IN')
+      .toLowerCase();
     const haystack = [
       cf.category,
       cf.source,
@@ -459,18 +428,16 @@ export default function CashFlowManager({
     );
     if (!confirmed) return;
     onDelete(cashflowId);
-    setIgnoredCashflowIds((prev) => prev.filter((id) => id !== cashflowId));
+    unignoreCashflow(cashflowId);
   };
 
   const handleIgnore = (cashflowId: string) => {
-    setIgnoredCashflowIds((prev) =>
-      prev.includes(cashflowId) ? prev : [...prev, cashflowId]
-    );
+    ignoreCashflow(cashflowId);
     setOpenActionMenuFor(null);
   };
 
   const handleUnignore = (cashflowId: string) => {
-    setIgnoredCashflowIds((prev) => prev.filter((id) => id !== cashflowId));
+    unignoreCashflow(cashflowId);
     setOpenActionMenuFor(null);
   };
 
@@ -550,9 +517,7 @@ export default function CashFlowManager({
           totalRemaining={totalRemaining}
           modeTotals={modeTotals}
           showModeBreakdown={showModeBreakdown}
-          onToggleModeBreakdown={() =>
-            setShowModeBreakdown((prev) => !prev)
-          }
+          onToggleModeBreakdown={() => setShowModeBreakdown((prev) => !prev)}
           selectedMode={selectedMode}
           onModeToggle={handleModeToggle}
         />
@@ -585,7 +550,8 @@ export default function CashFlowManager({
         <div className="text-center py-12">
           <p className="text-gray-300">
             No income or expense entries
-            {selectedMode ? ` for ${selectedMode}` : ''} for {monthLabel(currentMonth)}.
+            {selectedMode ? ` for ${selectedMode}` : ''} for{' '}
+            {monthLabel(currentMonth)}.
           </p>
         </div>
       ) : (
@@ -635,79 +601,44 @@ export default function CashFlowManager({
                     key={cashflow._id}
                     className="border-b border-slate-600 hover:bg-slate-700/30 transition-colors"
                   >
-                    <td className="py-4 px-3 lg:px-4 text-gray-200 whitespace-nowrap">
-                      {new Date(cashflow.date).toLocaleDateString('en-IN')}
-                    </td>
-                    <td className="py-4 px-3 lg:px-4">
-                      <TypeBadge type={cashflow.type} />
-                    </td>
-                    <td className="py-4 px-3 lg:px-4 text-gray-200 max-w-[10rem] lg:max-w-none truncate lg:whitespace-normal lg:break-words">
-                      {cashflow.category}
-                    </td>
-                    <td className="py-4 px-3 lg:px-4 text-gray-200 whitespace-nowrap">
-                      {labelPaymentSource(cashflow.paymentSource)}
-                    </td>
-                    <td className="py-4 px-3 lg:px-4 text-gray-200 max-w-[8rem] lg:max-w-[12rem] truncate lg:whitespace-normal lg:break-words">
-                      {cashflow.source}
-                    </td>
-                    <td
-                      className={`py-4 px-3 lg:px-4 text-right font-semibold whitespace-nowrap ${cashflow.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-destructive'}`}
+                    <CashFlowTableRow
+                      cashflow={cashflow}
+                      onEdit={() => {}}
+                      onIgnore={() => handleIgnore(cashflow._id)}
+                      onDelete={() => confirmAndDelete(cashflow._id)}
+                      onActionMenuToggle={(id) => setOpenActionMenuFor(id)}
+                      isActionMenuOpen={openActionMenuFor === cashflow._id}
+                      actionMenuRef={actionMenuRef}
                     >
-                      {cashflow.type === 'income' ? '+' : '-'}
-                      {formatCurrency(cashflow.amount)}
-                    </td>
-                    <td className="py-4 px-3 lg:px-4 text-right whitespace-nowrap">
-                      <div className="relative inline-block text-left">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setOpenActionMenuFor(
-                              openActionMenuFor === cashflow._id
-                                ? null
-                                : cashflow._id
-                            )
-                          }
-                          className="inline-flex items-center justify-center rounded p-1.5 text-slate-200 hover:bg-slate-700/50"
-                          aria-label="Open actions"
-                        >
-                          <MoreVertical size={16} />
-                        </button>
-                        {openActionMenuFor === cashflow._id && (
-                          <div
-                            ref={actionMenuRef}
-                            className="absolute right-0 z-50 mt-2 w-44 overflow-hidden rounded-md border border-slate-700 bg-slate-950 shadow-lg"
+                      <td className="py-4 px-3 lg:px-4 text-right whitespace-nowrap">
+                        <div className="relative inline-block text-left">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setOpenActionMenuFor(
+                                openActionMenuFor === cashflow._id
+                                  ? null
+                                  : cashflow._id
+                              )
+                            }
+                            className="inline-flex items-center justify-center rounded p-1.5 text-slate-200 hover:bg-slate-700/50"
+                            aria-label="Open actions"
                           >
-                            <button
-                              onClick={() => {
-                                onEdit && onEdit(cashflow);
-                                setOpenActionMenuFor(null);
-                              }}
-                              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-white hover:bg-slate-800"
-                            >
-                              <Edit2 size={14} />
-                              Edit entry
-                            </button>
-                            <button
-                              onClick={() => handleIgnore(cashflow._id)}
-                              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-white hover:bg-slate-800"
-                            >
-                              <EyeOff size={14} />
-                              Ignore entry
-                            </button>
-                            <button
-                              onClick={() => {
-                                confirmAndDelete(cashflow._id);
-                                setOpenActionMenuFor(null);
-                              }}
-                              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-300 hover:bg-slate-800"
-                            >
-                              <Trash2 size={14} />
-                              Delete entry
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </td>
+                            <MoreVertical size={16} />
+                          </button>
+                          {openActionMenuFor === cashflow._id && (
+                            <ActionMenu
+                              cashflow={cashflow}
+                              onEdit={() => onEdit && onEdit(cashflow)}
+                              onIgnore={() => handleIgnore(cashflow._id)}
+                              onDelete={() => confirmAndDelete(cashflow._id)}
+                              onClose={() => setOpenActionMenuFor(null)}
+                              menuRef={actionMenuRef}
+                            />
+                          )}
+                        </div>
+                      </td>
+                    </CashFlowTableRow>
                   </tr>
                 ))}
               </tbody>
@@ -729,8 +660,8 @@ export default function CashFlowManager({
               >
                 <div className="text-slate-200">
                   {new Date(cashflow.date).toLocaleDateString('en-IN')} |{' '}
-                  {cashflow.category} | {labelPaymentSource(cashflow.paymentSource)} |
-                  {' '}
+                  {cashflow.category} |{' '}
+                  {labelPaymentSource(cashflow.paymentSource)} |{' '}
                   {cashflow.type === 'income' ? '+' : '-'}
                   {formatCurrency(cashflow.amount)}
                 </div>
