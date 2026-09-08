@@ -217,6 +217,7 @@ function isMessageLikelyPromotional(text: string): boolean {
     lower.includes("don't miss") ||
     lower.includes('2 loans. 1 processing fee') ||
     lower.includes('get instant') ||
+    lower.includes('received repayment') ||
     lower.includes('sale') ||
     lower.includes('apply') ||
     lower.includes('deal') ||

@@ -118,8 +118,6 @@ interface UsersSectionProps {
   onUserAdded?: () => void;
 }
 
-const ITEMS_PER_PAGE = 14;
-
 const userTableColumns: UsersTableColumn[] = [
   { header: 'Name', accessor: 'name', type: 'string' },
   // { header: 'DOB', accessor: 'dob', type: 'string' },
@@ -166,6 +164,8 @@ export function UsersSection({
   onUserAdded,
 }: UsersSectionProps) {
   const [userPage, setUserPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(15);
+  const [itemsPerPageDraft, setItemsPerPageDraft] = useState('15');
   const [editUserDialogOpen, setEditUserDialogOpen] = useState(false);
   const [selectedUserForEdit, setSelectedUserForEdit] = useState<User | null>(
     null
@@ -192,6 +192,28 @@ export function UsersSection({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [openActionMenuFor]);
+
+  function handleItemsPerPageChange(value: string) {
+    setItemsPerPageDraft(value);
+    const nextItemsPerPage = Number(value);
+    if (
+      /^\d+$/.test(value) &&
+      nextItemsPerPage >= 1 &&
+      nextItemsPerPage <= 100
+    ) {
+      setItemsPerPage(nextItemsPerPage);
+      setUserPage(1);
+    }
+  }
+
+  function restoreItemsPerPage() {
+    if (!/^\d+$/.test(itemsPerPageDraft)) {
+      setItemsPerPageDraft(String(itemsPerPage));
+    }
+  }
+
+  const totalUserPages = Math.max(1, Math.ceil(users.length / itemsPerPage));
+  const currentUserPage = Math.min(userPage, totalUserPages);
 
   const handleAddUser = async (
     name: string,
@@ -282,8 +304,8 @@ export function UsersSection({
             <TableBody>
               {users
                 .slice(
-                  (userPage - 1) * ITEMS_PER_PAGE,
-                  userPage * ITEMS_PER_PAGE
+                  (currentUserPage - 1) * itemsPerPage,
+                  currentUserPage * itemsPerPage
                 )
                 .map((u) => (
                   <TableRow key={u._id}>
@@ -511,30 +533,48 @@ export function UsersSection({
             }
             onSubmit={onUpdateManagedUsers}
           />
-          {users.length > ITEMS_PER_PAGE && (
-            <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <label className="flex items-center gap-2 text-sm text-gray-400">
+              <span>Items per page</span>
+              <input
+                aria-label="Items per page"
+                type="number"
+                min={1}
+                max={100}
+                step={1}
+                inputMode="numeric"
+                value={itemsPerPageDraft}
+                onChange={(event) =>
+                  handleItemsPerPageChange(event.target.value)
+                }
+                onBlur={restoreItemsPerPage}
+                className="w-20 rounded border border-slate-600 bg-slate-800 px-2 py-1 text-white"
+              />
+            </label>
+            {users.length > itemsPerPage && (
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm text-gray-400">
-                Showing {(userPage - 1) * ITEMS_PER_PAGE + 1} to{' '}
-                {Math.min(userPage * ITEMS_PER_PAGE, users.length)} of{' '}
+                Showing {(currentUserPage - 1) * itemsPerPage + 1} to{' '}
+                {Math.min(currentUserPage * itemsPerPage, users.length)} of{' '}
                 {users.length} users
               </p>
               <div className="flex flex-wrap items-center gap-2 justify-center sm:justify-end">
                 <Button
                   onClick={() => setUserPage((p) => Math.max(1, p - 1))}
-                  disabled={userPage === 1}
+                  disabled={currentUserPage === 1}
                   className="bg-slate-700 hover:bg-slate-600 text-white disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                 >
                   Previous
                 </Button>
                 <div className="hidden sm:flex items-center gap-2">
                   {Array.from({
-                    length: Math.ceil(users.length / ITEMS_PER_PAGE),
+                    length: Math.ceil(users.length / itemsPerPage),
                   }).map((_, i) => (
                     <Button
                       key={i + 1}
                       onClick={() => setUserPage(i + 1)}
                       className={`w-10 h-10 text-sm ${
-                        userPage === i + 1
+                        currentUserPage === i + 1
                           ? 'bg-blue-600 text-white'
                           : 'bg-slate-700 hover:bg-slate-600 text-white'
                       }`}
@@ -544,16 +584,16 @@ export function UsersSection({
                   ))}
                 </div>
                 <div className="sm:hidden text-sm text-gray-400">
-                  Page {userPage}
+                  Page {currentUserPage}
                 </div>
                 <Button
                   onClick={() =>
                     setUserPage((p) =>
-                      Math.min(Math.ceil(users.length / ITEMS_PER_PAGE), p + 1)
+                      Math.min(Math.ceil(users.length / itemsPerPage), p + 1)
                     )
                   }
                   disabled={
-                    userPage === Math.ceil(users.length / ITEMS_PER_PAGE)
+                    currentUserPage === totalUserPages
                   }
                   className="bg-slate-700 hover:bg-slate-600 text-white disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                 >
@@ -561,7 +601,8 @@ export function UsersSection({
                 </Button>
               </div>
             </div>
-          )}
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>

@@ -11,7 +11,10 @@ interface BalanceUpdate {
 export async function recalculateBalances(
   userId: string
 ): Promise<BalanceUpdate> {
-  const transactions = await Transaction.find({ userId }).sort({ date: 1 });
+  const transactions = await Transaction.find({ userId }).sort({
+    date: 1,
+    _id: 1,
+  });
 
   let savingsBalance = 0;
   let fdBalance = 0;

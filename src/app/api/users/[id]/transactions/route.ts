@@ -12,7 +12,7 @@ export async function GET(
     await dbConnect();
     const url = new URL(req.url);
     const pageParam = Number(url.searchParams.get('page') ?? '1');
-    const limitParam = Number(url.searchParams.get('limit') ?? '10');
+    const limitParam = Number(url.searchParams.get('limit') ?? '15');
     const page = Math.max(1, pageParam);
     const limit = Math.max(1, Math.min(limitParam, 100));
     const { id } = await context.params;
@@ -29,7 +29,7 @@ export async function GET(
 
     const userTransactionsAsc = await Transaction.find({ userId: id })
       .select('userId type amount date relatedUserId relatedUserName metadata')
-      .sort({ date: 1 })
+      .sort({ date: 1, _id: 1 })
       .lean();
     const snapshotsByTxId = buildTransactionBalanceSnapshots(
       userTransactionsAsc,
@@ -44,7 +44,7 @@ export async function GET(
       rd:
         (user.rd ?? 0) > 0 ||
         userTransactionsAsc.some((tx) =>
-          ['rd', 'interest_rd'].includes(tx.type)
+          ['rd', 'rd_new', 'interest_rd', 'rd_new_maturity'].includes(tx.type)
         ),
       loan:
         (user.loanBalance ?? 0) > 0 ||

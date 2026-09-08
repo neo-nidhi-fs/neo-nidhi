@@ -61,7 +61,8 @@ export default function AdminTransactionsPage() {
   const [dateRange, setDateRange] = useState('all'); // 'all', 'weekly', 'monthly', 'yearly', 'custom'
   const [customStartDate, setCustomStartDate] = useState('');
   const [customEndDate, setCustomEndDate] = useState('');
-  const ITEMS_PER_PAGE = 10;
+  const [itemsPerPage, setItemsPerPage] = useState(15);
+  const [itemsPerPageDraft, setItemsPerPageDraft] = useState('15');
 
   useEffect(() => {
     async function fetchData() {
@@ -71,11 +72,31 @@ export default function AdminTransactionsPage() {
       await fetchTransactions(1);
     }
     fetchData();
-  }, [filterType, dateRange, customStartDate, customEndDate]);
+  }, [filterType, dateRange, customStartDate, customEndDate, itemsPerPage]);
+
+  function handleItemsPerPageChange(value: string) {
+    setItemsPerPageDraft(value);
+    const nextItemsPerPage = Number(value);
+    if (
+      /^\d+$/.test(value) &&
+      nextItemsPerPage >= 1 &&
+      nextItemsPerPage <= 100
+    ) {
+      setItemsPerPage(nextItemsPerPage);
+      setTxPage(1);
+    }
+  }
+
+  function restoreItemsPerPage() {
+    if (!/^\d+$/.test(itemsPerPageDraft)) {
+      setItemsPerPageDraft(String(itemsPerPage));
+    }
+  }
+
   async function fetchTransactions(page = 1) {
     setLoading(true);
     try {
-      let query = `/api/transactions?page=${page}&limit=${ITEMS_PER_PAGE}`;
+      let query = `/api/transactions?page=${page}&limit=${itemsPerPage}`;
       if (filterType) query += `&type=${filterType}`;
 
       // Date range logic
@@ -450,11 +471,29 @@ export default function AdminTransactionsPage() {
                 })}
               </TableBody>
             </Table>
-            {totalTransactionCount > ITEMS_PER_PAGE && (
-              <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <label className="flex items-center gap-2 text-sm text-gray-400">
+                <span>Items per page</span>
+                <Input
+                  aria-label="Items per page"
+                  type="number"
+                  min={1}
+                  max={100}
+                  step={1}
+                  inputMode="numeric"
+                  value={itemsPerPageDraft}
+                  onChange={(event) =>
+                    handleItemsPerPageChange(event.target.value)
+                  }
+                  onBlur={restoreItemsPerPage}
+                  className="w-20 bg-slate-800 border-slate-600 text-white"
+                />
+              </label>
+              {totalTransactionCount > itemsPerPage && (
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm text-gray-400">
-                  Showing {(txPage - 1) * ITEMS_PER_PAGE + 1} to{' '}
-                  {Math.min(txPage * ITEMS_PER_PAGE, totalTransactionCount)} of{' '}
+                  Showing {(txPage - 1) * itemsPerPage + 1} to{' '}
+                  {Math.min(txPage * itemsPerPage, totalTransactionCount)} of{' '}
                   {totalTransactionCount} transactions
                 </p>
                 <div className="flex flex-wrap items-center gap-2 justify-center sm:justify-end">
@@ -468,7 +507,7 @@ export default function AdminTransactionsPage() {
                   <div className="hidden sm:flex items-center gap-2">
                     {(() => {
                       const totalPages = Math.ceil(
-                        totalTransactionCount / ITEMS_PER_PAGE
+                        totalTransactionCount / itemsPerPage
                       );
                       const maxPagesToShow = 5;
                       let startPage = Math.max(
@@ -511,14 +550,14 @@ export default function AdminTransactionsPage() {
                     onClick={() =>
                       fetchTransactions(
                         Math.min(
-                          Math.ceil(totalTransactionCount / ITEMS_PER_PAGE),
+                          Math.ceil(totalTransactionCount / itemsPerPage),
                           txPage + 1
                         )
                       )
                     }
                     disabled={
                       txPage ===
-                      Math.ceil(totalTransactionCount / ITEMS_PER_PAGE)
+                      Math.ceil(totalTransactionCount / itemsPerPage)
                     }
                     className="bg-slate-700 hover:bg-slate-600 text-white disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                   >
@@ -526,7 +565,8 @@ export default function AdminTransactionsPage() {
                   </Button>
                 </div>
               </div>
-            )}
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>

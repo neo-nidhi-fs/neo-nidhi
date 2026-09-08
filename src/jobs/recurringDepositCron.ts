@@ -79,7 +79,8 @@ export async function processRecurringDepositDebits(
         },
         {
           $inc: {
-            savingsBalance: -rdPlan.monthlyAmount + (maturityTransfer?.transferAmount || 0),
+            savingsBalance:
+              -rdPlan.monthlyAmount + (maturityTransfer?.transferAmount || 0),
             rd: rdPlan.monthlyAmount - (maturityTransfer?.transferAmount || 0),
             'recurringDeposits.$.installmentsPaid': 1,
           },

@@ -9,6 +9,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
+import { useEffect, useState } from 'react';
 
 interface Transaction {
   _id: string;
@@ -36,6 +37,7 @@ interface TransactionTableProps {
     loan: boolean;
   };
   onPageChange: (page: number) => void;
+  onItemsPerPageChange: (itemsPerPage: number) => void;
 }
 
 export function TransactionTable({
@@ -45,7 +47,33 @@ export function TransactionTable({
   totalCount,
   balanceColumns = { fd: true, rd: true, loan: true },
   onPageChange,
+  onItemsPerPageChange,
 }: TransactionTableProps) {
+  const [itemsPerPageDraft, setItemsPerPageDraft] = useState(
+    String(itemsPerPage)
+  );
+
+  useEffect(() => {
+    setItemsPerPageDraft(String(itemsPerPage));
+  }, [itemsPerPage]);
+
+  const handleItemsPerPageChange = (value: string) => {
+    setItemsPerPageDraft(value);
+    const nextItemsPerPage = Number(value);
+    if (
+      /^\d+$/.test(value) &&
+      nextItemsPerPage >= 1 &&
+      nextItemsPerPage <= 100
+    ) {
+      onItemsPerPageChange(nextItemsPerPage);
+    }
+  };
+
+  const restoreItemsPerPage = () => {
+    if (!/^\d+$/.test(itemsPerPageDraft)) {
+      setItemsPerPageDraft(String(itemsPerPage));
+    }
+  };
   const getTransactionColor = (type: string) => {
     switch (type) {
       case 'deposit':
@@ -194,8 +222,24 @@ export function TransactionTable({
         </Table>
       </div>
 
-      {totalItems > itemsPerPage && (
-        <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <label className="flex items-center gap-2 text-sm text-gray-400">
+          <span>Items per page</span>
+          <input
+            aria-label="Items per page"
+            type="number"
+            min={1}
+            max={100}
+            step={1}
+            inputMode="numeric"
+            value={itemsPerPageDraft}
+            onChange={(event) => handleItemsPerPageChange(event.target.value)}
+            onBlur={restoreItemsPerPage}
+            className="w-20 rounded border border-slate-600 bg-slate-800 px-2 py-1 text-white"
+          />
+        </label>
+        {totalItems > itemsPerPage && (
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-gray-400">
             Showing {startIdx + 1} to {Math.min(endIdx, totalItems)} of{' '}
             {totalItems} transactions
@@ -232,8 +276,9 @@ export function TransactionTable({
               Next
             </Button>
           </div>
-        </div>
-      )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -4,12 +4,15 @@ import AdminTransactionsPage from './page';
 
 describe('AdminTransactionsPage', () => {
   let originalFetch: typeof global.fetch | undefined;
+  let requestedUrls: string[];
 
   beforeEach(() => {
     originalFetch = global.fetch;
+    requestedUrls = [];
 
     vi.stubGlobal('fetch', (input: RequestInfo) => {
       const url = typeof input === 'string' ? input : input.url;
+      requestedUrls.push(url);
 
       if (url.endsWith('/api/users')) {
         return Promise.resolve(new Response(JSON.stringify({ data: [{ _id: 'u1', name: 'Alice', age: 30, savingsBalance: 0, loanBalance: 0 }] }), { status: 200 }));
@@ -35,5 +38,6 @@ describe('AdminTransactionsPage', () => {
     // Check totals text and a transaction row user
     await waitFor(() => expect(screen.getByText(/Across 1 transactions/i)).toBeTruthy());
     await waitFor(() => expect(screen.getByText(/Alice/)).toBeTruthy());
+    expect(requestedUrls).toContain('/api/transactions?page=1&limit=15');
   });
 });

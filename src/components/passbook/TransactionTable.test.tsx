@@ -40,6 +40,7 @@ describe('TransactionTable', () => {
         itemsPerPage={10}
         totalCount={15}
         onPageChange={() => {}}
+        onItemsPerPageChange={() => {}}
       />
     );
 
@@ -62,10 +63,11 @@ describe('TransactionTable', () => {
         itemsPerPage={10}
         totalCount={0}
         onPageChange={() => {}}
+        onItemsPerPageChange={() => {}}
       />
     );
 
-    expect(screen.getByText('No transactions found')).toBeInTheDocument();
+    expect(screen.getAllByText('No transactions found')).toHaveLength(2);
   });
 
   it('calls onPageChange when next page is clicked', async () => {
@@ -79,6 +81,7 @@ describe('TransactionTable', () => {
         itemsPerPage={10}
         totalCount={15}
         onPageChange={handlePageChange}
+        onItemsPerPageChange={() => {}}
       />
     );
 
@@ -95,12 +98,35 @@ describe('TransactionTable', () => {
         totalCount={1}
         balanceColumns={{ fd: false, rd: false, loan: false }}
         onPageChange={() => {}}
+        onItemsPerPageChange={() => {}}
       />
     );
 
-    expect(screen.getByText(/S ₹1000.00/)).toBeInTheDocument();
+    expect(screen.getAllByText(/Savings ₹1000.00/)).toHaveLength(2);
     expect(screen.queryByText(/FD ₹/)).not.toBeInTheDocument();
     expect(screen.queryByText(/RD ₹/)).not.toBeInTheDocument();
     expect(screen.queryByText(/L ₹/)).not.toBeInTheDocument();
+  });
+
+  it('calls onItemsPerPageChange for a valid page size', async () => {
+    const user = userEvent.setup();
+    const handleItemsPerPageChange = vi.fn();
+
+    render(
+      <TransactionTable
+        transactions={transactions.slice(0, 10)}
+        page={1}
+        itemsPerPage={15}
+        totalCount={15}
+        onPageChange={() => {}}
+        onItemsPerPageChange={handleItemsPerPageChange}
+      />
+    );
+
+    const input = screen.getByRole('spinbutton', { name: 'Items per page' });
+    await user.clear(input);
+    await user.type(input, '20');
+
+    expect(handleItemsPerPageChange).toHaveBeenLastCalledWith(20);
   });
 });

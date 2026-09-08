@@ -43,7 +43,7 @@ export default function PassbookPage() {
   });
   const [isAdminViewingAnotherUser, setIsAdminViewingAnotherUser] =
     useState(false);
-  const ITEMS_PER_PAGE = 10;
+  const [itemsPerPage, setItemsPerPage] = useState(15);
 
   useEffect(() => {
     async function fetchTransactions() {
@@ -61,7 +61,7 @@ export default function PassbookPage() {
           Boolean(isAdminLike && viewUserId && viewUserId !== session.user.id)
         );
         const res = await fetch(
-          `/api/users/${targetUserId}/transactions?page=${page}&limit=${ITEMS_PER_PAGE}`
+          `/api/users/${targetUserId}/transactions?page=${page}&limit=${itemsPerPage}`
         );
         const data = await res.json();
         setTransactions(data.data || []);
@@ -74,7 +74,12 @@ export default function PassbookPage() {
       }
     }
     fetchTransactions();
-  }, [session, page]);
+  }, [session?.user?.id, session?.user?.role, page, itemsPerPage]);
+
+  const handleItemsPerPageChange = (nextItemsPerPage: number) => {
+    setItemsPerPage(nextItemsPerPage);
+    setPage(1);
+  };
 
   if (loading) {
     return (
@@ -132,10 +137,11 @@ export default function PassbookPage() {
             <TransactionTable
               transactions={transactions}
               page={page}
-              itemsPerPage={ITEMS_PER_PAGE}
+              itemsPerPage={itemsPerPage}
               totalCount={totalCount}
               balanceColumns={balanceColumns}
               onPageChange={setPage}
+              onItemsPerPageChange={handleItemsPerPageChange}
             />
           </CardContent>
         </Card>

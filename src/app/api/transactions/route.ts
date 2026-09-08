@@ -193,7 +193,7 @@ export async function GET(req: Request) {
 
     const url = new URL(req.url);
     const pageParam = Number(url.searchParams.get('page') ?? '1');
-    const limitParam = Number(url.searchParams.get('limit') ?? '10');
+    const limitParam = Number(url.searchParams.get('limit') ?? '15');
     const typeFilter = url.searchParams.get('type');
     const startDate = url.searchParams.get('startDate');
     const endDate = url.searchParams.get('endDate');
@@ -218,7 +218,7 @@ export async function GET(req: Request) {
 
     const transactionsAsc = await Transaction.find(filter)
       .select('userId type amount date relatedUserId relatedUserName metadata')
-      .sort({ date: 1 })
+      .sort({ date: 1, _id: 1 })
       .lean();
     const visibleUsers = await User.find(userFilter)
       .select('_id name savingsBalance fd rd loanBalance')

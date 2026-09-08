@@ -192,27 +192,41 @@ export default function AdminReports() {
     );
 
     if (transactionMode !== 'till_today') {
-      const { start, end } = getPeriodRange(transactionMode, transactionPeriodOffset);
+      const { start, end } = getPeriodRange(
+        transactionMode,
+        transactionPeriodOffset
+      );
       reportData.transactions.forEach((transaction) => {
         const amount = transaction.amount || 0;
         const date = new Date(transaction.date);
         if (Number.isNaN(date.getTime())) return;
         if (date < start || date > end) return;
         if (transaction.type in filteredPeriodAmounts) {
-          if (transaction.type === "repayment" && filteredPeriodAmounts["deposit"]) {
-            filteredPeriodAmounts["deposit"] -= amount;
-          }
           filteredPeriodAmounts[transaction.type] += amount;
         }
       });
     }
 
     const categories = typeKeys
-      .filter((key) => (transactionMode === 'till_today' ? reportData.transactionsByTypeAmount[key] : filteredPeriodAmounts[key]) > 0)
+      .filter(
+        (key) =>
+          (transactionMode === 'till_today'
+            ? reportData.transactionsByTypeAmount[key]
+            : filteredPeriodAmounts[key]) > 0
+      )
       .map((key) => key.replace(/_/g, ' '));
     const data = typeKeys
-      .filter((key) => (transactionMode === 'till_today' ? reportData.transactionsByTypeAmount[key] : filteredPeriodAmounts[key]) > 0)
-      .map((key) => (transactionMode === 'till_today' ? reportData.transactionsByTypeAmount[key] : filteredPeriodAmounts[key]));
+      .filter(
+        (key) =>
+          (transactionMode === 'till_today'
+            ? reportData.transactionsByTypeAmount[key]
+            : filteredPeriodAmounts[key]) > 0
+      )
+      .map((key) =>
+        transactionMode === 'till_today'
+          ? reportData.transactionsByTypeAmount[key]
+          : filteredPeriodAmounts[key]
+      );
 
     return {
       chart: { type: 'bar', height: 400, backgroundColor: 'transparent' },

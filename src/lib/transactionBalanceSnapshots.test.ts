@@ -118,4 +118,54 @@ describe('buildTransactionBalanceSnapshots', () => {
       loanBalance: 0,
     });
   });
+
+  it('treats new RD installments as RD-only reverse balance changes', () => {
+    const users: UserLike[] = [
+      {
+        _id: 'user-1',
+        name: 'Alice',
+        savingsBalance: 900,
+        fd: 0,
+        rd: 100,
+        loanBalance: 0,
+      },
+    ];
+
+    const transactions: TxLike[] = [
+      {
+        _id: 'tx-1',
+        userId: 'user-1',
+        type: 'rd_new',
+        amount: 100,
+        date: new Date('2024-01-01'),
+      },
+      {
+        _id: 'tx-2',
+        userId: 'user-1',
+        type: 'withdrawal',
+        amount: 100,
+        date: new Date('2024-01-01'),
+      },
+    ];
+
+    const snapshots = buildTransactionBalanceSnapshots(transactions, users);
+
+    expect(snapshots.get('tx-1')).toEqual({
+      userId: 'user-1',
+      name: 'Alice',
+      savingsBalance: 1000,
+      fdBalance: 0,
+      rdBalance: 100,
+      loanBalance: 0,
+    });
+
+    expect(snapshots.get('tx-2')).toEqual({
+      userId: 'user-1',
+      name: 'Alice',
+      savingsBalance: 900,
+      fdBalance: 0,
+      rdBalance: 100,
+      loanBalance: 0,
+    });
+  });
 });
