@@ -8,6 +8,7 @@ type Transaction = {
   type: string;
   amount: number;
   date: string;
+  notes?: string | null;
   userBalanceAfterTransaction?: {
     savingsBalance: number;
     fdBalance: number;
@@ -22,6 +23,7 @@ const transactions: Transaction[] = Array.from({ length: 15 }).map(
     type: index % 2 === 0 ? 'deposit' : 'withdrawal',
     amount: 100 + index,
     date: new Date(2024, 0, index + 1).toISOString(),
+    ...(index === 0 ? { notes: 'Admin entered note' } : {}),
     userBalanceAfterTransaction: {
       savingsBalance: 1000 + index,
       fdBalance: 200 + index,
@@ -47,6 +49,8 @@ describe('TransactionTable', () => {
     expect(screen.getByText('Date')).toBeInTheDocument();
     expect(screen.getByText('Type')).toBeInTheDocument();
     expect(screen.getByText('Amount')).toBeInTheDocument();
+    expect(screen.getByText('Notes')).toBeInTheDocument();
+    expect(screen.getAllByText('Admin entered note')).toHaveLength(2);
     expect(screen.getByText('Balance After Tx')).toBeInTheDocument();
     expect(
       screen.getByText('Showing 1 to 10 of 15 transactions')

@@ -28,7 +28,9 @@ export async function GET(
     }
 
     const userTransactionsAsc = await Transaction.find({ userId: id })
-      .select('userId type amount date relatedUserId relatedUserName metadata')
+      .select(
+        'userId type amount date notes relatedUserId relatedUserName metadata'
+      )
       .sort({ date: 1, _id: 1 })
       .lean();
     const snapshotsByTxId = buildTransactionBalanceSnapshots(

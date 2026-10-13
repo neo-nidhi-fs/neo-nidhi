@@ -12,6 +12,7 @@ type Transaction = {
   type: string;
   amount: number;
   date: string;
+  notes?: string | null;
   relatedUserName?: string;
   userBalanceAfterTransaction?: {
     userId: string;

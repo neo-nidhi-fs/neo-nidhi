@@ -31,7 +31,7 @@ export async function POST(req: Request) {
 
     const body = await req.json();
 
-    const { userId, type, amount } = body;
+    const { userId, type, amount, notes: submittedNotes } = body;
 
     // Validation
     if (!userId || !type || amount === undefined) {
@@ -40,6 +40,22 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
+
+    if (
+      submittedNotes !== undefined &&
+      submittedNotes !== null &&
+      typeof submittedNotes !== 'string'
+    ) {
+      return NextResponse.json(
+        { success: false, error: 'Notes must be a string' },
+        { status: 400 }
+      );
+    }
+
+    const notes =
+      typeof submittedNotes === 'string' && submittedNotes.trim()
+        ? submittedNotes.trim()
+        : undefined;
 
     if (amount <= 0) {
       return NextResponse.json(
@@ -150,6 +166,7 @@ export async function POST(req: Request) {
       type,
       amount,
       date: new Date(),
+      notes,
       metadata,
     });
     await transaction.save();
@@ -217,7 +234,9 @@ export async function GET(req: Request) {
     }
 
     const transactionsAsc = await Transaction.find(filter)
-      .select('userId type amount date relatedUserId relatedUserName metadata')
+      .select(
+        'userId type amount date notes relatedUserId relatedUserName metadata'
+      )
       .sort({ date: 1, _id: 1 })
       .lean();
     const visibleUsers = await User.find(userFilter)

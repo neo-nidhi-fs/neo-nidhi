@@ -16,6 +16,7 @@ interface Transaction {
   type: string;
   amount: number;
   date: string;
+  notes?: string | null;
   userBalanceAfterTransaction?: {
     userId: string;
     name: string;
@@ -157,6 +158,9 @@ export function TransactionTable({
               <div className="text-xl font-bold text-white mb-2">
                 ₹{tx.amount.toFixed(2)}
               </div>
+              {tx.notes && (
+                <p className="mb-2 text-sm text-gray-300">{tx.notes}</p>
+              )}
               {tx.userBalanceAfterTransaction && (
                 <div className="text-xs text-gray-300 bg-slate-900/50 p-3 rounded">
                   {formatBalanceParts(tx.userBalanceAfterTransaction)}
@@ -179,6 +183,7 @@ export function TransactionTable({
               <TableHead>Date</TableHead>
               <TableHead>Type</TableHead>
               <TableHead>Amount</TableHead>
+              <TableHead>Notes</TableHead>
               <TableHead>Balance After Tx</TableHead>
             </TableRow>
           </TableHeader>
@@ -197,6 +202,9 @@ export function TransactionTable({
                   <TableCell className="font-semibold text-gray-200">
                     ₹{tx.amount.toFixed(2)}
                   </TableCell>
+                  <TableCell className="text-gray-200">
+                    {tx.notes || '-'}
+                  </TableCell>
                   <TableCell className="text-xs text-gray-200 min-w-[240px]">
                     {tx.userBalanceAfterTransaction ? (
                       <div>
@@ -211,7 +219,7 @@ export function TransactionTable({
             ) : (
               <TableRow>
                 <TableCell
-                  colSpan={4}
+                  colSpan={5}
                   className="text-center text-gray-400 py-8"
                 >
                   No transactions found

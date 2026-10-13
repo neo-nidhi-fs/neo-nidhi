@@ -20,6 +20,7 @@ export interface ITransaction extends Document {
     | 'rd_new_maturity';
   amount: number;
   date: Date;
+  notes?: string | null;
   relatedUserId?: mongoose.Types.ObjectId; // For user-to-user transfers
   relatedUserName?: string; // Display name of the related user in transfer
   metadata?: Record<string, unknown>;
@@ -50,6 +51,7 @@ const TransactionSchema: Schema<ITransaction> = new Schema({
   },
   amount: { type: Number, required: true },
   date: { type: Date, default: Date.now },
+  notes: { type: String, default: null },
   relatedUserId: { type: Schema.Types.ObjectId, ref: 'User' },
   relatedUserName: { type: String },
   metadata: { type: Schema.Types.Mixed, default: null },

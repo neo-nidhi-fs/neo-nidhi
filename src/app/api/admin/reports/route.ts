@@ -2,20 +2,34 @@ import { dbConnect } from '@/lib/dbConnect';
 import { User } from '@/models/User';
 import { Transaction } from '@/models/Transaction';
 import { Scheme } from '@/models/Scheme';
+import { requireAdminLikeAccess } from '@/lib/adminAccess';
 
 export async function GET() {
   try {
     await dbConnect();
 
-    const [users, transactions, schemes] = await Promise.all([
-      User.find({})
+    const access = await requireAdminLikeAccess();
+    if (!access.ok) {
+      return access.response;
+    }
+
+    const { managedUserIds, isAdmin } = access.context;
+
+    const userFilter = isAdmin ? {} : { _id: { $in: managedUserIds } };
+
+    const [users, schemes] = await Promise.all([
+      User.find(userFilter)
         .select(
           'role savingsBalance fd rd loanBalance accruedSavingInterest accruedFdInterest accruedRdInterest accruedLoanInterest'
         )
         .lean(),
-      Transaction.find({}).select('type amount date').lean(),
       Scheme.find({}).select('name').lean(),
     ]);
+
+    const userIds = users.map((u) => u._id);
+    const transactions = await Transaction.find({ userId: { $in: userIds } })
+      .select('type amount date userId')
+      .lean();
 
     const totalUsers = users.length;
     let totalAdmins = 0;

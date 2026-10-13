@@ -37,6 +37,7 @@ interface Transaction {
   type: 'deposit' | 'loan' | 'repayment' | 'fd' | 'rd' | 'withdrawal';
   amount: number;
   date: string;
+  notes?: string | null;
   userBalanceAfterTransaction?: {
     userId: string;
     name: string;
@@ -146,7 +147,12 @@ export default function AdminTransactionsPage() {
       const res = await fetch('/api/transactions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, type, amount }),
+        body: JSON.stringify({
+          userId,
+          type,
+          amount,
+          notes: formData.get('notes'),
+        }),
       });
 
       const data = await res.json();
@@ -216,6 +222,7 @@ export default function AdminTransactionsPage() {
     { header: 'User', accessor: 'name' },
     { header: 'Type', accessor: 'type' },
     { header: 'Amount', accessor: 'amount' },
+    { header: 'Notes', accessor: 'notes' },
     { header: 'Balance After Tx', accessor: 'userBalanceAfterTransaction' },
   ];
   return (
@@ -323,6 +330,19 @@ export default function AdminTransactionsPage() {
                     required
                     disabled={addTransactionLoading}
                     className="bg-slate-700 border-slate-600 text-white disabled:opacity-50"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="notes" className="text-gray-100">
+                    Notes (optional)
+                  </Label>
+                  <textarea
+                    id="notes"
+                    name="notes"
+                    disabled={addTransactionLoading}
+                    className="w-full rounded border border-slate-600 bg-slate-700 px-3 py-2 text-white disabled:opacity-50"
+                    rows={3}
                   />
                 </div>
 
@@ -441,6 +461,9 @@ export default function AdminTransactionsPage() {
                       </TableCell>
                       <TableCell className="font-semibold text-gray-200">
                         ₹{tx.amount.toFixed(2)}
+                      </TableCell>
+                      <TableCell className="text-gray-200">
+                        {tx.notes || '-'}
                       </TableCell>
                       <TableCell className="text-xs text-gray-200 min-w-[240px]">
                         {tx.userBalanceAfterTransaction ? (
